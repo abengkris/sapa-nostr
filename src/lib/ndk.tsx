@@ -38,6 +38,16 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
       enableOutboxModel: true,
     });
 
+    // Performance Optimization: Signature Verification Sampling
+    // Only verify 50% of signatures initially, tapering down to 5% for trusted relays
+    instance.initialValidationRatio = 0.5;
+    instance.lowestValidationRatio = 0.05;
+
+    // Monitor for invalid signatures
+    instance.on("event:invalid-sig", (event) => {
+      console.error("Invalid signature received from relay:", event.relay?.url, event.id);
+    });
+
     // Handle session restoration
     const restoreSession = async () => {
       if (isLoggedIn) {
