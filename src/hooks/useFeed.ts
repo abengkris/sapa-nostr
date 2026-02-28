@@ -32,19 +32,17 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
       return;
     }
 
-    if (authors.length === 0) {
-      setLoading(false);
-      setPosts([]);
-      return;
-    }
-
     setLoading(true);
 
     const filter: NDKFilter = {
       kinds: kinds,
-      authors: authors,
       limit: limit,
     };
+
+    // Only add authors to filter if provided
+    if (authors && authors.length > 0) {
+      filter.authors = authors;
+    }
 
     if (isLoadMore && oldestTimestampRef.current) {
       filter.until = oldestTimestampRef.current - 1;
@@ -107,13 +105,16 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
 
   // Initial subscription for real-time updates (top of the feed)
   useEffect(() => {
-    if (!ndk || !isReady || authors.length === 0) return;
+    if (!ndk || !isReady) return;
 
     const realtimeFilter: NDKFilter = {
       kinds: kinds,
-      authors: authors,
       since: Math.floor(Date.now() / 1000),
     };
+
+    if (authors && authors.length > 0) {
+      realtimeFilter.authors = authors;
+    }
 
     const sub = ndk.subscribe(realtimeFilter, { closeOnEose: false });
     realtimeSubRef.current = sub;
