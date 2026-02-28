@@ -7,10 +7,14 @@ import { Repeat2, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
+import { UserIdentity } from "@/components/common/UserIdentity";
+
 interface PostHeaderProps {
   displayName: string;
   avatar: string;
   userNpub: string;
+  pubkey: string;
+  nip05?: string;
   createdAt: number | undefined;
   isRepost?: boolean;
   repostAuthorName?: string;
@@ -22,6 +26,8 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   displayName,
   avatar,
   userNpub,
+  pubkey,
+  nip05,
   createdAt,
   isRepost,
   repostAuthorName,
@@ -57,17 +63,22 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
             </Link>
           </div>
           <div className="flex items-center gap-1 truncate min-w-0">
-            <Link href={`/${userNpub}`} className="font-bold hover:underline truncate min-w-0">
-              {displayName}
+            <Link href={`/${userNpub}`} className="flex items-center gap-1 truncate min-w-0 hover:underline">
+              <UserIdentity 
+                pubkey={pubkey}
+                displayName={displayName}
+                nip05={nip05}
+                variant="post"
+              />
             </Link>
             {bot && (
-              <span className="text-[9px] bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1 rounded font-bold uppercase tracking-tighter shrink-0">
+              <span className="text-[9px] bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1 rounded font-bold uppercase tracking-tighter shrink-0 mt-1">
                 Bot
               </span>
             )}
           </div>
-          <span className="text-gray-500 text-xs shrink-0">·</span>
-          <span className="text-gray-500 text-xs whitespace-nowrap shrink-0">
+          <span className="text-gray-500 text-xs shrink-0 mt-1">·</span>
+          <span className="text-gray-500 text-xs whitespace-nowrap shrink-0 mt-1">
             {formattedTime}
           </span>
         </div>
