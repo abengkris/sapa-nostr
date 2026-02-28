@@ -40,8 +40,8 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-0.5">
-        <div className="flex items-center space-x-1 truncate" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between mb-0.5 min-w-0">
+        <div className="flex items-center space-x-1 truncate min-w-0" onClick={(e) => e.stopPropagation()}>
           <div className="mr-3 shrink-0 z-10">
             <Link href={`/${userNpub}`}>
               <Image
@@ -54,16 +54,16 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
               />
             </Link>
           </div>
-          <Link href={`/${userNpub}`} className="font-bold hover:underline truncate">
+          <Link href={`/${userNpub}`} className="font-bold hover:underline truncate min-w-0">
             {displayName}
           </Link>
-          <span className="text-gray-500 text-xs">·</span>
-          <span className="text-gray-500 text-xs whitespace-nowrap">
+          <span className="text-gray-500 text-xs shrink-0">·</span>
+          <span className="text-gray-500 text-xs whitespace-nowrap shrink-0">
             {formattedTime}
           </span>
         </div>
         <button 
-          className="text-gray-400 hover:text-blue-500 transition-colors" 
+          className="text-gray-400 hover:text-blue-500 transition-colors shrink-0" 
           onClick={(e) => {
             e.stopPropagation();
             onMoreClick?.(e);

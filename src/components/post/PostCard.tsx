@@ -102,6 +102,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             content={displayEvent.content}
             replyingToNpub={replyingToNpub}
             isRepost={isRepost}
+            event={displayEvent}
           />
 
           <PostActions

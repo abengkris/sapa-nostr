@@ -2,18 +2,21 @@
 
 import React from "react";
 import Link from "next/link";
+import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { ContentRenderer } from "../ContentRenderer";
 
 interface PostContentProps {
   content: string;
   replyingToNpub?: string | null;
   isRepost?: boolean;
+  event: NDKEvent;
 }
 
 export const PostContent: React.FC<PostContentProps> = ({
   content,
   replyingToNpub,
-  isRepost
+  isRepost,
+  event
 }) => {
   return (
     <>
@@ -25,7 +28,7 @@ export const PostContent: React.FC<PostContentProps> = ({
       )}
 
       <div className="mb-3">
-        <ContentRenderer content={content} />
+        <ContentRenderer content={content} tags={event.tags} />
       </div>
     </>
   );

@@ -33,20 +33,20 @@ export const QuoteRenderer: React.FC<QuoteRendererProps> = ({ id }) => {
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.pubkey}`;
 
   return (
-    <div className="mt-2 border rounded-2xl border-gray-200 dark:border-gray-800 p-3 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors overflow-hidden">
-      <div className="flex items-center space-x-2 mb-1.5">
+    <div className="mt-2 border rounded-2xl border-gray-200 dark:border-gray-800 p-3 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors overflow-hidden w-full">
+      <div className="flex items-center space-x-2 mb-1.5 min-w-0">
         <Image
           src={avatar}
           alt={displayName}
           width={18}
           height={18}
-          className="rounded-full bg-gray-200"
+          className="rounded-full bg-gray-200 shrink-0"
           unoptimized
         />
-        <span className="font-bold text-sm truncate">{displayName}</span>
-        <span className="text-gray-500 text-xs truncate">@{event.author.npub.slice(0, 12)}...</span>
+        <span className="font-bold text-sm truncate min-w-0">{displayName}</span>
+        <span className="text-gray-500 text-xs truncate min-w-0">@{event.author.npub.slice(0, 12)}…</span>
       </div>
-      <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3 break-words">
+      <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3 break-words text-pretty">
         {event.content}
       </p>
     </div>
