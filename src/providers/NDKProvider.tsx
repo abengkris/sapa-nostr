@@ -75,13 +75,25 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
 
     restoreSession();
 
-    instance.connect().then(() => {
-      setNdk(instance);
-      setIsReady(true);
-      console.log("NDK connected and session restored");
-    }).catch(err => {
-      console.error("NDK connection failed:", err);
-    });
+    // Set NDK instance immediately
+    setNdk(instance);
+
+    // Connection with safety timeout
+    const connectPromise = instance.connect();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Connection timeout")), 10000)
+    );
+
+    Promise.race([connectPromise, timeoutPromise])
+      .then(() => {
+        setIsReady(true);
+        console.log("NDK connected and session restored");
+      })
+      .catch(err => {
+        console.warn("NDK connection partial or timed out:", err.message);
+        // Still set isReady to true so the app can function with whatever relays connected
+        setIsReady(true);
+      });
   }, [isLoggedIn, loginType, privateKey, publicKey, setUser]);
 
   return (

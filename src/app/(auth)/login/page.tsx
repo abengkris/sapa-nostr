@@ -32,7 +32,7 @@ export default function LoginPage() {
     isLoggedIn 
   } = useAuthStore();
   
-  const { ndk } = useNDK();
+  const { ndk, isReady } = useNDK();
   const router = useRouter();
 
   // Redirect if already logged in
@@ -43,7 +43,7 @@ export default function LoginPage() {
   }, [isLoggedIn, router]);
 
   const handleNip07Login = async () => {
-    if (!ndk) return;
+    if (!ndk || !isReady) return;
     try {
       await login(ndk);
     } catch (err) {
@@ -53,7 +53,7 @@ export default function LoginPage() {
 
   const handleKeyLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ndk || !privateKey) return;
+    if (!ndk || !isReady || !privateKey) return;
     try {
       await loginWithPrivateKey(ndk, privateKey);
     } catch (err) {
@@ -62,7 +62,7 @@ export default function LoginPage() {
   };
 
   const handleGenerateKey = async () => {
-    if (!ndk) return;
+    if (!ndk || !isReady) return;
     try {
       const k = await generateNewKey(ndk);
       setNewKey(k);
@@ -133,20 +133,22 @@ export default function LoginPage() {
           <div className="space-y-4">
             <button
               onClick={handleNip07Login}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center space-x-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 text-gray-900 dark:text-white font-bold py-4 px-6 rounded-2xl transition-all group"
+              disabled={isLoading || !isReady}
+              className="w-full flex items-center justify-center space-x-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 text-gray-900 dark:text-white font-bold py-4 px-6 rounded-2xl transition-all group disabled:opacity-50"
             >
               <LogIn size={20} className="group-hover:text-blue-500" />
-              <span>{isLoading ? "Connecting..." : "Use Browser Extension"}</span>
+              <span>
+                {!isReady ? "Initializing..." : (isLoading ? "Connecting..." : "Use Browser Extension")}
+              </span>
             </button>
 
             <button
               onClick={handleGenerateKey}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center space-x-3 bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg shadow-blue-500/20"
+              disabled={isLoading || !isReady}
+              className="w-full flex items-center justify-center space-x-3 bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
             >
               {isLoading ? <Loader2 className="animate-spin" /> : <PlusCircle size={20} />}
-              <span>Create New Identity</span>
+              <span>{!isReady ? "Please wait..." : "Create New Identity"}</span>
             </button>
           </div>
 
@@ -188,10 +190,10 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
-              disabled={isLoading || !privateKey}
+              disabled={isLoading || !privateKey || !isReady}
               className="w-full bg-gray-900 dark:bg-white text-white dark:text-black font-bold py-4 px-6 rounded-2xl hover:opacity-90 transition-all disabled:opacity-50 shadow-lg"
             >
-              Login with Key
+              {!isReady ? "Initializing..." : (isLoading ? "Logging in..." : "Login with Key")}
             </button>
           </form>
 
