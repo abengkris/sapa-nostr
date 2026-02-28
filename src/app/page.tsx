@@ -148,7 +148,14 @@ function WoTStatusBanner({
   status: "idle" | "loading" | "ready" | "error";
   size: number;
 }) {
-  if (status === "ready" && size > 0) {
+  if (status === "ready") {
+    if (size <= 1) {
+      return (
+        <div className="flex items-center gap-2 px-4 py-3 bg-amber-50/30 dark:bg-amber-900/5 text-[10px] text-amber-600 dark:text-amber-400 border-b border-gray-100 dark:border-gray-900 font-bold uppercase tracking-widest">
+          <span>💡 Tip: Follow more people to build your Web of Trust</span>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center gap-2 px-4 py-3 bg-blue-50/30 dark:bg-blue-900/5 text-[10px] text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-900 font-bold uppercase tracking-widest">
         <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />

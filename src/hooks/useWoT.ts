@@ -51,14 +51,16 @@ export function useWoT(viewerPubkey: string | undefined): UseWoTReturn {
 
     wotLoadPromise = instance
       .load({
-        depth: 2,           
+        depth: 2,
+        timeout: 15000, // 15s max for WoT build
+        maxFollows: 150, // Don't crawl more than 150 follows per user
       })
       .then(() => {
         wotSingleton = instance;
         setWot(instance);
         setStatus("ready");
         setPubkeyCount(instance.size);
-        console.log(`[WoT] Loaded ${instance.size} pubkeys in trust graph`);
+        console.log(`[WoT] Finished loading. Size: ${instance.size}`);
       })
       .catch(err => {
         console.error("[WoT] Load failed:", err);
