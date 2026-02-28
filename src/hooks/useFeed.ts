@@ -4,7 +4,7 @@ import { useNDK } from "@/lib/ndk";
 
 const MAX_POSTS = 100;
 
-export function useFeed(authors: string[]) {
+export function useFeed(authors: string[], kinds: number[] = [1], disableFiltering: boolean = false) {
   const { ndk, isReady } = useNDK();
   const [posts, setPosts] = useState<NDKEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export function useFeed(authors: string[]) {
     setLoading(true);
 
     const filter: NDKFilter = {
-      kinds: [1],
+      kinds: kinds,
       authors: authors,
       limit: limit,
     };
@@ -59,27 +59,29 @@ export function useFeed(authors: string[]) {
         );
 
         // Filter based on Concept #5: Feed filtering
-        const filteredPosts = newPosts.filter(ev => {
-          const eTags = ev.tags.filter(t => t[0] === 'e');
-          const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
-          
-          if (!isReply) return true; // Standalone, Repost, Quote always show
+        let filteredPosts = newPosts;
+        
+        if (!disableFiltering && kinds.includes(1)) {
+          filteredPosts = newPosts.filter(ev => {
+            const eTags = ev.tags.filter(t => t[0] === 'e');
+            const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
+            
+            if (!isReply) return true; // Standalone, Repost, Quote always show
 
-          // If it's a reply, only show if:
-          // 1. In global feed, we generally hide replies to keep it clean
-          if (authors.length === 0) return false;
+            // If it's a reply, only show if:
+            // 1. In global feed, we generally hide replies to keep it clean
+            if (authors.length === 0) return false;
 
-          // 2. In following feed, show if it's a reply to someone the user follows
-          // (Simplified: we show all replies in following feed for now, 
-          // or we can check if the recipient pubkey is in the authors list)
-          const replyPTag = ev.tags.find(t => t[0] === 'p');
-          if (replyPTag && authors.includes(replyPTag[1])) return true;
-          
-          // 3. Thread continuation (reply to self)
-          if (replyPTag && replyPTag[1] === ev.pubkey) return true;
+            // 2. In following feed, show if it's a reply to someone the user follows
+            const replyPTag = ev.tags.find(t => t[0] === 'p');
+            if (replyPTag && authors.includes(replyPTag[1])) return true;
+            
+            // 3. Thread continuation (reply to self)
+            if (replyPTag && replyPTag[1] === ev.pubkey) return true;
 
-          return false;
-        });
+            return false;
+          });
+        }
 
         // Keep state small for performance (virtualization ready)
         const slicedPosts = filteredPosts.slice(0, MAX_POSTS);
@@ -95,14 +97,14 @@ export function useFeed(authors: string[]) {
     sub.on("eose", () => {
       setLoading(false);
     });
-  }, [ndk, isReady, authors, limit]);
+  }, [ndk, isReady, authors, limit, kinds, disableFiltering]);
 
   // Initial subscription for real-time updates (top of the feed)
   useEffect(() => {
     if (!ndk || !isReady || authors.length === 0) return;
 
     const realtimeFilter: NDKFilter = {
-      kinds: [1],
+      kinds: kinds,
       authors: authors,
       since: Math.floor(Date.now() / 1000),
     };
@@ -123,7 +125,7 @@ export function useFeed(authors: string[]) {
     return () => {
       if (realtimeSubRef.current) realtimeSubRef.current.stop();
     };
-  }, [ndk, isReady, authors]);
+  }, [ndk, isReady, authors, kinds]);
 
   // Initial fetch and global cleanup
   useEffect(() => {

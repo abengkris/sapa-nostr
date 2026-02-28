@@ -13,13 +13,24 @@ import { useFollowing } from "@/hooks/useFollowing";
 
 import Image from "next/image";
 
+import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
+
+type ProfileTab = "posts" | "replies" | "media" | "likes";
+
 export default function ProfilePage({ params }: { params: Promise<{ npub: string }> }) {
   const { npub } = use(params);
+  const [activeTab, setActiveTab] = React.useState<ProfileTab>("posts");
   const { profile, loading: profileLoading } = useProfile(npub);
-  const { posts, loading: feedLoading } = useFeed([npub]);
+  
   const { following: userFollowing } = useFollowing(useAuthStore.getState().user?.pubkey);
   const { ndk } = useNDK();
   const { user: currentUser } = useAuthStore();
+
+  // Determine feed parameters based on tab
+  const feedKinds = activeTab === "likes" ? [7] : [1];
+  const disableFiltering = activeTab === "replies" || activeTab === "likes";
+  
+  const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([npub], feedKinds, disableFiltering);
 
   const isFollowing = userFollowing.includes(npub);
   const isOwnProfile = currentUser?.pubkey === npub;
@@ -49,6 +60,13 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
 
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${npub}`;
   const displayName = profile?.name || profile?.displayName || `${npub.slice(0, 8)}...`;
+
+  // Custom filter for "Replies" tab since NDK might return both root and replies
+  const filteredPosts = activeTab === "replies" 
+    ? posts.filter(p => p.tags.some(t => t[0] === 'e'))
+    : activeTab === "posts"
+    ? posts.filter(p => !p.tags.some(t => t[0] === 'e'))
+    : posts;
 
   return (
     <MainLayout>
@@ -116,20 +134,45 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-gray-800">
-        <button className="flex-1 py-4 text-sm font-bold border-b-4 border-blue-500">Posts</button>
-        <button className="flex-1 py-4 text-sm font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900">Replies</button>
-        <button className="flex-1 py-4 text-sm font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900">Media</button>
-        <button className="flex-1 py-4 text-sm font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900">Likes</button>
+        {(["posts", "replies", "media", "likes"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-4 text-sm font-bold capitalize transition-colors relative ${
+              activeTab === tab ? "text-blue-500" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900"
+            }`}
+          >
+            {tab}
+            {activeTab === tab && (
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-blue-500 rounded-full" />
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Feed */}
       <div className="pb-20">
-        {feedLoading ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="animate-spin text-blue-500" size={24} />
+        {feedLoading && filteredPosts.length === 0 ? (
+          <FeedSkeleton />
+        ) : filteredPosts.length > 0 ? (
+          <>
+            {filteredPosts.map(post => <PostCard key={post.id} event={post} />)}
+            {hasMore && (
+              <div className="p-8 text-center border-t border-gray-100 dark:border-gray-900">
+                <button 
+                  onClick={() => loadMore()}
+                  disabled={feedLoading}
+                  className="text-blue-500 text-sm font-bold hover:underline disabled:opacity-50"
+                >
+                  {feedLoading ? "Loading..." : "Load more"}
+                </button>
+              </div>
+            )}
+          </>
+        ) : !feedLoading && (
+          <div className="p-12 text-center text-gray-500">
+            No {activeTab} to show.
           </div>
-        ) : (
-          posts.map(post => <PostCard key={post.id} event={post} />)
         )}
       </div>
     </MainLayout>

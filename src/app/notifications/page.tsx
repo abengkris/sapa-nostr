@@ -19,7 +19,7 @@ const NotificationIcon = ({ type }: { type: string }) => {
 };
 
 export default function NotificationsPage() {
-  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, loading, loadMore, hasMore } = useNotifications();
 
   React.useEffect(() => {
     markAsRead();
@@ -32,7 +32,11 @@ export default function NotificationsPage() {
       </div>
 
       <div className="pb-20">
-        {notifications.length === 0 ? (
+        {loading && notifications.length === 0 ? (
+          <div className="flex justify-center p-12">
+            <Loader2 className="animate-spin text-blue-500" size={32} />
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-gray-500 text-center">
             <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-full mb-4">
               <MessageCircle size={48} className="opacity-20" />
@@ -41,40 +45,54 @@ export default function NotificationsPage() {
             <p className="text-sm mt-2">Interactions with your posts will appear here.</p>
           </div>
         ) : (
-          notifications.map((notif) => (
-            <div key={notif.id} className="border-b border-gray-100 dark:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
-              <div className="flex p-4 space-x-3">
-                <div className="shrink-0 pt-1">
-                  <NotificationIcon type={notif.type} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <img 
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`} 
-                      className="w-8 h-8 rounded-full bg-gray-200"
-                      alt="User"
-                    />
-                    <Link href={`/p/${notif.pubkey}`} className="font-bold hover:underline truncate">
-                      {notif.pubkey.slice(0, 8)}...
-                    </Link>
-                    <span className="text-gray-500 text-sm">
-                      {notif.type === 'like' && "liked your post"}
-                      {notif.type === 'repost' && "reposted your post"}
-                      {notif.type === 'reply' && "replied to your post"}
-                      {notif.type === 'zap' && "zapped your post"}
-                      {notif.type === 'mention' && "mentioned you"}
-                    </span>
+          <>
+            {notifications.map((notif) => (
+              <div key={notif.id} className="border-b border-gray-100 dark:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                <div className="flex p-4 space-x-3">
+                  <div className="shrink-0 pt-1">
+                    <NotificationIcon type={notif.type} />
                   </div>
-                  
-                  {notif.kind === 1 && (
-                    <div className="text-gray-600 dark:text-gray-400 text-sm border-l-2 border-gray-200 dark:border-gray-800 pl-3 py-1 italic">
-                      {notif.content.length > 100 ? notif.content.slice(0, 100) + "..." : notif.content}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <img 
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`} 
+                        className="w-8 h-8 rounded-full bg-gray-200"
+                        alt="User"
+                      />
+                      <Link href={`/${notif.pubkey}`} className="font-bold hover:underline truncate">
+                        {notif.pubkey.slice(0, 8)}...
+                      </Link>
+                      <span className="text-gray-500 text-sm">
+                        {notif.type === 'like' && "liked your post"}
+                        {notif.type === 'repost' && "reposted your post"}
+                        {notif.type === 'reply' && "replied to your post"}
+                        {notif.type === 'zap' && "zapped your post"}
+                        {notif.type === 'mention' && "mentioned you"}
+                      </span>
                     </div>
-                  )}
+                    
+                    {notif.kind === 1 && (
+                      <div className="text-gray-600 dark:text-gray-400 text-sm border-l-2 border-gray-200 dark:border-gray-800 pl-3 py-1 italic">
+                        {notif.content.length > 100 ? notif.content.slice(0, 100) + "..." : notif.content}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+            
+            {hasMore && (
+              <div className="p-8 text-center">
+                <button 
+                  onClick={() => loadMore()}
+                  disabled={loading}
+                  className="text-blue-500 text-sm font-bold hover:underline disabled:opacity-50"
+                >
+                  {loading ? "Loading..." : "Load more"}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </MainLayout>

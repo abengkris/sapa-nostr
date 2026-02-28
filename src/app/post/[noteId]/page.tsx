@@ -9,7 +9,15 @@ import { useThread } from "@/hooks/useThread";
 
 export default function PostDetailPage({ params }: { params: Promise<{ noteId: string }> }) {
   const { noteId } = use(params);
-  const { focalPost, ancestors, replies, loading } = useThread(noteId);
+  const { 
+    focalPost, 
+    ancestors, 
+    replies, 
+    loading, 
+    loadingReplies, 
+    hasMoreReplies, 
+    loadMoreReplies 
+  } = useThread(noteId);
   const router = useRouter();
 
   return (
@@ -52,7 +60,20 @@ export default function PostDetailPage({ params }: { params: Promise<{ noteId: s
 
             {/* Direct Replies */}
             {replies.length > 0 ? (
-              replies.map(reply => <PostCard key={reply.id} event={reply} />)
+              <>
+                {replies.map(reply => <PostCard key={reply.id} event={reply} />)}
+                {hasMoreReplies && (
+                  <div className="p-8 text-center">
+                    <button 
+                      onClick={() => loadMoreReplies()}
+                      disabled={loadingReplies}
+                      className="text-blue-500 text-sm font-bold hover:underline disabled:opacity-50"
+                    >
+                      {loadingReplies ? "Loading..." : "Load more"}
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="p-12 text-center text-gray-500 italic text-sm">
                 No replies yet.

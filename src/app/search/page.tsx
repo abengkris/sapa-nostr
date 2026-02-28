@@ -9,12 +9,13 @@ import { useDebounce } from "use-debounce";
 import { PostCard } from "@/components/post/PostCard";
 import Link from "next/link";
 import Image from "next/image";
+import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 
 export default function SearchPage() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQuery] = useDebounce(searchInput, 300);
   const { ndk, isReady } = useNDK();
-  const { posts, profiles, loading } = useSearch(debouncedQuery);
+  const { posts, profiles, loading, loadMore, hasMore } = useSearch(debouncedQuery);
 
   return (
     <MainLayout>
@@ -34,10 +35,8 @@ export default function SearchPage() {
       </div>
 
       <div className="p-0">
-        {loading && (
-          <div className="flex justify-center p-8">
-            <Loader2 className="animate-spin text-blue-500" size={32} />
-          </div>
+        {loading && posts.length === 0 && (
+          <FeedSkeleton />
         )}
 
         {!loading && debouncedQuery && profiles.length > 0 && (
@@ -70,12 +69,23 @@ export default function SearchPage() {
           </div>
         )}
 
-        {!loading && debouncedQuery && posts.length > 0 && (
+        {posts.length > 0 && (
           <div className="pb-20">
             <h2 className="text-xl font-bold p-4 border-b border-gray-200 dark:border-gray-800">Posts</h2>
             {posts.map((post) => (
               <PostCard key={post.id} event={post} />
             ))}
+            {hasMore && (
+              <div className="p-8 text-center border-t border-gray-100 dark:border-gray-900">
+                <button 
+                  onClick={() => loadMore()}
+                  disabled={loading}
+                  className="text-blue-500 text-sm font-bold hover:underline disabled:opacity-50"
+                >
+                  {loading ? "Loading..." : "Load more"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { NDKEvent, NDKFilter } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/lib/ndk";
 
@@ -8,6 +8,50 @@ export function useThread(focalId?: string) {
   const [ancestors, setAncestors] = useState<NDKEvent[]>([]);
   const [replies, setReplies] = useState<NDKEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+  const [hasMoreReplies, setHasMoreReplies] = useState(true);
+  const oldestReplyTimestampRef = useRef<number | undefined>(undefined);
+
+  const fetchMoreReplies = useCallback(async (isLoadMore = false, targetId = focalId) => {
+    if (!ndk || !targetId) return;
+
+    setLoadingReplies(true);
+    try {
+      const filter: NDKFilter = {
+        kinds: [1],
+        "#e": [targetId],
+        limit: 20,
+      };
+
+      if (isLoadMore && oldestReplyTimestampRef.current) {
+        filter.until = oldestReplyTimestampRef.current - 1;
+      }
+
+      const replyEvents = await ndk.fetchEvents(filter);
+      const directReplies = Array.from(replyEvents)
+        .filter(ev => {
+          const replyTag = ev.tags.find(t => t[0] === 'e' && t[3] === 'reply');
+          if (replyTag) return replyTag[1] === targetId;
+          const eTags = ev.tags.filter(t => t[0] === 'e');
+          return eTags[eTags.length - 1]?.[1] === targetId;
+        })
+        .sort((a, b) => (a.created_at ?? 0) - (b.created_at ?? 0));
+
+      setReplies((prev) => {
+        const combined = isLoadMore ? [...prev, ...directReplies] : directReplies;
+        if (combined.length > 0) {
+          oldestReplyTimestampRef.current = combined[combined.length - 1].created_at;
+        }
+        return combined;
+      });
+
+      setHasMoreReplies(replyEvents.size >= 20);
+    } catch (err) {
+      console.error("Error fetching replies:", err);
+    } finally {
+      setLoadingReplies(false);
+    }
+  }, [ndk, focalId]);
 
   const fetchThread = useCallback(async () => {
     if (!ndk || !isReady || !focalId) return;
@@ -28,10 +72,8 @@ export function useThread(focalId?: string) {
       const visited = new Set<string>([focal.id]);
 
       for (let i = 0; i < 10; i++) {
-        // Find the parent ID from tags
-        const parentId = currentEvent.tags.find(t => t[0] === 'e' && t[3] === 'reply')?.[1] || 
-                         currentEvent.tags.find(t => t[0] === 'e' && t[3] === 'root')?.[1] ||
-                         currentEvent.tags.find(t => t[0] === 'e')?.[1];
+        const parentId = currentEvent.tags.find(t => t[0] === 'e' && (t[3] === 'reply' || t[3] === 'root'))?.[1] || 
+                         currentEvent.tags.filter(t => t[0] === 'e')[0]?.[1];
 
         if (!parentId || visited.has(parentId)) break;
         
@@ -39,40 +81,32 @@ export function useThread(focalId?: string) {
         const parent = await ndk.fetchEvent(parentId);
         if (!parent) break;
         
-        chain.unshift(parent); // Add to beginning to keep root -> parent order
+        chain.unshift(parent);
         currentEvent = parent;
       }
       setAncestors(chain);
 
-      // 3. Fetch Direct Replies (Downwards)
-      const filter: NDKFilter = {
-        kinds: [1],
-        "#e": [focalId],
-      };
-      const replyEvents = await ndk.fetchEvents(filter);
-      
-      // Filter only direct replies to avoid showing "replies of replies" in the first level
-      const directReplies = Array.from(replyEvents)
-        .filter(ev => {
-          const replyTag = ev.tags.find(t => t[0] === 'e' && t[3] === 'reply');
-          if (replyTag) return replyTag[1] === focalId;
-          // Fallback for old clients: last e tag is the reply parent
-          const eTags = ev.tags.filter(t => t[0] === 'e');
-          return eTags[eTags.length - 1]?.[1] === focalId;
-        })
-        .sort((a, b) => (a.created_at ?? 0) - (b.created_at ?? 0));
-      
-      setReplies(directReplies);
+      // 3. Initial Fetch Direct Replies
+      await fetchMoreReplies(false, focalId);
     } catch (err) {
       console.error("Thread fetch error:", err);
     } finally {
       setLoading(false);
     }
-  }, [ndk, isReady, focalId]);
+  }, [ndk, isReady, focalId, fetchMoreReplies]);
 
   useEffect(() => {
+    oldestReplyTimestampRef.current = undefined;
+    setAncestors([]);
+    setReplies([]);
     fetchThread();
   }, [fetchThread]);
 
-  return { focalPost, ancestors, replies, loading };
+  const loadMoreReplies = () => {
+    if (!loadingReplies && hasMoreReplies) {
+      fetchMoreReplies(true);
+    }
+  };
+
+  return { focalPost, ancestors, replies, loading, loadingReplies, hasMoreReplies, loadMoreReplies };
 }
