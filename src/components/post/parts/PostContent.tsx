@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { tokenize, Token, resolveDeprecatedMentions } from "@/lib/content/tokenizer";
+import { tokenize, Token, resolveDeprecatedMentions, buildImetaMap } from "@/lib/content/tokenizer";
 import { MentionLink } from "../tokens/MentionLink";
 import { HashtagLink } from "../tokens/HashtagLink";
 import { ImageEmbed } from "../tokens/ImageEmbed";
@@ -11,6 +11,8 @@ import { QuoteEmbed } from "../tokens/QuoteEmbed";
 import { LightningCard } from "../tokens/LightningCard";
 import { CashuCard } from "../tokens/CashuCard";
 import { ShortenedUrl } from "../tokens/ShortenedUrl";
+import { UrlPreview } from "../tokens/UrlPreview";
+import { AsyncMediaEmbed } from "../tokens/AsyncMediaEmbed";
 import { NDKEvent, NDKTag } from "@nostr-dev-kit/ndk";
 
 interface PostContentRendererProps {
@@ -37,12 +39,13 @@ export function PostContentRenderer({
   const [showFull, setShowFull] = useState(false);
   const isLong = content.length > 600;
 
-  // 1. Resolve deprecated NIP-08 mentions first
+  // Frame 1: Synchronous Preparations
+  const imetaMap = useMemo(() => buildImetaMap(event.tags), [event.tags]);
+  
   const normalizedContent = useMemo(() => 
     resolveDeprecatedMentions(content, event.tags), 
   [content, event.tags]);
 
-  // 2. Parse custom emojis into a map
   const emojiMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const tag of event.tags) {
@@ -53,14 +56,14 @@ export function PostContentRenderer({
     return map;
   }, [event.tags]);
 
-  // 3. Tokenize the normalized content
   const tokens = useMemo(() => tokenize(normalizedContent), [normalizedContent]);
 
-  // 4. Separate tokens for tiered rendering
+  // Separate tokens for priority rendering
   const textTokens: Token[] = [];
   const mediaTokens: Token[] = [];
   const quoteTokens: Token[] = [];
   const cardTokens: Token[] = [];
+  const urlTokens: Token[] = [];
 
   for (const token of tokens) {
     if (token.type === "image" || token.type === "video") {
@@ -69,12 +72,15 @@ export function PostContentRenderer({
       quoteTokens.push(token);
     } else if (token.type === "lightning" || token.type === "cashu") {
       cardTokens.push(token);
+    } else if (token.type === "url") {
+      urlTokens.push(token);
+      textTokens.push(token); // URL is kept in text but also tracked for preview
     } else {
       textTokens.push(token);
     }
   }
 
-  // Trim trailing whitespace from textTokens
+  // Trim trailing whitespace
   while (
     textTokens.length > 0 &&
     (textTokens[textTokens.length - 1].type === "linebreak" ||
@@ -85,14 +91,14 @@ export function PostContentRenderer({
 
   return (
     <div className={`flex flex-col min-w-0 max-w-full overflow-hidden ${className}`}>
-      {/* Replying to label */}
+      {/* Frame 1: Immediate Label */}
       {replyingToNpub && !isRepost && (
         <div className="text-gray-500 text-xs mb-1" onClick={(e) => e.stopPropagation()}>
           Replying to <span className="text-blue-500 hover:underline">@{replyingToNpub.slice(0, 12)}…</span>
         </div>
       )}
 
-      {/* Main Text Content */}
+      {/* Frame 1: Text Tokens */}
       {textTokens.length > 0 && (
         <div
           className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words text-gray-900 dark:text-gray-100 text-pretty min-w-0 ${
@@ -114,7 +120,7 @@ export function PostContentRenderer({
         </div>
       )}
 
-      {/* Payment Cards (Lightning/Cashu) */}
+      {/* Frame 1: Payment Cards (Local Decode) */}
       {cardTokens.length > 0 && (
         <div className="space-y-1">
           {cardTokens.map((token, i) => (
@@ -125,25 +131,39 @@ export function PostContentRenderer({
         </div>
       )}
 
-      {/* Media — image/video below text */}
+      {/* Frame 2: Explicit Media (Images/Videos with extensions) */}
       {renderMedia && mediaTokens.length > 0 && (
         <div className="space-y-2 w-full">
-          {mediaTokens.map((token, i) =>
-            token.type === "image" ? (
-              <ImageEmbed key={i} url={token.value} />
+          {mediaTokens.map((token, i) => {
+            const cleanUrl = token.value.replace(/[.,;]$/, "");
+            const imeta = imetaMap.get(cleanUrl);
+            return token.type === "image" ? (
+              <ImageEmbed key={i} url={cleanUrl} imeta={imeta} />
             ) : (
-              <VideoEmbed key={i} url={token.value} />
-            )
-          )}
+              <VideoEmbed key={i} url={cleanUrl} />
+            );
+          })}
         </div>
       )}
 
-      {/* Quote embeds — bottom */}
+      {/* Frame 2: Async Media Detection (URLs without extensions) */}
+      {renderMedia && urlTokens.map((token, i) => {
+        const cleanUrl = token.value.replace(/[.,;]$/, "");
+        const imeta = imetaMap.get(cleanUrl);
+        return <AsyncMediaEmbed key={i} url={cleanUrl} imeta={imeta} />;
+      })}
+
+      {/* Frame 3: Quote Embeds (Fetch required) */}
       {renderQuotes && quoteTokens.map((token, i) => (
         <QuoteEmbed
           key={i}
           eventId={token.decoded?.eventId ?? ""}
         />
+      ))}
+
+      {/* Frame 3: URL Previews (Fetch OG required) */}
+      {urlTokens.map((token, i) => (
+        <UrlPreview key={i} url={token.value} />
       ))}
     </div>
   );
@@ -152,7 +172,6 @@ export function PostContentRenderer({
 function TokenRenderer({ token, emojiMap }: { token: Token; emojiMap: Map<string, string> }) {
   switch (token.type) {
     case "text": {
-      // Split text by :shortcode: for custom emojis
       const parts = token.value.split(/(:[a-zA-Z0-9_]+:)/g);
       return (
         <>

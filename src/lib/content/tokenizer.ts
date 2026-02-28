@@ -185,3 +185,49 @@ export function resolveDeprecatedMentions(content: string, tags: string[][]): st
     return match;
   });
 }
+
+export interface ImetaData {
+  url: string;
+  mimeType?: string;
+  blurhash?: string;
+  dimensions?: { w: number; h: number };
+  alt?: string;
+  sha256?: string;
+  fallbackUrls?: string[];
+}
+
+export function parseImeta(tag: string[]): ImetaData | null {
+  if (tag[0] !== "imeta") return null;
+  const result: Partial<ImetaData> & { url?: string } = {};
+  const fallbackUrls: string[] = [];
+
+  for (let i = 1; i < tag.length; i++) {
+    const space = tag[i].indexOf(" ");
+    if (space === -1) continue;
+    const key = tag[i].slice(0, space);
+    const val = tag[i].slice(space + 1);
+
+    if (key === "url")       result.url = val;
+    if (key === "m")         result.mimeType = val;
+    if (key === "blurhash")  result.blurhash = val;
+    if (key === "alt")       result.alt = val;
+    if (key === "x")         result.sha256 = val;
+    if (key === "fallback")  fallbackUrls.push(val);
+    if (key === "dim") {
+      const [w, h] = val.split("x").map(Number);
+      if (w && h) result.dimensions = { w, h };
+    }
+  }
+
+  if (!result.url) return null;
+  return { ...result as ImetaData, fallbackUrls };
+}
+
+export function buildImetaMap(tags: string[][]): Map<string, ImetaData> {
+  const map = new Map<string, ImetaData>();
+  for (const tag of tags) {
+    const meta = parseImeta(tag);
+    if (meta) map.set(meta.url, meta);
+  }
+  return map;
+}
