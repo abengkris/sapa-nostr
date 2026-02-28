@@ -35,6 +35,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
     const instance = new NDK({
       explicitRelayUrls: DEFAULT_RELAYS,
       cacheAdapter: dexieAdapter as any,
+      enableOutboxModel: true,
     });
 
     // Handle session restoration
