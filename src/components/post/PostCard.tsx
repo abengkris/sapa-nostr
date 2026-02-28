@@ -10,6 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ZapModal } from "@/components/common/ZapModal";
+import { ContentRenderer } from "./ContentRenderer";
 
 interface PostCardProps {
   event: NDKEvent;
@@ -24,29 +25,6 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
   const createdAt = event.created_at 
     ? formatDistanceToNow(new Date(event.created_at * 1000), { addSuffix: true })
     : "unknown";
-
-  // Basic content parsing for mentions and hashtags
-  const renderContent = () => {
-    const parts = event.content.split(/(\s+)/);
-    return parts.map((part, i) => {
-      if (part.startsWith("#")) {
-        const tag = part.slice(1).replace(/[^\w]/g, "");
-        return (
-          <Link key={i} href={`/search?q=${tag}`} className="text-blue-500 hover:underline">
-            #{tag}
-          </Link>
-        );
-      }
-      if (part.startsWith("@npub1")) {
-        return (
-          <Link key={i} href={`/p/${part.slice(1)}`} className="text-blue-500 hover:underline">
-            {part}
-          </Link>
-        );
-      }
-      return part;
-    });
-  };
 
   const displayName = profile?.name || profile?.displayName || `${event.pubkey.slice(0, 8)}...`;
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.pubkey}`;
@@ -87,13 +65,13 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
               {createdAt}
             </span>
           </div>
-          <button className="text-gray-400 hover:text-blue-500 transition-colors">
+          <button className="text-gray-400 hover:text-blue-500 transition-colors" onClick={(e) => e.stopPropagation()}>
             <MoreHorizontal size={18} />
           </button>
         </div>
 
-        <div className="text-gray-900 dark:text-gray-100 break-words whitespace-pre-wrap mb-3 leading-normal">
-          {renderContent()}
+        <div className="mb-3">
+          <ContentRenderer content={event.content} />
         </div>
 
         {/* Action Buttons */}
