@@ -9,7 +9,7 @@ import { useAuthStore } from "@/store/auth";
 import { useRouter } from "next/navigation";
 import { ZapModal } from "@/components/common/ZapModal";
 import { PostHeader } from "./parts/PostHeader";
-import { PostContent } from "./parts/PostContent";
+import { PostContentRenderer } from "./parts/PostContent";
 import { PostActions } from "./parts/PostActions";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
@@ -78,7 +78,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         isFocal ? "bg-blue-50/5 dark:bg-blue-900/5 border-l-4 border-l-blue-500" : ""
       }`}
     >
-      <div className="flex relative">
+      <div className="flex relative min-w-0">
         {/* Thread Lines */}
         {(threadLine === "top" || threadLine === "both") && (
           <div className="absolute top-[-1rem] left-6 w-0.5 h-4 bg-gray-200 dark:bg-gray-800" />
@@ -88,7 +88,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         )}
 
         {/* Content Area */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <PostHeader
             displayName={displayName}
             avatar={avatar}
@@ -98,7 +98,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             repostAuthorName={repostAuthorName}
           />
 
-          <PostContent
+          <PostContentRenderer
             content={displayEvent.content}
             replyingToNpub={replyingToNpub}
             isRepost={isRepost}
