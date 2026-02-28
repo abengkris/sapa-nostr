@@ -9,18 +9,77 @@ interface ContentRendererProps {
   content: string;
 }
 
+const IMAGE_REGEX = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
+const VIDEO_REGEX = /\.(mp4|webm|ogg)(\?.*)?$/i;
+
+const MediaItem = ({ url, isVideo }: { url: string; isVideo?: boolean }) => {
+  if (isVideo) {
+    return (
+      <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <video
+          src={url}
+          controls
+          className="max-w-full max-h-full"
+          preload="metadata"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <img
+        src={url}
+        alt="Post content"
+        className="w-full h-full object-cover"
+        loading="lazy"
+      />
+    </div>
+  );
+};
+
+const MediaGrid = ({ items }: { items: { url: string; type: 'image' | 'video' }[] }) => {
+  const count = items.length;
+  
+  if (count === 0) return null;
+
+  // Single item layout
+  if (count === 1) {
+    return (
+      <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 mt-3 max-h-[400px] sm:max-h-[500px]">
+        <MediaItem url={items[0].url} isVideo={items[0].type === 'video'} />
+      </div>
+    );
+  }
+
+  // Multi-item layouts (Grid)
+  return (
+    <div className={`grid gap-1 mt-3 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 h-[250px] sm:h-[350px] ${
+      count === 2 ? "grid-cols-2" : 
+      count === 3 ? "grid-cols-2 grid-rows-2" : 
+      "grid-cols-2 grid-rows-2"
+    }`}>
+      {items.slice(0, 4).map((item, i) => (
+        <div key={i} className={`${
+          count === 3 && i === 0 ? "row-span-2" : ""
+        }`}>
+          <MediaItem url={item.url} isVideo={item.type === 'video'} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => {
   // Regex patterns
   const URL_REGEX = /https?:\/\/[^\s]+/gi;
   const HASHTAG_REGEX = /#\w+/g;
   const NOSTR_URI_REGEX = /(nostr:)?(npub1|note1|nevent1|naddr1|nprofile1)[0-9a-z]+/gi;
-  const IMAGE_REGEX = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
-  const VIDEO_REGEX = /\.(mp4|webm|ogg)(\?.*)?$/i;
 
   // Track quoted notes to avoid double rendering
   const quotedIds = new Set<string>();
 
-  // Tokenize the content to identify links, tags, and URIs
+  // Tokenize the content
   const tokenize = (text: string) => {
     const combinedRegex = new RegExp(
       `(${URL_REGEX.source})|(${HASHTAG_REGEX.source})|(${NOSTR_URI_REGEX.source})`,
@@ -32,13 +91,11 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
     let match;
 
     while ((match = combinedRegex.exec(text)) !== null) {
-      // Add text before the match
       if (match.index > lastIndex) {
         tokens.push({ type: "text", value: text.slice(lastIndex, match.index) });
       }
 
       const value = match[0];
-      
       if (value.match(URL_REGEX)) {
         tokens.push({ type: "url", value });
       } else if (value.match(HASHTAG_REGEX)) {
@@ -50,7 +107,6 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
       lastIndex = combinedRegex.lastIndex;
     }
 
-    // Add remaining text
     if (lastIndex < text.length) {
       tokens.push({ type: "text", value: text.slice(lastIndex) });
     }
@@ -59,6 +115,17 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
   };
 
   const tokens = tokenize(content);
+  
+  // Extract media items
+  const mediaItems = tokens
+    .filter(t => t.type === "url")
+    .map(t => {
+      const url = t.value.replace(/[.,;]$/, "");
+      if (url.match(IMAGE_REGEX)) return { url, type: 'image' as const };
+      if (url.match(VIDEO_REGEX)) return { url, type: 'video' as const };
+      return null;
+    })
+    .filter((item): item is { url: string; type: 'image' | 'video' } => item !== null);
 
   return (
     <div className="text-gray-900 dark:text-gray-100 break-words whitespace-pre-wrap leading-normal max-w-full overflow-hidden">
@@ -67,7 +134,7 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
           if (token.type === "url") {
             const cleanUrl = token.value.replace(/[.,;]$/, "");
             if (cleanUrl.match(IMAGE_REGEX) || cleanUrl.match(VIDEO_REGEX)) {
-              return null;
+              return null; // Don't render link text for media
             }
             return (
               <a key={i} href={cleanUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all" onClick={(e) => e.stopPropagation()}>
@@ -110,45 +177,13 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
 
       {/* Quoted Posts Section */}
       {Array.from(quotedIds).map((id) => (
-        <div key={id} onClick={(e) => e.stopPropagation()}>
+        <div key={id} className="mt-3" onClick={(e) => e.stopPropagation()}>
           <QuoteRenderer id={id} />
         </div>
       ))}
 
-      {/* Media Section */}
-      <div className="flex flex-col gap-2 mt-3 max-w-full">
-        {tokens.filter(t => t.type === "url").map((token, i) => {
-          const cleanUrl = token.value.replace(/[.,;]$/, "");
-          
-          if (cleanUrl.match(IMAGE_REGEX)) {
-            return (
-              <div key={i} className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 max-h-[500px] max-w-full" onClick={(e) => e.stopPropagation()}>
-                <img
-                  src={cleanUrl}
-                  alt="Post content"
-                  className="w-full h-auto object-contain max-h-[500px] block"
-                  loading="lazy"
-                />
-              </div>
-            );
-          }
-
-          if (cleanUrl.match(VIDEO_REGEX)) {
-            return (
-              <div key={i} className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-black max-w-full" onClick={(e) => e.stopPropagation()}>
-                <video
-                  src={cleanUrl}
-                  controls
-                  className="w-full max-h-[500px] block"
-                  preload="metadata"
-                />
-              </div>
-            );
-          }
-
-          return null;
-        })}
-      </div>
+      {/* Optimized Media Section */}
+      <MediaGrid items={mediaItems} />
     </div>
   );
 };
