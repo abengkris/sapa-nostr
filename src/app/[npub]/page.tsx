@@ -5,27 +5,37 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { useProfile } from "@/hooks/useProfile";
 import { useFeed } from "@/hooks/useFeed";
 import { PostCard } from "@/components/post/PostCard";
-import { Loader2, Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus } from "lucide-react";
+import { Loader2, Calendar, MapPin, Link as LinkIcon } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
-import { follow, unfollow } from "@/lib/actions/follow";
-import { useFollowing } from "@/hooks/useFollowing";
+import { useFollowingList } from "@/hooks/useFollowingList";
+import { useFollowerCount } from "@/hooks/useFollowers";
+import { FollowButton } from "@/components/profile/FollowButton";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
-import { decodeToHex } from "@/lib/utils/nip19";
+import { decodeNip19 } from "@/lib/utils/nip19";
 
 type ProfileTab = "posts" | "replies" | "media" | "likes";
 
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toString();
+}
+
 export default function ProfilePage({ params }: { params: Promise<{ npub: string }> }) {
-  const { npub } = use(params);
-  const hexPubkey = decodeToHex(npub);
+  const { npub: npubParam } = use(params);
+  const { id: hexPubkey } = decodeNip19(npubParam);
   
   const [activeTab, setActiveTab] = React.useState<ProfileTab>("posts");
   const { profile, loading: profileLoading } = useProfile(hexPubkey);
   
-  const { following: userFollowing } = useFollowing(useAuthStore.getState().user?.pubkey);
+  const { count: followingCount, loading: fwLoading } = useFollowingList(hexPubkey);
+  const { count: followerCount, loading: fLoading } = useFollowerCount(hexPubkey);
+
   const { ndk } = useNDK();
   const { user: currentUser } = useAuthStore();
 
@@ -35,21 +45,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   
   const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([hexPubkey], feedKinds, disableFiltering);
 
-  const isFollowing = userFollowing.includes(hexPubkey);
   const isOwnProfile = currentUser?.pubkey === hexPubkey;
-
-  const handleFollowToggle = async () => {
-    if (!ndk) return;
-    try {
-      if (isFollowing) {
-        await unfollow(ndk, hexPubkey);
-      } else {
-        await follow(ndk, hexPubkey);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   if (profileLoading) {
     return (
@@ -61,10 +57,10 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
     );
   }
 
-  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${npub}`;
-  const displayName = profile?.name || profile?.displayName || `${npub.slice(0, 8)}…`;
+  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${hexPubkey}`;
+  const displayName = profile?.name || profile?.displayName || `${npubParam.slice(0, 8)}…`;
 
-  // Custom filter for "Replies" tab since NDK might return both root and replies
+  // Custom filter for "Replies" tab
   const filteredPosts = activeTab === "replies" 
     ? posts.filter(p => p.tags.some(t => t[0] === 'e'))
     : activeTab === "posts"
@@ -96,16 +92,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           </div>
           
           {!isOwnProfile && currentUser && (
-            <button
-              onClick={handleFollowToggle}
-              className={`px-6 py-2 rounded-full font-bold transition-all ${
-                isFollowing 
-                  ? "border border-gray-300 hover:border-red-500 hover:text-red-500 hover:bg-red-50 dark:border-gray-700" 
-                  : "bg-black dark:bg-white text-white dark:text-black hover:opacity-90"
-              }`}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </button>
+            <FollowButton targetPubkey={hexPubkey} size="lg" />
           )}
         </div>
 
@@ -125,7 +112,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           </div>
           {profile?.nip05 && <p className="text-blue-500 text-sm font-medium">{profile.nip05}</p>}
           <p className="text-gray-500 text-xs font-mono break-all bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
-            {npub}
+            {npubParam}
           </p>
         </div>
 
@@ -146,6 +133,26 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             <Calendar size={16} />
             <span>Joined Nostr</span>
           </div>
+        </div>
+
+        {/* Stats */}
+        <div className="flex gap-5 mt-4">
+          <Link
+            href={`/${npubParam}/followers?tab=following`}
+            className="hover:underline flex items-center gap-1"
+          >
+            <span className="font-bold text-gray-900 dark:text-white">
+              {fwLoading ? "–" : followingCount.toLocaleString()}
+            </span>
+            <span className="text-gray-500">Following</span>
+          </Link>
+
+          <Link href={`/${npubParam}/followers?tab=followers`} className="hover:underline flex items-center gap-1">
+            <span className="font-bold text-gray-900 dark:text-white">
+              {fLoading ? "–" : formatCount(followerCount)}
+            </span>
+            <span className="text-gray-500">Followers</span>
+          </Link>
         </div>
       </div>
 

@@ -1,74 +1,109 @@
-import NDK, { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
+// src/lib/actions/follow.ts
+
+import { NDKEvent } from "@nostr-dev-kit/ndk";
+import { getNDK } from "@/lib/ndk";
 
 /**
- * Follow a user by adding their pubkey to the kind:3 contact list.
- * @param ndk The NDK instance
- * @param pubkeyToFollow The hex pubkey of the user to follow
+ * ATURAN WAJIB:
+ * Selalu fetch kind:3 terbaru SEBELUM publish yang baru.
+ * Jangan pernah publish kind:3 berdasarkan state lokal saja.
+ * Satu kind:3 yang salah bisa menghapus seluruh following list.
  */
-export const follow = async (ndk: NDK, pubkeyToFollow: string): Promise<void> => {
-  const user = ndk.signer ? await ndk.signer.user() : null;
-  if (!user) throw new Error("No signer available");
 
-  // 1. Fetch current contact list (kind:3)
-  // We use fetchEvent to get the latest kind:3 from relays
-  const contactListEvent = await ndk.fetchEvent({
-    kinds: [3],
-    authors: [user.pubkey],
-  });
+export type FollowResult =
+  | { success: true }
+  | { success: false; error: string };
 
-  const newEvent = new NDKEvent(ndk);
-  newEvent.kind = 3;
+/**
+ * Follow seorang user.
+ * Fetch kind:3 terkini → tambah pubkey → publish.
+ */
+export async function followUser(
+  targetPubkey: string
+): Promise<FollowResult> {
+  const ndk = getNDK();
+  if (!ndk.signer) return { success: false, error: "Belum login" };
 
-  if (contactListEvent) {
-    // Check if already following
-    const isFollowing = contactListEvent.tags.some(
-      (t) => t[0] === "p" && t[1] === pubkeyToFollow
+  const me = await ndk.signer.user();
+
+  try {
+    // Step 1: Fetch contact list terkini dari relay
+    // JANGAN pakai cache saja — harus dari relay untuk hindari race condition
+    const currentContactList = await ndk.fetchEvent(
+      { kinds: [3], authors: [me.pubkey] },
+      { groupable: false, cacheUsage: 0 } // force relay
     );
-    if (isFollowing) return;
 
-    // Copy existing tags and add new one
-    newEvent.tags = [...contactListEvent.tags, ["p", pubkeyToFollow]];
-    newEvent.content = contactListEvent.content; // Some clients store relay info in content
-  } else {
-    // First follow ever
-    newEvent.tags = [["p", pubkeyToFollow]];
+    // Step 2: Kumpulkan p-tags yang sudah ada
+    const existingTags: string[][] = currentContactList?.tags ?? [];
+
+    // Cek apakah sudah follow
+    const alreadyFollowing = existingTags.some(
+      (t) => t[0] === "p" && t[1] === targetPubkey
+    );
+    if (alreadyFollowing) return { success: true }; // no-op
+
+    // Step 3: Tambah p-tag baru
+    const newTags = [...existingTags, ["p", targetPubkey]];
+
+    // Step 4: Publish kind:3 baru dengan full list
+    const newContactList = new NDKEvent(ndk);
+    newContactList.kind = 3;
+    newContactList.tags = newTags;
+    newContactList.content = currentContactList?.content ?? "";
+
+    await newContactList.sign();
+    await newContactList.publish();
+
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Gagal follow",
+    };
   }
-
-  // 2. Publish new contact list
-  await newEvent.publish();
-};
+}
 
 /**
- * Unfollow a user by removing their pubkey from the kind:3 contact list.
- * @param ndk The NDK instance
- * @param pubkeyToUnfollow The hex pubkey of the user to unfollow
+ * Unfollow seorang user.
+ * Fetch kind:3 terkini → hapus pubkey → publish.
  */
-export const unfollow = async (ndk: NDK, pubkeyToUnfollow: string): Promise<void> => {
-  const user = ndk.signer ? await ndk.signer.user() : null;
-  if (!user) throw new Error("No signer available");
+export async function unfollowUser(
+  targetPubkey: string
+): Promise<FollowResult> {
+  const ndk = getNDK();
+  if (!ndk.signer) return { success: false, error: "Belum login" };
 
-  // 1. Fetch current contact list
-  const contactListEvent = await ndk.fetchEvent({
-    kinds: [3],
-    authors: [user.pubkey],
-  });
+  const me = await ndk.signer.user();
 
-  if (!contactListEvent) return;
+  try {
+    // Step 1: Fetch contact list terkini
+    const currentContactList = await ndk.fetchEvent(
+      { kinds: [3], authors: [me.pubkey] },
+      { groupable: false, cacheUsage: 0 }
+    );
 
-  // 2. Filter out the pubkey
-  const originalTagsCount = contactListEvent.tags.length;
-  const newTags = contactListEvent.tags.filter(
-    (t) => !(t[0] === "p" && t[1] === pubkeyToUnfollow)
-  );
+    if (!currentContactList) return { success: true }; // tidak ada → sudah "unfollow"
 
-  // Only publish if something actually changed
-  if (newTags.length === originalTagsCount) return;
+    // Step 2: Hapus p-tag yang sesuai
+    const newTags = currentContactList.tags.filter(
+      (t) => !(t[0] === "p" && t[1] === targetPubkey)
+    );
 
-  const newEvent = new NDKEvent(ndk);
-  newEvent.kind = 3;
-  newEvent.tags = newTags;
-  newEvent.content = contactListEvent.content;
+    // Step 3: Publish
+    const newContactList = new NDKEvent(ndk);
+    newContactList.kind = 3;
+    newContactList.tags = newTags;
+    newContactList.content = currentContactList.content;
 
-  // 3. Publish updated contact list
-  await newEvent.publish();
-};
+    await newContactList.sign();
+    await newContactList.publish();
+
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Gagal unfollow",
+    };
+  }
+}

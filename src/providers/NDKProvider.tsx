@@ -4,16 +4,7 @@ import { createContext, useEffect, useState, ReactNode } from "react";
 import NDK, { NDKPrivateKeySigner, NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import { useAuthStore } from "@/store/auth";
-
-const DEFAULT_RELAYS = [
-  "wss://relay.primal.net",
-  "wss://nos.lol",
-  "wss://relay.damus.io",
-  "wss://relay.nostr.band",
-  "wss://nostr.wine",
-  "wss://relay.snort.social",
-  "wss://purple.relayer.org",
-];
+import { getNDK, connectNDK } from "@/lib/ndk";
 
 export interface NDKContextType {
   ndk: NDK | null;
@@ -35,11 +26,12 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window === "undefined") return;
 
     const dexieAdapter = new NDKCacheAdapterDexie({ dbName: "ndk-cache" });
-    const instance = new NDK({
-      explicitRelayUrls: DEFAULT_RELAYS,
-      cacheAdapter: dexieAdapter as any,
-      enableOutboxModel: true,
-    });
+    const instance = getNDK();
+    
+    // Set cache adapter if not already set
+    if (!instance.cacheAdapter) {
+      instance.cacheAdapter = dexieAdapter as any;
+    }
 
     // Performance Optimization: Signature Verification Sampling
     instance.initialValidationRatio = 1.0;

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import NDK from "@nostr-dev-kit/ndk";
 import { RelayPoolMock, UserGenerator, EventGenerator, SignerGenerator } from "@nostr-dev-kit/ndk/test";
-import { follow, unfollow } from "../follow";
+import { followUser, unfollowUser } from "../follow";
 
 describe("follow/unfollow with NDK Test Utils", () => {
   let ndk: NDK;
@@ -31,7 +31,7 @@ describe("follow/unfollow with NDK Test Utils", () => {
       }
     });
 
-    await follow(ndk, "target-pubkey");
+    await followUser(ndk, "target-pubkey");
 
     const sentEvents = relay.messageLog
       .filter((m: any) => m.direction === "out")
@@ -58,7 +58,7 @@ describe("follow/unfollow with NDK Test Utils", () => {
       }
     });
 
-    await unfollow(ndk, "friend1");
+    await unfollowUser(ndk, "friend1");
 
     const sentEvents = relay.messageLog
       .filter((m: any) => m.direction === "out")
