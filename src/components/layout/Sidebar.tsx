@@ -16,6 +16,8 @@ const SidebarItem = ({ href, icon: Icon, label, badge }: { href: string; icon: a
   return (
     <Link
       href={href}
+      aria-label={label}
+      aria-current={active ? "page" : undefined}
       className={`flex items-center space-x-4 p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors relative ${
         active ? "font-bold text-blue-500" : ""
       }`}
@@ -61,6 +63,7 @@ export const Sidebar = () => {
         {isLoggedIn ? (
           <button
             onClick={logout}
+            aria-label="Logout"
             className="hidden sm:flex items-center space-x-4 p-3 rounded-full hover:bg-red-50 dark:hover:bg-red-900/10 text-red-500 transition-colors w-full"
           >
             <LogOut size={26} />
@@ -69,6 +72,7 @@ export const Sidebar = () => {
         ) : (
           <button
             onClick={() => ndk && login(ndk)}
+            aria-label="Login"
             className="flex items-center space-x-4 p-3 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/10 text-blue-500 transition-colors w-full"
           >
             <LogIn size={26} />

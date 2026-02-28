@@ -27,6 +27,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
           e.stopPropagation();
           onReplyClick?.(e);
         }}
+        aria-label="Reply"
         className="group flex items-center space-x-2 hover:text-blue-500 transition-colors"
       >
         <div className="p-2 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 rounded-full transition-colors">
@@ -40,6 +41,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
           e.stopPropagation();
           onRepostClick?.(e);
         }}
+        aria-label="Repost"
         className="group flex items-center space-x-2 hover:text-green-500 transition-colors"
       >
         <div className="p-2 group-hover:bg-green-50 dark:group-hover:bg-green-900/20 rounded-full transition-colors">
@@ -53,6 +55,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
           e.stopPropagation();
           onLikeClick?.(e);
         }}
+        aria-label={userReacted === '+' ? "Unlike" : "Like"}
         className={`group flex items-center space-x-2 hover:text-pink-500 transition-colors ${userReacted === '+' ? 'text-pink-500' : ''}`}
       >
         <div className="p-2 group-hover:bg-pink-50 dark:group-hover:bg-pink-900/20 rounded-full transition-colors">
@@ -66,6 +69,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
           e.stopPropagation();
           onZapClick?.(e);
         }}
+        aria-label="Zap"
         className="group flex items-center space-x-2 hover:text-yellow-500 transition-colors"
       >
         <div className="p-2 group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/20 rounded-full transition-colors">

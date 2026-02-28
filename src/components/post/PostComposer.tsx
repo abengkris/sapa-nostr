@@ -45,7 +45,9 @@ export const PostComposer = () => {
       </div>
       
       <div className="flex-1">
+        <label htmlFor="post-content" className="sr-only">Post content</label>
         <textarea
+          id="post-content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="What's happening?"
@@ -55,16 +57,28 @@ export const PostComposer = () => {
         
         <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-900 pt-3 mt-3">
           <div className="flex items-center space-x-1 text-blue-500">
-            <button className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors">
+            <button 
+              aria-label="Add image"
+              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+            >
               <ImageIcon size={20} />
             </button>
-            <button className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors">
+            <button 
+              aria-label="Add emoji"
+              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+            >
               <Smile size={20} />
             </button>
-            <button className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed">
+            <button 
+              aria-label="Schedule post"
+              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
+            >
               <Calendar size={20} />
             </button>
-            <button className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed">
+            <button 
+              aria-label="Add location"
+              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
+            >
               <MapPin size={20} />
             </button>
           </div>

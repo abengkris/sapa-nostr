@@ -97,6 +97,7 @@ export default function LoginPage() {
               </p>
               <button 
                 onClick={copyToClipboard}
+                aria-label="Copy private key"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors"
               >
                 {isCopied ? <CheckCircle2 size={18} className="text-green-500" /> : <Copy size={18} />}
@@ -170,10 +171,12 @@ export default function LoginPage() {
             </div>
             
             <div className="relative">
+              <label htmlFor="private-key" className="sr-only">Private Key</label>
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Key className="h-5 w-5 text-gray-400" />
               </div>
               <input
+                id="private-key"
                 type={showPassword ? "text" : "password"}
                 placeholder="nsec... or hex key"
                 value={privateKey}
@@ -183,6 +186,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide private key" : "Show private key"}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}

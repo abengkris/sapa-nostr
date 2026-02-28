@@ -82,7 +82,11 @@ export const ZapModal: React.FC<ZapModalProps> = ({ event, onClose, onSuccess })
             <Zap size={20} fill="currentColor" />
             <h3 className="font-bold text-lg">Send Zap</h3>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+          <button 
+            onClick={onClose} 
+            aria-label="Close modal"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+          >
             <X size={20} />
           </button>
         </div>
