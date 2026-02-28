@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
 import { useProfile } from "@/hooks/useProfile";
 import { useReactions } from "@/hooks/useReactions";
+import { useNDK } from "@/lib/ndk";
 import { formatDistanceToNow } from "date-fns";
 import { MessageCircle, Repeat2, Heart, Zap, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +12,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ZapModal } from "@/components/common/ZapModal";
 import { ContentRenderer } from "./ContentRenderer";
-import { Repeat2 } from "lucide-react";
 
 interface PostCardProps {
   event: NDKEvent;
@@ -112,41 +112,42 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
             <ContentRenderer content={displayEvent.content} />
           </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between max-w-md text-gray-500">
-          <button className="group flex items-center space-x-2 hover:text-blue-500 transition-colors">
-            <div className="p-2 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 rounded-full transition-colors">
-              <MessageCircle size={18} />
-            </div>
-            <span className="text-sm">0</span>
-          </button>
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between max-w-md text-gray-500">
+            <button className="group flex items-center space-x-2 hover:text-blue-500 transition-colors">
+              <div className="p-2 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 rounded-full transition-colors">
+                <MessageCircle size={18} />
+              </div>
+              <span className="text-sm">0</span>
+            </button>
 
-          <button className="group flex items-center space-x-2 hover:text-green-500 transition-colors">
-            <div className="p-2 group-hover:bg-green-50 dark:group-hover:bg-green-900/20 rounded-full transition-colors">
-              <Repeat2 size={18} />
-            </div>
-            <span className="text-sm">0</span>
-          </button>
+            <button className="group flex items-center space-x-2 hover:text-green-500 transition-colors">
+              <div className="p-2 group-hover:bg-green-50 dark:group-hover:bg-green-900/20 rounded-full transition-colors">
+                <Repeat2 size={18} />
+              </div>
+              <span className="text-sm">0</span>
+            </button>
 
-          <button className={`group flex items-center space-x-2 hover:text-pink-500 transition-colors ${userReacted === '+' ? 'text-pink-500' : ''}`}>
-            <div className="p-2 group-hover:bg-pink-50 dark:group-hover:bg-pink-900/20 rounded-full transition-colors">
-              <Heart size={18} fill={userReacted === '+' ? 'currentColor' : 'none'} />
-            </div>
-            <span className="text-sm">{likes}</span>
-          </button>
+            <button className={`group flex items-center space-x-2 hover:text-pink-500 transition-colors ${userReacted === '+' ? 'text-pink-500' : ''}`}>
+              <div className="p-2 group-hover:bg-pink-50 dark:group-hover:bg-pink-900/20 rounded-full transition-colors">
+                <Heart size={18} fill={userReacted === '+' ? 'currentColor' : 'none'} />
+              </div>
+              <span className="text-sm">{likes}</span>
+            </button>
 
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowZapModal(true);
-            }}
-            className="group flex items-center space-x-2 hover:text-yellow-500 transition-colors"
-          >
-            <div className="p-2 group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/20 rounded-full transition-colors">
-              <Zap size={18} />
-            </div>
-            <span className="text-sm">0</span>
-          </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowZapModal(true);
+              }}
+              className="group flex items-center space-x-2 hover:text-yellow-500 transition-colors"
+            >
+              <div className="p-2 group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/20 rounded-full transition-colors">
+                <Zap size={18} />
+              </div>
+              <span className="text-sm">0</span>
+            </button>
+          </div>
         </div>
       </div>
 
