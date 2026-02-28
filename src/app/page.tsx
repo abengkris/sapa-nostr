@@ -71,8 +71,10 @@ export default function HomePage() {
           <h1 className="text-xl font-bold">Home</h1>
         </div>
         
-        <div className="flex w-full">
+        <div className="flex w-full" role="tablist">
           <button
+            role="tab"
+            aria-selected={activeTab === "global"}
             onClick={() => setActiveTab("global")}
             className={`flex-1 py-4 text-sm font-bold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 relative ${
               activeTab === "global" ? "text-blue-500" : "text-gray-500"
@@ -88,6 +90,8 @@ export default function HomePage() {
           </button>
           
           <button
+            role="tab"
+            aria-selected={activeTab === "following"}
             onClick={() => setActiveTab("following")}
             className={`flex-1 py-4 text-sm font-bold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 relative ${
               activeTab === "following" ? "text-blue-500" : "text-gray-500"

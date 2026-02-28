@@ -57,7 +57,7 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
           <Link href={`/${userNpub}`} className="font-bold hover:underline truncate">
             {displayName}
           </Link>
-          <span className="text-gray-400 text-xs">·</span>
+          <span className="text-gray-500 text-xs">·</span>
           <span className="text-gray-500 text-xs whitespace-nowrap">
             {formattedTime}
           </span>
