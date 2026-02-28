@@ -5,6 +5,7 @@ import { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
 import { useProfile } from "@/hooks/useProfile";
 import { useReactions } from "@/hooks/useReactions";
 import { useNDK } from "@/lib/ndk";
+import { useAuthStore } from "@/store/auth";
 import { formatDistanceToNow } from "date-fns";
 import { MessageCircle, Repeat2, Heart, Zap, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
