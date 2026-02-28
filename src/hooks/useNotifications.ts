@@ -33,10 +33,11 @@ export function useNotifications() {
     }
 
     const sub = ndk.subscribe(
-      [filter, { cacheUnconstrainFilter: ["limit"] }], 
-      { closeOnEose: true, groupable: false },
-      undefined,
-      {
+      filter, 
+      { 
+        closeOnEose: true, 
+        groupable: false, 
+        cacheUnconstrainFilter: ["limit"],
         onEvent: (event: NDKEvent) => {
           if (event.pubkey === user.pubkey) return;
 
@@ -84,9 +85,9 @@ export function useNotifications() {
 
     const sub = ndk.subscribe(
       filter,
-      { closeOnEose: false, groupingDelay: 200 },
-      undefined,
-      {
+      { 
+        closeOnEose: false, 
+        groupableDelay: 200,
         onEvent: (event: NDKEvent) => {
           if (event.pubkey === user.pubkey) return;
 

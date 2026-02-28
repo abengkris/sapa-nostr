@@ -52,8 +52,8 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
     if (subscriptionRef.current) subscriptionRef.current.stop();
 
     const sub = ndk.subscribe(
-      [filter, { cacheUnconstrainFilter: ["limit"] }], 
-      { closeOnEose: true, groupable: false }
+      filter, 
+      { closeOnEose: true, groupable: false, cacheUnconstrainFilter: ["limit"] }
     );
     subscriptionRef.current = sub;
 
@@ -123,11 +123,8 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
       realtimeFilter,
       { 
         closeOnEose: false,
-        groupingDelay: 200,
-        groupingDelayType: "at-most"
-      },
-      undefined,
-      {
+        groupableDelay: 200,
+        groupableDelayType: "at-most",
         onEvent: (event: NDKEvent) => {
           setPosts((prev) => {
             if (prev.find((p) => p.id === event.id)) return prev;

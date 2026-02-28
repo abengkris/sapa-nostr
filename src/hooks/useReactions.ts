@@ -25,11 +25,8 @@ export function useReactions(eventId?: string) {
       filter,
       { 
         closeOnEose: false, 
-        groupingDelay: 500, // Wait up to 500ms to group multiple PostCard reaction requests
-        groupingDelayType: "at-most" 
-      },
-      undefined, // relaySet
-      {
+        groupableDelay: 500, // Wait up to 500ms to group multiple PostCard reaction requests
+        groupableDelayType: "at-most",
         onEvent: (event: NDKEvent) => {
           if (event.kind === 7) {
             if (event.content === "+" || event.content === "") {
