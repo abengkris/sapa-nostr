@@ -33,7 +33,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
     const dexieAdapter = new NDKCacheAdapterDexie({ dbName: "ndk-cache" });
     const instance = new NDK({
       explicitRelayUrls: DEFAULT_RELAYS,
-      cacheAdapter: dexieAdapter,
+      cacheAdapter: dexieAdapter as any,
     });
 
     // Handle session restoration
