@@ -11,68 +11,106 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ZapModal } from "@/components/common/ZapModal";
 import { ContentRenderer } from "./ContentRenderer";
+import { Repeat2 } from "lucide-react";
 
 interface PostCardProps {
   event: NDKEvent;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ event }) => {
-  const { profile, loading: profileLoading } = useProfile(event.pubkey);
-  const { likes, userReacted } = useReactions(event.id);
+  const isRepost = event.kind === 6;
+  const [repostedEvent, setRepostedEvent] = useState<NDKEvent | null>(null);
+  
+  // Use the original event if it's a repost
+  const displayEvent = isRepost && repostedEvent ? repostedEvent : event;
+  
+  const { profile, loading: profileLoading } = useProfile(displayEvent.pubkey);
+  const { likes, userReacted } = useReactions(displayEvent.id);
   const [showZapModal, setShowZapModal] = useState(false);
+  const { ndk, isReady } = useNDK();
   const router = useRouter();
 
-  const createdAt = event.created_at 
-    ? formatDistanceToNow(new Date(event.created_at * 1000), { addSuffix: true })
+  useEffect(() => {
+    if (isRepost && isReady && ndk) {
+      // Extract original event ID from tags
+      const eTag = event.tags.find(t => t[0] === 'e');
+      if (eTag) {
+        ndk.fetchEvent(eTag[1]).then(setRepostedEvent);
+      }
+    }
+  }, [isRepost, event, isReady, ndk]);
+
+  const createdAt = displayEvent.created_at 
+    ? formatDistanceToNow(new Date(displayEvent.created_at * 1000), { addSuffix: true })
     : "unknown";
 
-  const displayName = profile?.name || profile?.displayName || `${event.pubkey.slice(0, 8)}...`;
-  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.pubkey}`;
+  const displayName = profile?.name || profile?.displayName || `${displayEvent.pubkey.slice(0, 8)}...`;
+  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayEvent.pubkey}`;
+
+  // Get the pubkey we are replying to
+  const replyTag = displayEvent.tags.find(t => t[0] === 'p');
+  const replyingToPubkey = replyTag ? replyTag[1] : null;
 
   return (
     <div 
-      onClick={() => router.push(`/post/${event.id}`)}
-      className="flex p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer dark:border-gray-800 dark:hover:bg-gray-900/50"
+      onClick={() => router.push(`/post/${displayEvent.id}`)}
+      className="flex flex-col p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer dark:border-gray-800 dark:hover:bg-gray-900/50"
     >
-      {/* Avatar */}
-      <div className="mr-3 shrink-0" onClick={(e) => e.stopPropagation()}>
-        <Link href={`/${event.pubkey}`}>
-          <Image
-            src={avatar}
-            alt={displayName}
-            width={48}
-            height={48}
-            className="w-12 h-12 rounded-full object-cover bg-gray-200"
-            unoptimized={true}
-          />
-        </Link>
-      </div>
+      {/* Repost Header */}
+      {isRepost && (
+        <div className="flex items-center space-x-2 text-gray-500 text-xs font-bold mb-2 ml-10">
+          <Repeat2 size={14} />
+          <span>You reposted</span>
+        </div>
+      )}
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center space-x-1 truncate" onClick={(e) => e.stopPropagation()}>
-            <Link href={`/${event.pubkey}`} className="font-bold hover:underline truncate">
-              {displayName}
-            </Link>
-            {profile?.nip05 && (
-              <span className="text-gray-500 text-sm truncate">
-                {profile.nip05}
+      <div className="flex">
+        {/* Avatar */}
+        <div className="mr-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <Link href={`/${displayEvent.pubkey}`}>
+            <Image
+              src={avatar}
+              alt={displayName}
+              width={48}
+              height={48}
+              className="w-12 h-12 rounded-full object-cover bg-gray-200"
+              unoptimized={true}
+            />
+          </Link>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-0.5">
+            <div className="flex items-center space-x-1 truncate" onClick={(e) => e.stopPropagation()}>
+              <Link href={`/${displayEvent.pubkey}`} className="font-bold hover:underline truncate">
+                {displayName}
+              </Link>
+              {profile?.nip05 && (
+                <span className="text-gray-500 text-sm truncate">
+                  {profile.nip05}
+                </span>
+              )}
+              <span className="text-gray-400">·</span>
+              <span className="text-gray-500 text-sm whitespace-nowrap">
+                {createdAt}
               </span>
-            )}
-            <span className="text-gray-400">·</span>
-            <span className="text-gray-500 text-sm whitespace-nowrap">
-              {createdAt}
-            </span>
+            </div>
+            <button className="text-gray-400 hover:text-blue-500 transition-colors" onClick={(e) => e.stopPropagation()}>
+              <MoreHorizontal size={18} />
+            </button>
           </div>
-          <button className="text-gray-400 hover:text-blue-500 transition-colors" onClick={(e) => e.stopPropagation()}>
-            <MoreHorizontal size={18} />
-          </button>
-        </div>
 
-        <div className="mb-3">
-          <ContentRenderer content={event.content} />
-        </div>
+          {/* Replying to label */}
+          {replyingToPubkey && !isRepost && (
+            <div className="text-gray-500 text-sm mb-1" onClick={(e) => e.stopPropagation()}>
+              Replying to <Link href={`/${replyingToPubkey}`} className="text-blue-500 hover:underline">@{replyingToPubkey.slice(0, 8)}...</Link>
+            </div>
+          )}
+
+          <div className="mb-3">
+            <ContentRenderer content={displayEvent.content} />
+          </div>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between max-w-md text-gray-500">
