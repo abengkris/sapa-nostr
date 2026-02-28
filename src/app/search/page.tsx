@@ -58,10 +58,10 @@ export default function SearchPage() {
                     unoptimized={true}
                   />
                   <p className="font-bold text-sm truncate w-24">
-                    {user.profile?.name || `${user.pubkey.slice(0, 8)}...`}
+                    {user.profile?.name || `${user.npub.slice(0, 12)}...`}
                   </p>
                   <p className="text-xs text-gray-500 truncate w-24">
-                    {user.profile?.nip05 || ""}
+                    {user.profile?.nip05 || `${user.npub.slice(-8)}`}
                   </p>
                 </Link>
               ))}

@@ -44,7 +44,7 @@ export const QuoteRenderer: React.FC<QuoteRendererProps> = ({ id }) => {
           unoptimized
         />
         <span className="font-bold text-sm truncate">{displayName}</span>
-        <span className="text-gray-500 text-xs truncate">@{event.pubkey.slice(0, 8)}</span>
+        <span className="text-gray-500 text-xs truncate">@{event.author.npub.slice(0, 12)}...</span>
       </div>
       <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3 break-words">
         {event.content}

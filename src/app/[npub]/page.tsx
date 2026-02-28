@@ -111,8 +111,10 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
 
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">{displayName}</h1>
-          {profile?.nip05 && <p className="text-blue-500 text-sm">{profile.nip05}</p>}
-          <p className="text-gray-500 text-sm font-mono">{npub.slice(0, 16)}...</p>
+          {profile?.nip05 && <p className="text-blue-500 text-sm font-medium">{profile.nip05}</p>}
+          <p className="text-gray-500 text-xs font-mono break-all bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
+            {npub}
+          </p>
         </div>
 
         {profile?.about && (

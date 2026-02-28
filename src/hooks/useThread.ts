@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { NDKEvent, NDKFilter } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKFilter, NDKUser } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/lib/ndk";
 
 export function useThread(focalId?: string) {

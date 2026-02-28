@@ -63,11 +63,10 @@ export default function NotificationsPage() {
                                                               alt="User"
                                                               unoptimized
                                                             />
-                                                            <Link href={`/${notif.author.npub}`} className="font-bold hover:underline truncate">
-                                                              {notif.pubkey.slice(0, 8)}...
-                                                            </Link>
-                                        
-                      <span className="text-gray-500 text-sm">
+                                                                                <Link href={`/${notif.author.npub}`} className="font-bold hover:underline truncate">
+                                                                                  {notif.author.npub.slice(0, 12)}...
+                                                                                </Link>
+                                                                                  <span className="text-gray-500 text-sm">
                         {notif.type === 'like' && "liked your post"}
                         {notif.type === 'repost' && "reposted your post"}
                         {notif.type === 'reply' && "replied to your post"}
