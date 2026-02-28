@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { QuoteRenderer } from "./QuoteRenderer";
 import { Mention } from "./Mention";
 
@@ -62,8 +61,8 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
   const tokens = tokenize(content);
 
   return (
-    <div className="text-gray-900 dark:text-gray-100 break-words whitespace-pre-wrap leading-normal">
-      <div>
+    <div className="text-gray-900 dark:text-gray-100 break-words whitespace-pre-wrap leading-normal max-w-full overflow-hidden">
+      <div className="max-w-full">
         {tokens.map((token, i) => {
           if (token.type === "url") {
             const cleanUrl = token.value.replace(/[.,;]$/, "");
@@ -117,20 +116,18 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
       ))}
 
       {/* Media Section */}
-      <div className="flex flex-col gap-2 mt-3">
+      <div className="flex flex-col gap-2 mt-3 max-w-full">
         {tokens.filter(t => t.type === "url").map((token, i) => {
           const cleanUrl = token.value.replace(/[.,;]$/, "");
           
           if (cleanUrl.match(IMAGE_REGEX)) {
             return (
-              <div key={i} className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 max-h-[500px]" onClick={(e) => e.stopPropagation()}>
-                <Image
+              <div key={i} className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 max-h-[500px] max-w-full" onClick={(e) => e.stopPropagation()}>
+                <img
                   src={cleanUrl}
                   alt="Post content"
-                  width={800}
-                  height={500}
-                  className="w-full h-auto object-contain max-h-[500px]"
-                  unoptimized
+                  className="w-full h-auto object-contain max-h-[500px] block"
+                  loading="lazy"
                 />
               </div>
             );
@@ -138,11 +135,11 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
 
           if (cleanUrl.match(VIDEO_REGEX)) {
             return (
-              <div key={i} className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-black" onClick={(e) => e.stopPropagation()}>
+              <div key={i} className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-black max-w-full" onClick={(e) => e.stopPropagation()}>
                 <video
                   src={cleanUrl}
                   controls
-                  className="w-full max-h-[500px]"
+                  className="w-full max-h-[500px] block"
                   preload="metadata"
                 />
               </div>
