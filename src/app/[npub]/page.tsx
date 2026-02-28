@@ -143,8 +143,8 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             <Calendar size={16} />
             <span>
               {profile?.published_at 
-                ? `Joined ${format(new Date(profile.published_at * 1000), "MMMM yyyy")}` 
-                : "Joined Nostr"
+                ? `${format(new Date(profile.published_at * 1000), "MMMM yyyy")}` 
+                : "-"
               }
             </span>
           </div>
