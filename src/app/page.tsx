@@ -5,7 +5,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { PostComposer } from "@/components/post/PostComposer";
 import { PostCard } from "@/components/post/PostCard";
 import { useAuthStore } from "@/store/auth";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { useFeed } from "@/hooks/useFeed";
 import { useWoT } from "@/hooks/useWoT";
 import { useRouter } from "next/navigation";

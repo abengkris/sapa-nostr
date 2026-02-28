@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Search, Loader2, User as UserIcon } from "lucide-react";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { useSearch } from "@/hooks/useSearch";
 import { useDebounce } from "use-debounce";
 import { PostCard } from "@/components/post/PostCard";

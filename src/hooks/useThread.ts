@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { NDKEvent, NDKFilter, NDKUser } from "@nostr-dev-kit/ndk";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 
 export function useThread(focalId?: string) {
   const { ndk, isReady } = useNDK();

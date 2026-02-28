@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { useProfile } from "@/hooks/useProfile";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { createZapInvoice, listenForZapReceipt } from "@/lib/actions/zap";
 import { X, Zap, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";

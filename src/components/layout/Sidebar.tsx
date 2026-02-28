@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, User, LogIn, LogOut, Bell, MessageSquare } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { useNotifications } from "@/hooks/useNotifications";
 
 const SidebarItem = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: number }) => {

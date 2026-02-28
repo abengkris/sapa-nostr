@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NDKEvent, NDKFilter } from "@nostr-dev-kit/ndk";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 
 /**
  * Hook to fetch and count reactions for a specific event ID.

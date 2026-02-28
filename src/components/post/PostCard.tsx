@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { useProfile } from "@/hooks/useProfile";
 import { useReactions } from "@/hooks/useReactions";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "next/navigation";
 import { ZapModal } from "@/components/common/ZapModal";

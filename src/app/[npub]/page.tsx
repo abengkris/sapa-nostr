@@ -7,7 +7,7 @@ import { useFeed } from "@/hooks/useFeed";
 import { PostCard } from "@/components/post/PostCard";
 import { Loader2, Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { follow, unfollow } from "@/lib/actions/follow";
 import { useFollowing } from "@/hooks/useFollowing";
 

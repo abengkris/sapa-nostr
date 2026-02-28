@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import NDK, { NDKRelaySet, NDKPrivateKeySigner, NDKNip07Signer } from "@nostr-dev-kit/ndk";
+import { createContext, useEffect, useState, ReactNode } from "react";
+import NDK, { NDKPrivateKeySigner, NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import { useAuthStore } from "@/store/auth";
 
@@ -12,12 +12,12 @@ const DEFAULT_RELAYS = [
   "wss://relay.nostr.band",
 ];
 
-interface NDKContextType {
+export interface NDKContextType {
   ndk: NDK | null;
   isReady: boolean;
 }
 
-const NDKContext = createContext<NDKContextType>({
+export const NDKContext = createContext<NDKContextType>({
   ndk: null,
   isReady: false,
 });
@@ -36,11 +36,9 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
       explicitRelayUrls: DEFAULT_RELAYS,
       cacheAdapter: dexieAdapter as any,
       enableOutboxModel: true,
-      aiGuardrails: true
     });
 
     // Performance Optimization: Signature Verification Sampling
-    // Only verify 50% of signatures initially, tapering down to 5% for trusted relays
     instance.initialValidationRatio = 0.5;
     instance.lowestValidationRatio = 0.05;
 
@@ -91,12 +89,4 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </NDKContext.Provider>
   );
-};
-
-export const useNDK = () => {
-  const context = useContext(NDKContext);
-  if (context === undefined) {
-    throw new Error("useNDK must be used within an NDKProvider");
-  }
-  return context;
 };

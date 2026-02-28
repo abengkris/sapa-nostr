@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { NDKEvent, NDKFilter, NDKSubscription } from "@nostr-dev-kit/ndk";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 
 const MAX_POSTS = 100;
 

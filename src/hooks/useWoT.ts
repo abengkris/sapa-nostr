@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 
 export function useWoT(rootPubkey?: string, depth: number = 2) {

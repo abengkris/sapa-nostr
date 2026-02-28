@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { NDKUserProfile } from "@nostr-dev-kit/ndk";
 
 export interface ProfileMetadata extends NDKUserProfile {

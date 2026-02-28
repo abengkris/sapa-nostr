@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuthStore } from "@/store/auth";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
 import { ImageIcon, Calendar, Smile, MapPin } from "lucide-react";
 import Image from "next/image";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNDK } from "@/lib/ndk";
+import { useNDK } from "@/hooks/useNDK";
 
 export function useFollowing(pubkey?: string) {
   const { ndk, isReady } = useNDK();
