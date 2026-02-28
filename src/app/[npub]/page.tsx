@@ -18,6 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
+import { format } from "date-fns";
 import { decodeNip19 } from "@/lib/utils/nip19";
 
 type ProfileTab = "posts" | "replies" | "media" | "likes";
@@ -140,7 +141,12 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           )}
           <div className="flex items-center space-x-1">
             <Calendar size={16} />
-            <span>Joined Nostr</span>
+            <span>
+              {profile?.published_at 
+                ? `Joined ${format(new Date(profile.published_at * 1000), "MMMM yyyy")}` 
+                : "Joined Nostr"
+              }
+            </span>
           </div>
         </div>
 

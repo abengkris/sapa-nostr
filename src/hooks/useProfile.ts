@@ -13,6 +13,7 @@ export interface ProfileMetadata {
   website?: string;
   pronouns?: string;
   bot?: boolean | string;
+  published_at?: number;
 }
 
 export function useProfile(pubkey?: string) {
@@ -36,7 +37,21 @@ export function useProfile(pubkey?: string) {
         const userProfile = await user.fetchProfile();
         
         if (isMounted && userProfile) {
-          setProfile(userProfile as ProfileMetadata);
+          const metadata: ProfileMetadata = { ...userProfile };
+          
+          // Try to get published_at from kind 0 event tags
+          const kind0 = await ndk.fetchEvent({ kinds: [0], authors: [pubkey] });
+          if (kind0) {
+            const publishedAtTag = kind0.tags.find(t => t[0] === 'published_at');
+            if (publishedAtTag && publishedAtTag[1]) {
+              metadata.published_at = parseInt(publishedAtTag[1]);
+            } else {
+              // Fallback to event created_at if published_at tag is missing
+              metadata.published_at = kind0.created_at;
+            }
+          }
+          
+          setProfile(metadata);
         }
       } catch (error) {
         console.error("Error fetching profile for", pubkey, error);
