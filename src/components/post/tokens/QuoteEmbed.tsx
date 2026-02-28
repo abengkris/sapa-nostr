@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { NDKEvent } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKRelaySet } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
 import { useProfile } from "@/hooks/useProfile";
 import { formatDistanceToNow } from "date-fns";
@@ -12,10 +12,11 @@ import { PostContentRenderer } from "../parts/PostContent";
 
 interface QuoteEmbedProps {
   eventId: string;
+  hintRelays?: string[];
   className?: string;
 }
 
-export function QuoteEmbed({ eventId, className = "" }: QuoteEmbedProps) {
+export function QuoteEmbed({ eventId, hintRelays, className = "" }: QuoteEmbedProps) {
   const { ndk, isReady } = useNDK();
   const [event, setEvent] = useState<NDKEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,14 +25,18 @@ export function QuoteEmbed({ eventId, className = "" }: QuoteEmbedProps) {
   useEffect(() => {
     if (!ndk || !isReady || !eventId) return;
     
-    ndk.fetchEvent(eventId)
+    const relaySet = hintRelays && hintRelays.length > 0 
+      ? NDKRelaySet.fromRelayUrls(hintRelays, ndk) 
+      : undefined;
+
+    ndk.fetchEvent(eventId, undefined, relaySet)
       .then(ev => {
         if (ev) setEvent(ev);
         else setNotFound(true);
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [ndk, isReady, eventId]);
+  }, [ndk, isReady, eventId, hintRelays]);
 
   if (loading) {
     return (

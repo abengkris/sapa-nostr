@@ -158,6 +158,7 @@ export function PostContentRenderer({
         <QuoteEmbed
           key={i}
           eventId={token.decoded?.eventId ?? ""}
+          hintRelays={token.decoded?.relays}
         />
       ))}
 
@@ -212,16 +213,18 @@ function TokenRenderer({ token, emojiMap }: { token: Token; emojiMap: Map<string
       return <ShortenedUrl url={token.value} />;
 
     case "note_ref":
-    case "naddr_ref":
+    case "naddr_ref": {
+      const rawValue = token.value.replace(/^nostr:/, "");
       return (
         <Link
-          href={`/post/${token.decoded?.eventId || token.value}`}
+          href={`/post/${token.decoded?.eventId || rawValue}`}
           className="text-blue-500 hover:text-blue-600 hover:underline font-mono text-sm"
           onClick={e => e.stopPropagation()}
         >
-          {token.value.slice(0, 20)}…
+          {rawValue.slice(0, 20)}…
         </Link>
       );
+    }
 
     default:
       return null;

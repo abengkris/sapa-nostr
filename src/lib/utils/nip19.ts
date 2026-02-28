@@ -1,15 +1,13 @@
 import { nip19 } from "nostr-tools";
 
 /**
- * Decodes a NIP-19 string (npub, nprofile, note, nevent, naddr) to its hex ID or pubkey.
- * Returns the original string if it's already hex or decoding fails.
+ * Decodes a NIP-19 string and returns its ID and any associated relays.
  */
-export function decodeToHex(nip19String: string): string {
-  if (!nip19String) return "";
+export function decodeNip19(nip19String: string): { id: string; relays?: string[] } {
+  if (!nip19String) return { id: "" };
   
-  // If it's already a 64-char hex string, return it
   if (/^[0-9a-fA-F]{64}$/.test(nip19String)) {
-    return nip19String;
+    return { id: nip19String };
   }
 
   try {
@@ -18,21 +16,27 @@ export function decodeToHex(nip19String: string): string {
     switch (decoded.type) {
       case "npub":
       case "note":
-        return decoded.data;
+        return { id: decoded.data };
       case "nprofile":
-        return decoded.data.pubkey;
+        return { id: decoded.data.pubkey, relays: decoded.data.relays };
       case "nevent":
-        return decoded.data.id;
+        return { id: decoded.data.id, relays: decoded.data.relays };
       case "naddr":
-        // For naddr, we usually want the identifier or the pubkey? 
-        // In many cases we want the pubkey, but let's return the identifier for now if needed.
-        return decoded.data.identifier;
+        return { id: decoded.data.identifier, relays: decoded.data.relays };
       default:
-        return nip19String;
+        return { id: nip19String };
     }
   } catch (e) {
-    return nip19String;
+    return { id: nip19String };
   }
+}
+
+/**
+ * Decodes a NIP-19 string (npub, nprofile, note, nevent, naddr) to its hex ID or pubkey.
+ * Returns the original string if it's already hex or decoding fails.
+ */
+export function decodeToHex(nip19String: string): string {
+  return decodeNip19(nip19String).id;
 }
 
 /**

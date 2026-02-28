@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { NDKEvent, NDKFilter, NDKUser } from "@nostr-dev-kit/ndk";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { NDKEvent, NDKFilter, NDKRelaySet } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
 
-export function useThread(focalId?: string) {
+export function useThread(focalId?: string, hintRelays?: string[]) {
   const { ndk, isReady } = useNDK();
   const [focalPost, setFocalPost] = useState<NDKEvent | null>(null);
   const [ancestors, setAncestors] = useState<NDKEvent[]>([]);
@@ -11,6 +11,15 @@ export function useThread(focalId?: string) {
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [hasMoreReplies, setHasMoreReplies] = useState(true);
   const oldestReplyTimestampRef = useRef<number | undefined>(undefined);
+
+  const relaySet = useMemo(() => {
+    if (!ndk || !hintRelays || hintRelays.length === 0) return undefined;
+    try {
+      return NDKRelaySet.fromRelayUrls(hintRelays, ndk);
+    } catch (e) {
+      return undefined;
+    }
+  }, [ndk, hintRelays]);
 
   const fetchMoreReplies = useCallback(async (isLoadMore = false, targetId = focalId) => {
     if (!ndk || !targetId) return;
@@ -27,7 +36,7 @@ export function useThread(focalId?: string) {
         filter.until = oldestReplyTimestampRef.current - 1;
       }
 
-      const replyEvents = await ndk.fetchEvents(filter);
+      const replyEvents = await ndk.fetchEvents(filter, undefined, relaySet);
       const directReplies = Array.from(replyEvents)
         .filter(ev => {
           const replyTag = ev.tags.find(t => t[0] === 'e' && t[3] === 'reply');
@@ -35,7 +44,7 @@ export function useThread(focalId?: string) {
           const eTags = ev.tags.filter(t => t[0] === 'e');
           return eTags[eTags.length - 1]?.[1] === targetId;
         })
-        .sort((a, b) => (a.created_at ?? 0) - (b.created_at ?? 0));
+        .sort((a, b) => (a.created_at ?? 0) - (a.created_at ?? 0));
 
       setReplies((prev) => {
         const combined = isLoadMore ? [...prev, ...directReplies] : directReplies;
@@ -51,7 +60,7 @@ export function useThread(focalId?: string) {
     } finally {
       setLoadingReplies(false);
     }
-  }, [ndk, focalId]);
+  }, [ndk, focalId, relaySet]);
 
   const fetchThread = useCallback(async () => {
     if (!ndk || !isReady || !focalId) return;
@@ -59,7 +68,7 @@ export function useThread(focalId?: string) {
     setLoading(true);
     try {
       // 1. Fetch the focal post
-      const focal = await ndk.fetchEvent(focalId);
+      const focal = await ndk.fetchEvent(focalId, undefined, relaySet);
       if (!focal) {
         setLoading(false);
         return;
@@ -78,7 +87,7 @@ export function useThread(focalId?: string) {
         if (!parentId || visited.has(parentId)) break;
         
         visited.add(parentId);
-        const parent = await ndk.fetchEvent(parentId);
+        const parent = await ndk.fetchEvent(parentId, undefined, relaySet);
         if (!parent) break;
         
         chain.unshift(parent);
@@ -93,7 +102,7 @@ export function useThread(focalId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [ndk, isReady, focalId, fetchMoreReplies]);
+  }, [ndk, isReady, focalId, fetchMoreReplies, relaySet]);
 
   useEffect(() => {
     oldestReplyTimestampRef.current = undefined;
