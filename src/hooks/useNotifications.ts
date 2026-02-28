@@ -36,8 +36,6 @@ export function useNotifications() {
       filter, 
       { 
         closeOnEose: true, 
-        groupable: false, 
-        cacheUnconstrainFilter: ["limit"],
         onEvent: (event: NDKEvent) => {
           if (event.pubkey === user.pubkey) return;
 

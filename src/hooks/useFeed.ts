@@ -53,11 +53,13 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
 
     const sub = ndk.subscribe(
       filter, 
-      { closeOnEose: true, groupable: false, cacheUnconstrainFilter: ["limit"] }
+      { closeOnEose: true }
     );
     subscriptionRef.current = sub;
+    console.log("Fetching feed with filter:", filter);
 
     sub.on("event", (event: NDKEvent) => {
+      console.log("Feed event received:", event.id);
       setPosts((prev) => {
         if (prev.find((p) => p.id === event.id)) return prev;
         
@@ -102,6 +104,7 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
     });
 
     sub.on("eose", () => {
+      console.log("Feed EOSE reached");
       setLoading(false);
     });
   }, [ndk, isReady, authors, limit, kinds, disableFiltering]);
