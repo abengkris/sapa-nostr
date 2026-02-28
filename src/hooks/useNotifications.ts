@@ -58,10 +58,6 @@ export function useNotifications() {
       setUnreadCount((prev) => prev + 1);
     });
 
-    sub.on("error", (err) => {
-      console.error("Notifications subscription error:", err);
-    });
-
     return () => {
       sub.stop();
     };

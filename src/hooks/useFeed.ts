@@ -72,11 +72,6 @@ export function useFeed(authors: string[]) {
     sub.on("eose", () => {
       setLoading(false);
     });
-
-    sub.on("error", (err) => {
-      console.error("Feed subscription error:", err);
-      setLoading(false);
-    });
   }, [ndk, isReady, authors, limit]);
 
   // Initial subscription for real-time updates (top of the feed)

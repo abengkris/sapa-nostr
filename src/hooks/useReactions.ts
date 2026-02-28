@@ -46,10 +46,6 @@ export function useReactions(eventId?: string) {
       }
     });
 
-    sub.on("error", (err) => {
-      console.error("Reactions subscription error:", err);
-    });
-
     return () => sub.stop();
   }, [ndk, isReady, eventId]);
 
