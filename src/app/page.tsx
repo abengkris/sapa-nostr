@@ -41,10 +41,9 @@ export default function HomePage() {
   }, [ndk, isReady, isLoggedIn, user]);
 
   // Determine which authors to show based on active tab
-  // Global tab now shows WoT Depth 2
   const feedAuthors = activeTab === "following" 
     ? followingPubkeys 
-    : (wotPubkeys.length > 0 ? wotPubkeys : []);
+    : []; // Empty array for Global = search across all users
     
   const { posts, loading: feedLoading, loadMore, hasMore } = useFeed(feedAuthors);
 
@@ -109,7 +108,7 @@ export default function HomePage() {
 
       <div className="pb-20">
         <ErrorBoundary>
-          {(feedLoading || (activeTab === 'global' && wotLoading && posts.length === 0)) && posts.length === 0 ? (
+          {feedLoading && posts.length === 0 ? (
             <FeedSkeleton />
           ) : (
             posts.map((post) => (

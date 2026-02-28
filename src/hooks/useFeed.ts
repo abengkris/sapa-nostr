@@ -75,7 +75,9 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
                 const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
                 
                 if (!isReply) return true;
-                if (authors.length === 0) return false;
+                
+                // If global feed, show replies for now to ensure data appears
+                if (authors.length === 0) return true;
 
                 const replyPTag = ev.tags.find(t => t[0] === 'p');
                 if (replyPTag && authors.includes(replyPTag[1])) return true;
@@ -131,6 +133,9 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
               
               if (isReply) {
                 shouldInclude = false;
+                // Global feed: show replies
+                if (authors.length === 0) shouldInclude = true;
+                
                 const replyPTag = event.tags.find(t => t[0] === 'p');
                 if (replyPTag && replyPTag[1] === event.pubkey) shouldInclude = true;
                 if (replyPTag && authors.includes(replyPTag[1])) shouldInclude = true;
