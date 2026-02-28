@@ -6,12 +6,14 @@ import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
 import { ImageIcon, Calendar, Smile, MapPin } from "lucide-react";
 import Image from "next/image";
+import { useUIStore } from "@/store/ui";
 
 export const PostComposer = () => {
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, isLoggedIn } = useAuthStore();
   const { ndk } = useNDK();
+  const { addToast } = useUIStore();
 
   const handlePost = async () => {
     if (!ndk || !content.trim() || isSubmitting) return;
@@ -20,10 +22,11 @@ export const PostComposer = () => {
     try {
       await publishPost(ndk, content);
       setContent("");
+      addToast("Post published successfully!", "success");
       // Success: ideally trigger a feed refresh here
     } catch (err) {
       console.error("Failed to post:", err);
-      alert("Failed to publish post. Make sure your NIP-07 extension is ready.");
+      addToast("Failed to publish post.", "error");
     } finally {
       setIsSubmitting(false);
     }

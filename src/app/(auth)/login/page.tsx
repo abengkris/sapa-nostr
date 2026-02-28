@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
+import { useUIStore } from "@/store/ui";
 import { useRouter } from "next/navigation";
 import { 
   LogIn, 
@@ -33,6 +34,7 @@ export default function LoginPage() {
   } = useAuthStore();
   
   const { ndk, isReady } = useNDK();
+  const { addToast } = useUIStore();
   const router = useRouter();
 
   // Redirect if already logged in
@@ -46,8 +48,9 @@ export default function LoginPage() {
     if (!ndk || !isReady) return;
     try {
       await login(ndk);
+      addToast("Logged in successfully!", "success");
     } catch (err) {
-      alert("NIP-07 Login failed. Make sure you have a Nostr extension (Alby, nos2x, etc.) installed.");
+      addToast("NIP-07 Login failed. Check extension.", "error");
     }
   };
 
@@ -56,8 +59,9 @@ export default function LoginPage() {
     if (!ndk || !isReady || !privateKey) return;
     try {
       await loginWithPrivateKey(ndk, privateKey);
+      addToast("Logged in successfully!", "success");
     } catch (err) {
-      alert("Invalid private key. Make sure it's in nsec or hex format.");
+      addToast("Invalid private key.", "error");
     }
   };
 
@@ -67,14 +71,16 @@ export default function LoginPage() {
       const k = await generateNewKey(ndk);
       setNewKey(k);
       setShowOnboarding(true);
+      addToast("New identity generated!", "success");
     } catch (err) {
-      alert("Failed to generate key.");
+      addToast("Failed to generate key.", "error");
     }
   };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(newKey);
     setIsCopied(true);
+    addToast("Key copied to clipboard!", "success");
     setTimeout(() => setIsCopied(false), 2000);
   };
 

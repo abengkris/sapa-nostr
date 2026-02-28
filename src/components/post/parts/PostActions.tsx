@@ -1,7 +1,6 @@
-"use client";
-
-import React from "react";
+import React, { useState } from "react";
 import { MessageCircle, Repeat2, Heart, Zap } from "lucide-react";
+import { useUIStore } from "@/store/ui";
 
 interface PostActionsProps {
   likes: number;
@@ -13,13 +12,38 @@ interface PostActionsProps {
 }
 
 export const PostActions: React.FC<PostActionsProps> = ({
-  likes,
-  userReacted,
+  likes: initialLikes,
+  userReacted: initialUserReacted,
   onReplyClick,
   onRepostClick,
   onLikeClick,
   onZapClick
 }) => {
+  const [optimisticLikes, setOptimisticLikes] = useState(initialLikes);
+  const [optimisticReacted, setOptimisticReacted] = useState(initialUserReacted);
+  const [optimisticReposted, setOptimisticReposted] = useState(false);
+  const { addToast } = useUIStore();
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (optimisticReacted === '+') {
+      setOptimisticLikes(prev => Math.max(0, prev - 1));
+      setOptimisticReacted(null);
+    } else {
+      setOptimisticLikes(prev => prev + 1);
+      setOptimisticReacted('+');
+      addToast("Liked!", "success");
+    }
+    onLikeClick?.(e);
+  };
+
+  const handleRepost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOptimisticReposted(true);
+    addToast("Reposted!", "success");
+    onRepostClick?.(e);
+  };
+
   return (
     <div className="flex items-center justify-between max-w-md text-gray-500">
       <button 
@@ -37,31 +61,25 @@ export const PostActions: React.FC<PostActionsProps> = ({
       </button>
 
       <button 
-        onClick={(e) => {
-          e.stopPropagation();
-          onRepostClick?.(e);
-        }}
+        onClick={handleRepost}
         aria-label="Repost"
-        className="group flex items-center space-x-2 hover:text-green-500 transition-colors"
+        className={`group flex items-center space-x-2 hover:text-green-500 transition-colors ${optimisticReposted ? 'text-green-500' : ''}`}
       >
         <div className="p-2 group-hover:bg-green-50 dark:group-hover:bg-green-900/20 rounded-full transition-colors">
-          <Repeat2 size={18} />
+          <Repeat2 size={18} className={optimisticReposted ? "animate-in spin-in-180 duration-500" : ""} />
         </div>
         <span className="text-xs">0</span>
       </button>
 
       <button 
-        onClick={(e) => {
-          e.stopPropagation();
-          onLikeClick?.(e);
-        }}
-        aria-label={userReacted === '+' ? "Unlike" : "Like"}
-        className={`group flex items-center space-x-2 hover:text-pink-500 transition-colors ${userReacted === '+' ? 'text-pink-500' : ''}`}
+        onClick={handleLike}
+        aria-label={optimisticReacted === '+' ? "Unlike" : "Like"}
+        className={`group flex items-center space-x-2 hover:text-pink-500 transition-colors ${optimisticReacted === '+' ? 'text-pink-500' : ''}`}
       >
         <div className="p-2 group-hover:bg-pink-50 dark:group-hover:bg-pink-900/20 rounded-full transition-colors">
-          <Heart size={18} fill={userReacted === '+' ? 'currentColor' : 'none'} />
+          <Heart size={18} fill={optimisticReacted === '+' ? 'currentColor' : 'none'} className={optimisticReacted === '+' ? "animate-in zoom-in-125 duration-300" : ""} />
         </div>
-        <span className="text-xs">{likes}</span>
+        <span className="text-xs">{optimisticLikes}</span>
       </button>
 
       <button 

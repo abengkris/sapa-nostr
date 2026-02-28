@@ -6,6 +6,7 @@ import { useNDK } from "@/hooks/useNDK";
 import { createZapInvoice, listenForZapReceipt } from "@/lib/actions/zap";
 import { X, Zap, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useUIStore } from "@/store/ui";
 
 interface ZapModalProps {
   event: NDKEvent;
@@ -20,6 +21,7 @@ export const ZapModal: React.FC<ZapModalProps> = ({ event, onClose, onSuccess })
   const [invoice, setInvoice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [paid, setPaid] = useState(false);
+  const { addToast } = useUIStore();
 
   // Listen for zap confirmation (receipt)
   useEffect(() => {
@@ -28,11 +30,12 @@ export const ZapModal: React.FC<ZapModalProps> = ({ event, onClose, onSuccess })
     const stopListening = listenForZapReceipt(ndk, event.id, (receipt) => {
       console.log("Zap confirmed:", receipt);
       setPaid(true);
+      addToast("Zap received!", "success");
       if (onSuccess) onSuccess();
     });
 
     return () => stopListening();
-  }, [ndk, event.id, invoice, onSuccess]);
+  }, [ndk, event.id, invoice, onSuccess, addToast]);
 
   const handleZap = async () => {
     if (!ndk || loading) return;
@@ -57,11 +60,11 @@ export const ZapModal: React.FC<ZapModalProps> = ({ event, onClose, onSuccess })
           }
         }
       } else {
-        alert("Failed to create zap invoice. Does the user have a lightning address?");
+        addToast("Failed to create zap invoice.", "error");
       }
     } catch (err) {
       console.error(err);
-      alert("Something went wrong while zapping.");
+      addToast("Something went wrong while zapping.", "error");
     } finally {
       setLoading(false);
     }
@@ -70,7 +73,7 @@ export const ZapModal: React.FC<ZapModalProps> = ({ event, onClose, onSuccess })
   const copyInvoice = () => {
     if (invoice) {
       navigator.clipboard.writeText(invoice);
-      alert("Invoice copied to clipboard!");
+      addToast("Invoice copied to clipboard!", "success");
     }
   };
 
