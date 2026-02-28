@@ -1,7 +1,6 @@
 // src/lib/actions/follow.ts
 
-import { NDKEvent } from "@nostr-dev-kit/ndk";
-import { getNDK } from "@/lib/ndk";
+import NDK, { NDKEvent, NDKSubscriptionCacheUsage } from "@nostr-dev-kit/ndk";
 
 /**
  * ATURAN WAJIB:
@@ -19,9 +18,9 @@ export type FollowResult =
  * Fetch kind:3 terkini → tambah pubkey → publish.
  */
 export async function followUser(
+  ndk: NDK,
   targetPubkey: string
 ): Promise<FollowResult> {
-  const ndk = getNDK();
   if (!ndk.signer) return { success: false, error: "Belum login" };
 
   const me = await ndk.signer.user();
@@ -31,7 +30,7 @@ export async function followUser(
     // JANGAN pakai cache saja — harus dari relay untuk hindari race condition
     const currentContactList = await ndk.fetchEvent(
       { kinds: [3], authors: [me.pubkey] },
-      { groupable: false, cacheUsage: 0 } // force relay
+      { groupable: false, cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY } // force relay
     );
 
     // Step 2: Kumpulkan p-tags yang sudah ada
@@ -69,9 +68,9 @@ export async function followUser(
  * Fetch kind:3 terkini → hapus pubkey → publish.
  */
 export async function unfollowUser(
+  ndk: NDK,
   targetPubkey: string
 ): Promise<FollowResult> {
-  const ndk = getNDK();
   if (!ndk.signer) return { success: false, error: "Belum login" };
 
   const me = await ndk.signer.user();
@@ -80,7 +79,7 @@ export async function unfollowUser(
     // Step 1: Fetch contact list terkini
     const currentContactList = await ndk.fetchEvent(
       { kinds: [3], authors: [me.pubkey] },
-      { groupable: false, cacheUsage: 0 }
+      { groupable: false, cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY }
     );
 
     if (!currentContactList) return { success: true }; // tidak ada → sudah "unfollow"

@@ -50,10 +50,11 @@ export function useFollowState(targetPubkey: string): UseFollowStateReturn {
     setIsFollowing(!prevState);
     setIsPending(true);
 
+    const ndk = getNDK();
     try {
       const result = prevState
-        ? await unfollowUser(targetPubkey)
-        : await followUser(targetPubkey);
+        ? await unfollowUser(ndk, targetPubkey)
+        : await followUser(ndk, targetPubkey);
 
       if (!result.success) {
         // Rollback jika gagal
