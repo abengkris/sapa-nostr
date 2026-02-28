@@ -36,6 +36,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
       explicitRelayUrls: DEFAULT_RELAYS,
       cacheAdapter: dexieAdapter as any,
       enableOutboxModel: true,
+      aiGuardrails: true
     });
 
     // Performance Optimization: Signature Verification Sampling

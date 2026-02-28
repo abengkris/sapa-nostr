@@ -25,10 +25,17 @@ export function useWoT(rootPubkey?: string, depth: number = 2) {
           
           if (authorsToCrawl.length === 0) break;
 
-          const contactEvents = await ndk.fetchEvents({
-            kinds: [3],
-            authors: authorsToCrawl,
-          });
+          const contactEvents = await ndk.fetchEvents(
+            {
+              kinds: [3],
+              authors: authorsToCrawl,
+            },
+            {
+              groupable: true,
+              groupableDelay: 500,
+              groupableDelayType: "at-most"
+            }
+          );
 
           for (const event of contactEvents) {
             const pTags = event.tags.filter(t => t[0] === 'p').map(t => t[1]);

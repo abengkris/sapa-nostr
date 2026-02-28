@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, Users } from "lucide-react";
 
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 
 export default function HomePage() {
   const { isLoggedIn, user, isLoading: isAuthLoading, _hasHydrated } = useAuthStore();
@@ -107,22 +108,24 @@ export default function HomePage() {
       <PostComposer />
 
       <div className="pb-20">
-        {(feedLoading || (activeTab === 'global' && wotLoading && posts.length === 0)) && posts.length === 0 ? (
-          <FeedSkeleton />
-        ) : (
-          posts.map((post) => (
-            <PostCard key={post.id} event={post} />
-          ))
-        )}
+        <ErrorBoundary>
+          {(feedLoading || (activeTab === 'global' && wotLoading && posts.length === 0)) && posts.length === 0 ? (
+            <FeedSkeleton />
+          ) : (
+            posts.map((post) => (
+              <PostCard key={post.id} event={post} />
+            ))
+          )}
 
-        {posts.length === 0 && !feedLoading && (
-          <div className="p-12 text-center text-gray-500">
-            <p className="text-lg font-medium">Nothing to see here yet.</p>
-            {activeTab === "following" && (
-              <p className="text-sm mt-2">Try following some people or check the Global tab!</p>
-            )}
-          </div>
-        )}
+          {posts.length === 0 && !feedLoading && (
+            <div className="p-12 text-center text-gray-500">
+              <p className="text-lg font-medium">Nothing to see here yet.</p>
+              {activeTab === "following" && (
+                <p className="text-sm mt-2">Try following some people or check the Global tab!</p>
+              )}
+            </div>
+          )}
+        </ErrorBoundary>
         
         {hasMore && posts.length > 0 && (
           <div className="p-8 text-center">
