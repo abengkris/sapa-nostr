@@ -58,8 +58,31 @@ export function useFeed(authors: string[]) {
           (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
         );
 
+        // Filter based on Concept #5: Feed filtering
+        const filteredPosts = newPosts.filter(ev => {
+          const eTags = ev.tags.filter(t => t[0] === 'e');
+          const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
+          
+          if (!isReply) return true; // Standalone, Repost, Quote always show
+
+          // If it's a reply, only show if:
+          // 1. In global feed, we generally hide replies to keep it clean
+          if (authors.length === 0) return false;
+
+          // 2. In following feed, show if it's a reply to someone the user follows
+          // (Simplified: we show all replies in following feed for now, 
+          // or we can check if the recipient pubkey is in the authors list)
+          const replyPTag = ev.tags.find(t => t[0] === 'p');
+          if (replyPTag && authors.includes(replyPTag[1])) return true;
+          
+          // 3. Thread continuation (reply to self)
+          if (replyPTag && replyPTag[1] === ev.pubkey) return true;
+
+          return false;
+        });
+
         // Keep state small for performance (virtualization ready)
-        const slicedPosts = newPosts.slice(0, MAX_POSTS);
+        const slicedPosts = filteredPosts.slice(0, MAX_POSTS);
 
         // Update oldest timestamp for pagination from the full list if possible
         const lastPost = slicedPosts[slicedPosts.length - 1];

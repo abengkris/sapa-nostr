@@ -1,60 +1,16 @@
 "use client";
 
-import React, { use, useState, useEffect } from "react";
+import React, { use } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { useNDK } from "@/lib/ndk";
-import { NDKEvent, NDKFilter } from "@nostr-dev-kit/ndk";
 import { PostCard } from "@/components/post/PostCard";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useThread } from "@/hooks/useThread";
 
 export default function PostDetailPage({ params }: { params: Promise<{ noteId: string }> }) {
   const { noteId } = use(params);
-  const { ndk, isReady } = useNDK();
-  const [rootPost, setRootPost] = useState<NDKEvent | null>(null);
-  const [parents, setParents] = useState<NDKEvent[]>([]);
-  const [replies, setReplies] = useState<NDKEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { focalPost, ancestors, replies, loading } = useThread(noteId);
   const router = useRouter();
-
-  useEffect(() => {
-    if (!ndk || !isReady || !noteId) return;
-
-    const fetchPostAndReplies = async () => {
-      setLoading(true);
-      try {
-        // 1. Fetch the actual post
-        const event = await ndk.fetchEvent(noteId);
-        if (event) {
-          setRootPost(event);
-
-          // 2. Fetch parents (ancestors)
-          const parentIds = event.tags
-            .filter(t => t[0] === 'e' && (t[3] === 'root' || t[3] === 'reply'))
-            .map(t => t[1]);
-          
-          if (parentIds.length > 0) {
-            const parentEvents = await ndk.fetchEvents({ ids: parentIds });
-            setParents(Array.from(parentEvents).sort((a, b) => (a.created_at ?? 0) - (b.created_at ?? 0)));
-          }
-        }
-
-        // 3. Fetch replies
-        const filter: NDKFilter = {
-          kinds: [1],
-          "#e": [noteId],
-        };
-        const replyEvents = await ndk.fetchEvents(filter);
-        setReplies(Array.from(replyEvents).sort((a, b) => (a.created_at ?? 0) - (b.created_at ?? 0)));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPostAndReplies();
-  }, [ndk, isReady, noteId]);
 
   return (
     <MainLayout>
@@ -62,7 +18,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ noteId: s
         <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-xl font-bold">Post</h1>
+        <h1 className="text-xl font-bold">Thread</h1>
       </div>
 
       <div className="pb-20">
@@ -72,23 +28,33 @@ export default function PostDetailPage({ params }: { params: Promise<{ noteId: s
           </div>
         ) : (
           <>
-            {/* Thread Parents */}
-            {parents.map(parent => (
-              <div key={parent.id} className="opacity-70 scale-[0.98] origin-top transition-all hover:opacity-100">
-                <PostCard event={parent} />
-              </div>
+            {/* Ancestors with connecting lines */}
+            {ancestors.map((parent, index) => (
+              <PostCard 
+                key={parent.id} 
+                event={parent} 
+                threadLine={index === 0 && ancestors.length === 1 ? "bottom" : (index === 0 ? "bottom" : "both")} 
+              />
             ))}
 
-            {rootPost && <div className="border-l-4 border-blue-500 bg-blue-50/10 dark:bg-blue-900/5"><PostCard event={rootPost} /></div>}
+            {/* Focal Post */}
+            {focalPost && (
+              <PostCard 
+                event={focalPost} 
+                isFocal={true} 
+                threadLine={ancestors.length > 0 ? "top" : "none"} 
+              />
+            )}
             
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 text-sm font-bold text-gray-500 uppercase tracking-wider">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 text-xs font-bold text-gray-500 uppercase tracking-widest">
               Replies
             </div>
 
+            {/* Direct Replies */}
             {replies.length > 0 ? (
               replies.map(reply => <PostCard key={reply.id} event={reply} />)
             ) : (
-              <div className="p-12 text-center text-gray-500 italic">
+              <div className="p-12 text-center text-gray-500 italic text-sm">
                 No replies yet.
               </div>
             )}
