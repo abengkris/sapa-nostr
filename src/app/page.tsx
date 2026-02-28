@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PostComposer } from "@/components/post/PostComposer";
 import { useAuthStore } from "@/store/auth";
@@ -8,13 +8,17 @@ import { useNDK } from "@/hooks/useNDK";
 import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, Users } from "lucide-react";
 import { FeedList } from "@/components/feed/FeedList";
-import { NDKFilter } from "@nostr-dev-kit/ndk";
+import { NewPostsIsland } from "@/components/feed/NewPostsIsland";
+import { usePausedFeed } from "@/hooks/usePausedFeed";
+import { useForYouFeed } from "@/hooks/useForYouFeed";
+
+type FeedTab = "following" | "forYou";
 
 export default function HomePage() {
   const { isLoggedIn, user, isLoading: isAuthLoading, _hasHydrated } = useAuthStore();
   const { ndk, isReady } = useNDK();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"following" | "global">("global");
+  const [activeTab, setActiveTab] = useState<FeedTab>("forYou");
 
   const [followingPubkeys, setFollowingPubkeys] = useState<string[]>([]);
 
@@ -31,15 +35,6 @@ export default function HomePage() {
     }
   }, [ndk, isReady, isLoggedIn, user]);
 
-  const filter = useMemo((): NDKFilter => {
-    if (activeTab === "global") {
-      return { kinds: [1] };
-    }
-    // For following tab, if we don't have following list yet, use user's own pubkey as placeholder
-    const authors = followingPubkeys.length > 0 ? followingPubkeys : (user ? [user.pubkey] : []);
-    return { kinds: [1], authors };
-  }, [activeTab, followingPubkeys, user]);
-
   // Protected route check
   useEffect(() => {
     if (_hasHydrated && !isAuthLoading && !isLoggedIn) {
@@ -55,7 +50,7 @@ export default function HomePage() {
     );
   }
 
-  if (!isLoggedIn) return null;
+  if (!isLoggedIn || !user) return null;
 
   return (
     <MainLayout>
@@ -67,17 +62,17 @@ export default function HomePage() {
         <div className="flex w-full" role="tablist">
           <button
             role="tab"
-            aria-selected={activeTab === "global"}
-            onClick={() => setActiveTab("global")}
+            aria-selected={activeTab === "forYou"}
+            onClick={() => setActiveTab("forYou")}
             className={`flex-1 py-4 text-sm font-bold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 relative ${
-              activeTab === "global" ? "text-blue-500" : "text-gray-500"
+              activeTab === "forYou" ? "text-blue-500" : "text-gray-500"
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
               <Sparkles size={16} />
-              <span>Global</span>
+              <span>For You</span>
             </div>
-            {activeTab === "global" && (
+            {activeTab === "forYou" && (
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-blue-500 rounded-full" />
             )}
           </button>
@@ -104,16 +99,79 @@ export default function HomePage() {
       <PostComposer />
 
       <div className="pb-20">
-        <FeedList 
-          key={activeTab} 
-          filter={filter} 
-          emptyMessage={
-            activeTab === "following" 
-              ? "Try following some people to see their posts here!" 
-              : "Nothing to see here yet."
-          }
-        />
+        {activeTab === "forYou" ? (
+          <ForYouFeedTab 
+            viewerPubkey={user.pubkey} 
+            followingList={followingPubkeys} 
+          />
+        ) : (
+          <FollowingFeedTab 
+            followingList={followingPubkeys} 
+            viewerPubkey={user.pubkey}
+          />
+        )}
       </div>
     </MainLayout>
+  );
+}
+
+function ForYouFeedTab({ viewerPubkey, followingList }: { viewerPubkey: string; followingList: string[] }) {
+  const { posts, newCount, isLoading, isEnriching, flushNewPosts, loadMore, hasMore } = 
+    useForYouFeed({ viewerPubkey, followingList });
+
+  const handleFlush = useCallback(() => {
+    flushNewPosts();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [flushNewPosts]);
+
+  return (
+    <div className="relative">
+      <NewPostsIsland count={newCount} onFlush={handleFlush} />
+      
+      {isEnriching && (
+        <div className="flex items-center justify-center gap-2 py-3 bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest border-b border-gray-100 dark:border-gray-900">
+          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+          Personalizing your feed…
+        </div>
+      )}
+
+      <FeedList 
+        posts={posts}
+        isLoading={isLoading}
+        loadMore={loadMore}
+        hasMore={hasMore}
+        emptyMessage="Looking for something for you… Try following more people!"
+      />
+    </div>
+  );
+}
+
+function FollowingFeedTab({ followingList, viewerPubkey }: { followingList: string[]; viewerPubkey: string }) {
+  const authors = followingList.length > 0 ? followingList : [viewerPubkey];
+  
+  const { posts, newCount, isLoading, flushNewPosts, loadMore, hasMore } =
+    usePausedFeed({
+      filter: {
+        kinds: [1],
+        authors,
+      },
+    });
+
+  const handleFlush = useCallback(() => {
+    flushNewPosts();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [flushNewPosts]);
+
+  return (
+    <div className="relative">
+      <NewPostsIsland count={newCount} onFlush={handleFlush} />
+      <FeedList 
+        posts={posts}
+        isLoading={isLoading}
+        loadMore={loadMore}
+        hasMore={hasMore}
+        emptyMessage="Try following some people to see their posts here!" 
+      />
+    </div>
   );
 }

@@ -1,30 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import { NDKFilter } from "@nostr-dev-kit/ndk";
-import { usePausedFeed } from "@/hooks/usePausedFeed";
-import { NewPostsIsland } from "./NewPostsIsland";
+import { useEffect, useRef } from "react";
 import { PostCard } from "@/components/post/PostCard";
 import { FeedSkeleton } from "./FeedSkeleton";
+import { NDKEvent } from "@nostr-dev-kit/ndk";
 
 interface FeedListProps {
-  filter: NDKFilter;
+  posts: NDKEvent[];
+  isLoading: boolean;
+  loadMore: () => void;
+  hasMore: boolean;
   emptyMessage?: string;
 }
 
-export function FeedList({ filter, emptyMessage = "Nothing to see here yet." }: FeedListProps) {
-  const { posts, newCount, isLoading, flushNewPosts, loadMore, hasMore } =
-    usePausedFeed({ filter });
-
-  const listTopRef = useRef<HTMLDivElement>(null);
-
-  // Scroll to top when flushing new posts
-  const handleFlush = useCallback(() => {
-    flushNewPosts();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [flushNewPosts]);
-
-  // Infinite scroll — Intersection Observer for load more
+export function FeedList({ 
+  posts, 
+  isLoading, 
+  loadMore, 
+  hasMore, 
+  emptyMessage = "Nothing to see here yet." 
+}: FeedListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -46,13 +41,7 @@ export function FeedList({ filter, emptyMessage = "Nothing to see here yet." }: 
 
   return (
     <div className="relative">
-      {/* Island — fixed, appears when new posts are in buffer */}
-      <NewPostsIsland count={newCount} onFlush={handleFlush} />
-
-      {/* Anchor for scroll-to-top */}
-      <div ref={listTopRef} />
-
-      {/* Loading skeleton */}
+      {/* Loading skeleton for initial load */}
       {isLoading && posts.length === 0 && (
         <FeedSkeleton />
       )}
