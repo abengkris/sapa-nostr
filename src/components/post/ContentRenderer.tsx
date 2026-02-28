@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { QuoteRenderer } from "./QuoteRenderer";
+import { Mention } from "./Mention";
 
 interface ContentRendererProps {
   content: string;
@@ -11,71 +12,100 @@ interface ContentRendererProps {
 
 export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => {
   // Regex patterns
-  const URL_REGEX = /(https?:\/\/[^\s]+)/g;
-  const HASHTAG_REGEX = /#(\w+)/g;
+  const URL_REGEX = /https?:\/\/[^\s]+/gi;
+  const HASHTAG_REGEX = /#\w+/g;
   const NOSTR_URI_REGEX = /(nostr:)?(npub1|note1|nevent1|naddr1|nprofile1)[0-9a-z]+/gi;
   const IMAGE_REGEX = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
   const VIDEO_REGEX = /\.(mp4|webm|ogg)(\?.*)?$/i;
 
-  const parts = content.split(/(\s+)/);
-  
   // Track quoted notes to avoid double rendering
   const quotedIds = new Set<string>();
+
+  // Tokenize the content to identify links, tags, and URIs
+  const tokenize = (text: string) => {
+    const combinedRegex = new RegExp(
+      `(${URL_REGEX.source})|(${HASHTAG_REGEX.source})|(${NOSTR_URI_REGEX.source})`,
+      "gi"
+    );
+
+    const tokens = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = combinedRegex.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        tokens.push({ type: "text", value: text.slice(lastIndex, match.index) });
+      }
+
+      const value = match[0];
+      
+      if (value.match(URL_REGEX)) {
+        tokens.push({ type: "url", value });
+      } else if (value.match(HASHTAG_REGEX)) {
+        tokens.push({ type: "hashtag", value });
+      } else if (value.match(NOSTR_URI_REGEX)) {
+        tokens.push({ type: "nostr", value });
+      }
+
+      lastIndex = combinedRegex.lastIndex;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      tokens.push({ type: "text", value: text.slice(lastIndex) });
+    }
+
+    return tokens;
+  };
+
+  const tokens = tokenize(content);
 
   return (
     <div className="text-gray-900 dark:text-gray-100 break-words whitespace-pre-wrap leading-normal">
       <div>
-        {parts.map((part, i) => {
-          // 1. Handle URLs
-          if (part.match(URL_REGEX)) {
-            const cleanUrl = part.replace(/[.,;]$/, "");
-            
-            // If it's an image or video, don't render the text/link here
-            // as it will be displayed in the Media Section below.
+        {tokens.map((token, i) => {
+          if (token.type === "url") {
+            const cleanUrl = token.value.replace(/[.,;]$/, "");
             if (cleanUrl.match(IMAGE_REGEX) || cleanUrl.match(VIDEO_REGEX)) {
               return null;
             }
-
             return (
               <a key={i} href={cleanUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all" onClick={(e) => e.stopPropagation()}>
-                {part}
+                {token.value}
               </a>
             );
           }
 
-          // 2. Handle Hashtags
-          if (part.match(HASHTAG_REGEX)) {
-            const tag = part.slice(1).replace(/[^\w]/g, "");
+          if (token.type === "hashtag") {
+            const tag = token.value.slice(1);
             return (
               <Link key={i} href={`/search?q=${tag}`} className="text-blue-500 hover:underline" onClick={(e) => e.stopPropagation()}>
-                {part}
+                {token.value}
               </Link>
             );
           }
 
-          // 3. Handle Nostr URIs (Quotes/Mentions)
-          if (part.match(NOSTR_URI_REGEX)) {
-            const uri = part.startsWith("nostr:") ? part.slice(6) : part;
-            const prefix = uri.slice(0, 4);
+          if (token.type === "nostr") {
+            const cleanUri = token.value.replace(/[.,;]$/, "");
+            const uriWithoutScheme = cleanUri.startsWith("nostr:") ? cleanUri.slice(6) : cleanUri;
+            const prefix = uriWithoutScheme.slice(0, 4);
             
-            // If it's a note or nevent, we'll render it as a quote below
-            if (prefix === "note" || prefix === "neve") {
-              quotedIds.add(uri);
+            if (prefix === "npub" || prefix === "npro") {
+              return <Mention key={i} uri={cleanUri} />;
+            }
+
+            if (prefix === "note" || prefix === "neve" || prefix === "nadd") {
+              quotedIds.add(uriWithoutScheme);
               return (
-                <Link key={i} href={`/post/${uri}`} className="text-blue-500 hover:underline break-all" onClick={(e) => e.stopPropagation()}>
-                  {part}
+                <Link key={i} href={`/post/${uriWithoutScheme}`} className="text-blue-500 hover:underline break-all font-mono text-[10px] bg-gray-100 dark:bg-gray-900 px-1 rounded inline-block translate-y-[-1px]" onClick={(e) => e.stopPropagation()}>
+                  {uriWithoutScheme.slice(0, 12)}...{uriWithoutScheme.slice(-4)}
                 </Link>
               );
             }
-
-            return (
-              <Link key={i} href={`/${uri}`} className="text-blue-500 hover:underline break-all" onClick={(e) => e.stopPropagation()}>
-                {part}
-              </Link>
-            );
           }
 
-          return part;
+          return <span key={i}>{token.value}</span>;
         })}
       </div>
 
@@ -88,8 +118,8 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
 
       {/* Media Section */}
       <div className="flex flex-col gap-2 mt-3">
-        {parts.filter(p => p.match(URL_REGEX)).map((url, i) => {
-          const cleanUrl = url.replace(/[.,;]$/, "");
+        {tokens.filter(t => t.type === "url").map((token, i) => {
+          const cleanUrl = token.value.replace(/[.,;]$/, "");
           
           if (cleanUrl.match(IMAGE_REGEX)) {
             return (
