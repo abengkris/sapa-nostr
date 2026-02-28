@@ -52,7 +52,7 @@ export const Sidebar = () => {
           <>
             <SidebarItem href="/notifications" icon={Bell} label="Notifications" badge={unreadCount} />
             <SidebarItem href="/messages" icon={MessageSquare} label="Messages" />
-            <SidebarItem href={`/${user?.pubkey}`} icon={User} label="Profile" />
+            <SidebarItem href={`/${user?.npub}`} icon={User} label="Profile" />
           </>
         )}
       </div>

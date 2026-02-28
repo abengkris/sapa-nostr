@@ -46,7 +46,7 @@ export default function SearchPage() {
               {profiles.map((user) => (
                 <Link
                   key={user.pubkey}
-                  href={`/${user.pubkey}`}
+                  href={`/${user.npub}`}
                   className="flex flex-col items-center min-w-[100px] p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
                 >
                   <Image

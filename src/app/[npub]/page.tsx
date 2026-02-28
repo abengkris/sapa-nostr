@@ -14,13 +14,16 @@ import { useFollowing } from "@/hooks/useFollowing";
 import Image from "next/image";
 
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
+import { decodeToHex } from "@/lib/utils/nip19";
 
 type ProfileTab = "posts" | "replies" | "media" | "likes";
 
 export default function ProfilePage({ params }: { params: Promise<{ npub: string }> }) {
   const { npub } = use(params);
+  const hexPubkey = decodeToHex(npub);
+  
   const [activeTab, setActiveTab] = React.useState<ProfileTab>("posts");
-  const { profile, loading: profileLoading } = useProfile(npub);
+  const { profile, loading: profileLoading } = useProfile(hexPubkey);
   
   const { following: userFollowing } = useFollowing(useAuthStore.getState().user?.pubkey);
   const { ndk } = useNDK();
@@ -30,18 +33,18 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const feedKinds = activeTab === "likes" ? [7] : [1];
   const disableFiltering = activeTab === "replies" || activeTab === "likes";
   
-  const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([npub], feedKinds, disableFiltering);
+  const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([hexPubkey], feedKinds, disableFiltering);
 
-  const isFollowing = userFollowing.includes(npub);
-  const isOwnProfile = currentUser?.pubkey === npub;
+  const isFollowing = userFollowing.includes(hexPubkey);
+  const isOwnProfile = currentUser?.pubkey === hexPubkey;
 
   const handleFollowToggle = async () => {
     if (!ndk) return;
     try {
       if (isFollowing) {
-        await unfollow(ndk, npub);
+        await unfollow(ndk, hexPubkey);
       } else {
-        await follow(ndk, npub);
+        await follow(ndk, hexPubkey);
       }
     } catch (err) {
       console.error(err);

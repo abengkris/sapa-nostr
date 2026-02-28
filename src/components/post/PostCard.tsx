@@ -60,14 +60,19 @@ export const PostCard: React.FC<PostCardProps> = ({
     ? "You" 
     : (repostAuthorProfile?.name || `${event.pubkey.slice(0, 8)}...`);
 
-  // Detect Replying To
+  // Use NIP-19 encoded strings for URLs
+  const userNpub = displayEvent.author.npub;
+  const eventNoteId = displayEvent.encode();
+
+  // Get the pubkey we are replying to
   const replyPTag = displayEvent.tags.find(t => t[0] === 'p' && t[3] === 'reply') || 
                     [...displayEvent.tags].reverse().find(t => t[0] === 'p');
   const replyingToPubkey = replyPTag ? replyPTag[1] : null;
+  const replyingToNpub = replyingToPubkey ? ndk?.getUser({ pubkey: replyingToPubkey }).npub : null;
 
   return (
     <div 
-      onClick={() => router.push(`/post/${displayEvent.id}`)}
+      onClick={() => router.push(`/post/${eventNoteId}`)}
       className={`flex flex-col p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer dark:border-gray-800 dark:hover:bg-gray-900/50 ${
         isFocal ? "bg-blue-50/5 dark:bg-blue-900/5 border-l-4 border-l-blue-500" : ""
       }`}
@@ -91,7 +96,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
         {/* Avatar */}
         <div className="mr-3 shrink-0 z-10" onClick={(e) => e.stopPropagation()}>
-          <Link href={`/${displayEvent.pubkey}`}>
+          <Link href={`/${userNpub}`}>
             <Image
               src={avatar}
               alt={displayName}
@@ -107,7 +112,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-0.5">
             <div className="flex items-center space-x-1 truncate" onClick={(e) => e.stopPropagation()}>
-              <Link href={`/${displayEvent.pubkey}`} className="font-bold hover:underline truncate">
+              <Link href={`/${userNpub}`} className="font-bold hover:underline truncate">
                 {displayName}
               </Link>
               <span className="text-gray-400 text-xs">·</span>
@@ -121,9 +126,9 @@ export const PostCard: React.FC<PostCardProps> = ({
           </div>
 
           {/* Replying to label */}
-          {replyingToPubkey && !isRepost && (
+          {replyingToNpub && !isRepost && (
             <div className="text-gray-500 text-xs mb-1" onClick={(e) => e.stopPropagation()}>
-              Replying to <Link href={`/${replyingToPubkey}`} className="text-blue-500 hover:underline">@{replyingToPubkey.slice(0, 8)}...</Link>
+              Replying to <Link href={`/${replyingToNpub}`} className="text-blue-500 hover:underline">@{replyingToNpub.slice(0, 12)}...</Link>
             </div>
           )}
 

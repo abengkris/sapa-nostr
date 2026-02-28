@@ -55,18 +55,18 @@ export default function NotificationsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                                       <div className="flex items-center space-x-2 mb-2">
-                                        <Image 
-                                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`} 
-                                          width={32}
-                                          height={32}
-                                          className="w-8 h-8 rounded-full bg-gray-200"
-                                          alt="User"
-                                          unoptimized
-                                        />
-                                        <Link href={`/${notif.pubkey}`} className="font-bold hover:underline truncate">
-                    
-                        {notif.pubkey.slice(0, 8)}...
-                      </Link>
+                                                            <Image 
+                                                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`} 
+                                                              width={32}
+                                                              height={32}
+                                                              className="w-8 h-8 rounded-full bg-gray-200"
+                                                              alt="User"
+                                                              unoptimized
+                                                            />
+                                                            <Link href={`/${notif.author.npub}`} className="font-bold hover:underline truncate">
+                                                              {notif.pubkey.slice(0, 8)}...
+                                                            </Link>
+                                        
                       <span className="text-gray-500 text-sm">
                         {notif.type === 'like' && "liked your post"}
                         {notif.type === 'repost' && "reposted your post"}

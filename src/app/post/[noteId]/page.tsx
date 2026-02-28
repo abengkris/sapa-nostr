@@ -6,9 +6,11 @@ import { PostCard } from "@/components/post/PostCard";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useThread } from "@/hooks/useThread";
+import { decodeToHex } from "@/lib/utils/nip19";
 
 export default function PostDetailPage({ params }: { params: Promise<{ noteId: string }> }) {
   const { noteId } = use(params);
+  const hexId = decodeToHex(noteId);
   const { 
     focalPost, 
     ancestors, 
@@ -17,7 +19,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ noteId: s
     loadingReplies, 
     hasMoreReplies, 
     loadMoreReplies 
-  } = useThread(noteId);
+  } = useThread(hexId);
   const router = useRouter();
 
   return (

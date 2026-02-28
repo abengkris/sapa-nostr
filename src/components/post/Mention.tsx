@@ -34,7 +34,7 @@ export const Mention: React.FC<MentionProps> = ({ uri }) => {
 
   return (
     <Link 
-      href={`/${pubkey}`} 
+      href={`/${cleanUri.startsWith("npub") ? cleanUri : nip19.npubEncode(pubkey)}`} 
       className="text-blue-500 hover:underline font-medium"
       onClick={(e) => e.stopPropagation()}
     >
