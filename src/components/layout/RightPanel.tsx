@@ -13,6 +13,7 @@ export const RightPanel = () => {
         <input
           type="text"
           placeholder="Search Nostr..."
+          aria-label="Search"
           className="block w-full pl-10 pr-3 py-2 border border-transparent rounded-full bg-gray-100 dark:bg-gray-900 focus:outline-none focus:bg-white dark:focus:bg-black focus:ring-1 focus:ring-blue-500 transition-all text-sm"
         />
       </div>
