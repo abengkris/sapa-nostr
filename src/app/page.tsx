@@ -1,18 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PostComposer } from "@/components/post/PostComposer";
-import { PostCard } from "@/components/post/PostCard";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
-import { useFeed } from "@/hooks/useFeed";
-import { useWoT } from "@/hooks/useWoT";
 import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, Users } from "lucide-react";
-
-import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { FeedList } from "@/components/feed/FeedList";
+import { NDKFilter } from "@nostr-dev-kit/ndk";
 
 export default function HomePage() {
   const { isLoggedIn, user, isLoading: isAuthLoading, _hasHydrated } = useAuthStore();
@@ -20,15 +16,10 @@ export default function HomePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"following" | "global">("global");
 
-  // Get following pubkeys from user contact list (Depth 1)
   const [followingPubkeys, setFollowingPubkeys] = useState<string[]>([]);
-
-  // Get Web of Trust pubkeys (Depth 2)
-  const { wotPubkeys, loading: wotLoading } = useWoT(user?.pubkey, 2);
 
   useEffect(() => {
     if (isReady && isLoggedIn && user) {
-      // Fetch user's following list (kind:3)
       ndk?.fetchEvent({ kinds: [3], authors: [user.pubkey] }).then((event) => {
         if (event) {
           const pubkeys = event.tags
@@ -40,12 +31,14 @@ export default function HomePage() {
     }
   }, [ndk, isReady, isLoggedIn, user]);
 
-  // Determine which authors to show based on active tab
-  const feedAuthors = activeTab === "following" 
-    ? followingPubkeys 
-    : []; // Empty array for Global = search across all users
-    
-  const { posts, loading: feedLoading, loadMore, hasMore } = useFeed(feedAuthors);
+  const filter = useMemo((): NDKFilter => {
+    if (activeTab === "global") {
+      return { kinds: [1] };
+    }
+    // For following tab, if we don't have following list yet, use user's own pubkey as placeholder
+    const authors = followingPubkeys.length > 0 ? followingPubkeys : (user ? [user.pubkey] : []);
+    return { kinds: [1], authors };
+  }, [activeTab, followingPubkeys, user]);
 
   // Protected route check
   useEffect(() => {
@@ -111,36 +104,15 @@ export default function HomePage() {
       <PostComposer />
 
       <div className="pb-20">
-        <ErrorBoundary>
-          {feedLoading && posts.length === 0 ? (
-            <FeedSkeleton />
-          ) : (
-            posts.map((post) => (
-              <PostCard key={post.id} event={post} />
-            ))
-          )}
-
-          {posts.length === 0 && !feedLoading && (
-            <div className="p-12 text-center text-gray-500">
-              <p className="text-lg font-medium">Nothing to see here yet.</p>
-              {activeTab === "following" && (
-                <p className="text-sm mt-2">Try following some people or check the Global tab!</p>
-              )}
-            </div>
-          )}
-        </ErrorBoundary>
-        
-        {hasMore && posts.length > 0 && (
-          <div className="p-8 text-center">
-            <button 
-              onClick={() => loadMore()}
-              disabled={feedLoading}
-              className="text-blue-500 text-sm font-bold hover:underline disabled:opacity-50"
-            >
-              {feedLoading ? "Loading..." : "Load more"}
-            </button>
-          </div>
-        )}
+        <FeedList 
+          key={activeTab} 
+          filter={filter} 
+          emptyMessage={
+            activeTab === "following" 
+              ? "Try following some people to see their posts here!" 
+              : "Nothing to see here yet."
+          }
+        />
       </div>
     </MainLayout>
   );
