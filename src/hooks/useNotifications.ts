@@ -32,40 +32,44 @@ export function useNotifications() {
       filter.until = oldestTimestampRef.current - 1;
     }
 
-    const sub = ndk.subscribe(filter, { closeOnEose: true });
-    
-    sub.on("event", (event: NDKEvent) => {
-      if (event.pubkey === user.pubkey) return;
+    const sub = ndk.subscribe(
+      [filter, { cacheUnconstrainFilter: ["limit"] }], 
+      { closeOnEose: true, groupable: false },
+      undefined,
+      {
+        onEvent: (event: NDKEvent) => {
+          if (event.pubkey === user.pubkey) return;
 
-      const notif = event as NotificationEvent;
-      if (event.kind === 1) {
-        const isReply = event.tags.some(t => t[0] === 'e');
-        notif.type = isReply ? 'reply' : 'mention';
-      } else if (event.kind === 6) {
-        notif.type = 'repost';
-      } else if (event.kind === 7) {
-        notif.type = 'like';
-      } else if (event.kind === 9735) {
-        notif.type = 'zap';
-      }
+          const notif = event as NotificationEvent;
+          if (event.kind === 1) {
+            const isReply = event.tags.some(t => t[0] === 'e');
+            notif.type = isReply ? 'reply' : 'mention';
+          } else if (event.kind === 6) {
+            notif.type = 'repost';
+          } else if (event.kind === 7) {
+            notif.type = 'like';
+          } else if (event.kind === 9735) {
+            notif.type = 'zap';
+          }
 
-      setNotifications((prev) => {
-        if (prev.find((n) => n.id === notif.id)) return prev;
-        const newNotifs = [...prev, notif].sort(
-          (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
-        );
-        
-        if (newNotifs.length > 0) {
-          oldestTimestampRef.current = newNotifs[newNotifs.length - 1].created_at;
+          setNotifications((prev) => {
+            if (prev.find((n) => n.id === notif.id)) return prev;
+            const newNotifs = [...prev, notif].sort(
+              (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
+            );
+            
+            if (newNotifs.length > 0) {
+              oldestTimestampRef.current = newNotifs[newNotifs.length - 1].created_at;
+            }
+            
+            return newNotifs;
+          });
+        },
+        onEose: () => {
+          setLoading(false);
         }
-        
-        return newNotifs;
-      });
-    });
-
-    sub.on("eose", () => {
-      setLoading(false);
-    });
+      }
+    );
   }, [ndk, isReady, isLoggedIn, user]);
 
   useEffect(() => {
@@ -78,31 +82,36 @@ export function useNotifications() {
       since: Math.floor(Date.now() / 1000),
     };
 
-    const sub = ndk.subscribe(filter, { closeOnEose: false });
-    subscriptionRef.current = sub;
+    const sub = ndk.subscribe(
+      filter,
+      { closeOnEose: false, groupingDelay: 200 },
+      undefined,
+      {
+        onEvent: (event: NDKEvent) => {
+          if (event.pubkey === user.pubkey) return;
 
-    sub.on("event", (event: NDKEvent) => {
-      if (event.pubkey === user.pubkey) return;
+          const notif = event as NotificationEvent;
+          if (event.kind === 1) {
+            const isReply = event.tags.some(t => t[0] === 'e');
+            notif.type = isReply ? 'reply' : 'mention';
+          } else if (event.kind === 6) {
+            notif.type = 'repost';
+          } else if (event.kind === 7) {
+            notif.type = 'like';
+          } else if (event.kind === 9735) {
+            notif.type = 'zap';
+          }
 
-      const notif = event as NotificationEvent;
-      if (event.kind === 1) {
-        const isReply = event.tags.some(t => t[0] === 'e');
-        notif.type = isReply ? 'reply' : 'mention';
-      } else if (event.kind === 6) {
-        notif.type = 'repost';
-      } else if (event.kind === 7) {
-        notif.type = 'like';
-      } else if (event.kind === 9735) {
-        notif.type = 'zap';
+          setNotifications((prev) => {
+            if (prev.find((n) => n.id === notif.id)) return prev;
+            return [notif, ...prev].sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
+          });
+
+          setUnreadCount((prev) => prev + 1);
+        }
       }
-
-      setNotifications((prev) => {
-        if (prev.find((n) => n.id === notif.id)) return prev;
-        return [notif, ...prev].sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
-      });
-
-      setUnreadCount((prev) => prev + 1);
-    });
+    );
+    subscriptionRef.current = sub;
 
     // Initial fetch
     fetchNotifications();

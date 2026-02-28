@@ -51,7 +51,10 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
     // Stop previous fetch subscription if exists
     if (subscriptionRef.current) subscriptionRef.current.stop();
 
-    const sub = ndk.subscribe(filter, { closeOnEose: true });
+    const sub = ndk.subscribe(
+      [filter, { cacheUnconstrainFilter: ["limit"] }], 
+      { closeOnEose: true, groupable: false }
+    );
     subscriptionRef.current = sub;
 
     sub.on("event", (event: NDKEvent) => {
@@ -116,37 +119,46 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
       realtimeFilter.authors = authors;
     }
 
-    const sub = ndk.subscribe(realtimeFilter, { closeOnEose: false });
-    realtimeSubRef.current = sub;
+    const sub = ndk.subscribe(
+      realtimeFilter,
+      { 
+        closeOnEose: false,
+        groupingDelay: 200,
+        groupingDelayType: "at-most"
+      },
+      undefined,
+      {
+        onEvent: (event: NDKEvent) => {
+          setPosts((prev) => {
+            if (prev.find((p) => p.id === event.id)) return prev;
+            
+            // Filter based on Concept #5: Feed filtering (same as fetchFeed)
+            let shouldInclude = true;
+            if (!disableFiltering && kinds.includes(1)) {
+              const eTags = event.tags.filter(t => t[0] === 'e');
+              const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
+              
+              if (isReply) {
+                shouldInclude = false;
+                // 1. Thread continuation (reply to self)
+                const replyPTag = event.tags.find(t => t[0] === 'p');
+                if (replyPTag && replyPTag[1] === event.pubkey) shouldInclude = true;
+                // 2. Reply to someone followed
+                if (replyPTag && authors.includes(replyPTag[1])) shouldInclude = true;
+              }
+            }
 
-    sub.on("event", (event: NDKEvent) => {
-      setPosts((prev) => {
-        if (prev.find((p) => p.id === event.id)) return prev;
-        
-        // Filter based on Concept #5: Feed filtering (same as fetchFeed)
-        let shouldInclude = true;
-        if (!disableFiltering && kinds.includes(1)) {
-          const eTags = event.tags.filter(t => t[0] === 'e');
-          const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
-          
-          if (isReply) {
-            shouldInclude = false;
-            // 1. Thread continuation (reply to self)
-            const replyPTag = event.tags.find(t => t[0] === 'p');
-            if (replyPTag && replyPTag[1] === event.pubkey) shouldInclude = true;
-            // 2. Reply to someone followed
-            if (replyPTag && authors.includes(replyPTag[1])) shouldInclude = true;
-          }
+            if (!shouldInclude) return prev;
+
+            const newPosts = [event, ...prev].sort(
+              (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
+            );
+            return newPosts.slice(0, MAX_POSTS);
+          });
         }
-
-        if (!shouldInclude) return prev;
-
-        const newPosts = [event, ...prev].sort(
-          (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
-        );
-        return newPosts.slice(0, MAX_POSTS);
-      });
-    });
+      }
+    );
+    realtimeSubRef.current = sub;
 
     return () => {
       if (realtimeSubRef.current) realtimeSubRef.current.stop();

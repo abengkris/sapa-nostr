@@ -64,6 +64,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
         if (publicKey) {
           const user = instance.getUser({ pubkey: publicKey });
           user.ndk = instance;
+          instance.activeUser = user; // Enable automatic mute filtering
           // Trigger profile fetch in background
           user.fetchProfile().finally(() => {
             setUser(user);

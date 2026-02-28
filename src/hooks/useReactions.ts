@@ -21,30 +21,39 @@ export function useReactions(eventId?: string) {
       "#e": [eventId],
     };
 
-    const sub = ndk.subscribe(filter, { closeOnEose: false });
-
-    sub.on("event", (event: NDKEvent) => {
-      if (event.kind === 7) {
-        if (event.content === "+" || event.content === "") {
-          setLikes((prev) => prev + 1);
-        } else if (event.content === "-") {
-          setDislikes((prev) => prev + 1);
-        }
-      } else if (event.kind === 6) {
-        setReposts((prev) => prev + 1);
-      }
-
-      // Track if current user has reacted
-      if (ndk.signer) {
-        ndk.signer.user().then(user => {
-          if (user && event.pubkey === user.pubkey) {
-            if (event.kind === 7) {
-              setUserReacted(event.content || "+");
+    const sub = ndk.subscribe(
+      filter,
+      { 
+        closeOnEose: false, 
+        groupingDelay: 500, // Wait up to 500ms to group multiple PostCard reaction requests
+        groupingDelayType: "at-most" 
+      },
+      undefined, // relaySet
+      {
+        onEvent: (event: NDKEvent) => {
+          if (event.kind === 7) {
+            if (event.content === "+" || event.content === "") {
+              setLikes((prev) => prev + 1);
+            } else if (event.content === "-") {
+              setDislikes((prev) => prev + 1);
             }
+          } else if (event.kind === 6) {
+            setReposts((prev) => prev + 1);
           }
-        });
+
+          // Track if current user has reacted
+          if (ndk.signer) {
+            ndk.signer.user().then(user => {
+              if (user && event.pubkey === user.pubkey) {
+                if (event.kind === 7) {
+                  setUserReacted(event.content || "+");
+                }
+              }
+            });
+          }
+        }
       }
-    });
+    );
 
     return () => sub.stop();
   }, [ndk, isReady, eventId]);
