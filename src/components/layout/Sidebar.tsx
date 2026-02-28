@@ -10,17 +10,18 @@ import { useNotifications } from "@/hooks/useNotifications";
 
 const SidebarItem = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: number }) => {
   const pathname = usePathname();
-  const active = pathname === href;
+  // More robust active state check for nested routes
+  const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <Link
       href={href}
       className={`flex items-center space-x-4 p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors relative ${
-        active ? "font-bold" : ""
+        active ? "font-bold text-blue-500" : ""
       }`}
     >
       <div className="relative">
-        <Icon size={26} className={active ? "text-blue-500" : ""} strokeWidth={active ? 2.5 : 2} />
+        <Icon size={26} className={active ? "text-blue-500" : ""} strokeWidth={active ? 3 : 2} />
         {badge !== undefined && badge > 0 && (
           <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white dark:border-black">
             {badge > 9 ? "9+" : badge}
@@ -51,7 +52,7 @@ export const Sidebar = () => {
           <>
             <SidebarItem href="/notifications" icon={Bell} label="Notifications" badge={unreadCount} />
             <SidebarItem href="/messages" icon={MessageSquare} label="Messages" />
-            <SidebarItem href={`/p/${user?.pubkey}`} icon={User} label="Profile" />
+            <SidebarItem href={`/${user?.pubkey}`} icon={User} label="Profile" />
           </>
         )}
       </div>

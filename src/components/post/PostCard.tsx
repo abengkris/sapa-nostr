@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { MessageCircle, Repeat2, Heart, Zap, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ZapModal } from "@/components/common/ZapModal";
 
 interface PostCardProps {
@@ -18,6 +19,7 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
   const { profile, loading: profileLoading } = useProfile(event.pubkey);
   const { likes, userReacted } = useReactions(event.id);
   const [showZapModal, setShowZapModal] = useState(false);
+  const router = useRouter();
 
   const createdAt = event.created_at 
     ? formatDistanceToNow(new Date(event.created_at * 1000), { addSuffix: true })
@@ -50,10 +52,13 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.pubkey}`;
 
   return (
-    <div className="flex p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer dark:border-gray-800 dark:hover:bg-gray-900/50">
+    <div 
+      onClick={() => router.push(`/post/${event.id}`)}
+      className="flex p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer dark:border-gray-800 dark:hover:bg-gray-900/50"
+    >
       {/* Avatar */}
-      <div className="mr-3 shrink-0">
-        <Link href={`/p/${event.pubkey}`}>
+      <div className="mr-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <Link href={`/${event.pubkey}`}>
           <Image
             src={avatar}
             alt={displayName}
@@ -68,8 +73,8 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center space-x-1 truncate">
-            <Link href={`/p/${event.pubkey}`} className="font-bold hover:underline truncate">
+          <div className="flex items-center space-x-1 truncate" onClick={(e) => e.stopPropagation()}>
+            <Link href={`/${event.pubkey}`} className="font-bold hover:underline truncate">
               {displayName}
             </Link>
             {profile?.nip05 && (

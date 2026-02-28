@@ -15,7 +15,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
     <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
       {/* Mobile Header */}
       <div className="sm:hidden sticky top-0 z-20 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 py-3">
-        <Link href={`/p/${user?.pubkey}`}>
+        <Link href={`/${user?.pubkey}`}>
           <Image
             src={user?.profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.pubkey}`}
             alt="Profile"

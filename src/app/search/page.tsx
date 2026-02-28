@@ -43,12 +43,12 @@ export default function SearchPage() {
         {!loading && debouncedQuery && profiles.length > 0 && (
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <h2 className="text-xl font-bold mb-4">People</h2>
-            <div className="flex overflow-x-auto pb-4 space-x-4">
+            <div className="flex overflow-x-auto pb-4 space-x-4 text-center">
               {profiles.map((user) => (
                 <Link
                   key={user.pubkey}
-                  href={`/p/${user.pubkey}`}
-                  className="flex flex-col items-center min-w-[100px] text-center p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+                  href={`/${user.pubkey}`}
+                  className="flex flex-col items-center min-w-[100px] p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
                 >
                   <Image
                     src={user.profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.pubkey}`}
