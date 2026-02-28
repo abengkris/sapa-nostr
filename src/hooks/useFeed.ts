@@ -33,13 +33,13 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
     }
 
     setLoading(true);
+    const fetchLimit = authors.length === 0 ? 50 : limit;
 
     const filter: NDKFilter = {
       kinds: kinds,
-      limit: limit,
+      limit: fetchLimit,
     };
 
-    // Only add authors to filter if provided
     if (authors && authors.length > 0) {
       filter.authors = authors;
     }
@@ -48,15 +48,18 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
       filter.until = oldestTimestampRef.current - 1;
     }
 
-    // Stop previous fetch subscription if exists
     if (subscriptionRef.current) subscriptionRef.current.stop();
+
+    const loadingTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 10000); // 10s safety timeout
 
     const sub = ndk.subscribe(
       filter, 
       { 
         closeOnEose: true,
         onEvent: (event: NDKEvent) => {
-          console.log("Feed event received:", event.id);
+          clearTimeout(loadingTimeout);
           setPosts((prev) => {
             if (prev.find((p) => p.id === event.id)) return prev;
             
@@ -64,35 +67,25 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
               (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
             );
 
-            // Filter based on Concept #5: Feed filtering
+            // Filter logic
             let filteredPosts = newPosts;
-            
             if (!disableFiltering && kinds.includes(1)) {
               filteredPosts = newPosts.filter(ev => {
                 const eTags = ev.tags.filter(t => t[0] === 'e');
                 const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
                 
-                if (!isReply) return true; // Standalone, Repost, Quote always show
-
-                // If it's a reply, only show if:
-                // 1. In global feed, we generally hide replies to keep it clean
+                if (!isReply) return true;
                 if (authors.length === 0) return false;
 
-                // 2. In following feed, show if it's a reply to someone the user follows
                 const replyPTag = ev.tags.find(t => t[0] === 'p');
                 if (replyPTag && authors.includes(replyPTag[1])) return true;
-                
-                // 3. Thread continuation (reply to self)
                 if (replyPTag && replyPTag[1] === ev.pubkey) return true;
 
                 return false;
               });
             }
 
-            // Keep state small for performance (virtualization ready)
             const slicedPosts = filteredPosts.slice(0, MAX_POSTS);
-
-            // Update oldest timestamp for pagination from the full list if possible
             const lastPost = slicedPosts[slicedPosts.length - 1];
             oldestTimestampRef.current = lastPost?.created_at;
 
@@ -100,13 +93,12 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
           });
         },
         onEose: () => {
-          console.log("Feed EOSE reached");
+          clearTimeout(loadingTimeout);
           setLoading(false);
         }
       }
     );
     subscriptionRef.current = sub;
-    console.log("Fetching feed with filter:", filter);
   }, [ndk, isReady, authors, limit, kinds, disableFiltering]);
 
   // Initial subscription for real-time updates (top of the feed)
@@ -132,7 +124,6 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
           setPosts((prev) => {
             if (prev.find((p) => p.id === event.id)) return prev;
             
-            // Filter based on Concept #5: Feed filtering (same as fetchFeed)
             let shouldInclude = true;
             if (!disableFiltering && kinds.includes(1)) {
               const eTags = event.tags.filter(t => t[0] === 'e');
@@ -140,10 +131,8 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
               
               if (isReply) {
                 shouldInclude = false;
-                // 1. Thread continuation (reply to self)
                 const replyPTag = event.tags.find(t => t[0] === 'p');
                 if (replyPTag && replyPTag[1] === event.pubkey) shouldInclude = true;
-                // 2. Reply to someone followed
                 if (replyPTag && authors.includes(replyPTag[1])) shouldInclude = true;
               }
             }
@@ -163,7 +152,7 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
     return () => {
       if (realtimeSubRef.current) realtimeSubRef.current.stop();
     };
-  }, [ndk, isReady, authors, kinds]);
+  }, [ndk, isReady, authors, kinds, disableFiltering]);
 
   // Initial fetch and global cleanup
   useEffect(() => {

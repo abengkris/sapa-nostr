@@ -39,8 +39,8 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
     });
 
     // Performance Optimization: Signature Verification Sampling
-    instance.initialValidationRatio = 0.5;
-    instance.lowestValidationRatio = 0.05;
+    instance.initialValidationRatio = 1.0;
+    instance.lowestValidationRatio = 1.0;
 
     // Monitor for invalid signatures
     instance.on("event:invalid-sig", (event) => {
