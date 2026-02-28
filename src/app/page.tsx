@@ -7,6 +7,7 @@ import { PostCard } from "@/components/post/PostCard";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/lib/ndk";
 import { useFeed } from "@/hooks/useFeed";
+import { useWoT } from "@/hooks/useWoT";
 import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, Users } from "lucide-react";
 
@@ -16,8 +17,11 @@ export default function HomePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"following" | "global">("global");
 
-  // Get following pubkeys from user contact list
+  // Get following pubkeys from user contact list (Depth 1)
   const [followingPubkeys, setFollowingPubkeys] = useState<string[]>([]);
+
+  // Get Web of Trust pubkeys (Depth 2)
+  const { wotPubkeys, loading: wotLoading } = useWoT(user?.pubkey, 2);
 
   useEffect(() => {
     if (isReady && isLoggedIn && user) {
@@ -33,8 +37,12 @@ export default function HomePage() {
     }
   }, [ndk, isReady, isLoggedIn, user]);
 
-  // Use following pubkeys for following tab, or empty array for global (useFeed handle all)
-  const feedAuthors = activeTab === "following" ? followingPubkeys : [];
+  // Determine which authors to show based on active tab
+  // Global tab now shows WoT Depth 2
+  const feedAuthors = activeTab === "following" 
+    ? followingPubkeys 
+    : (wotPubkeys.length > 0 ? wotPubkeys : []);
+    
   const { posts, loading: feedLoading } = useFeed(feedAuthors);
 
   // Protected route check
@@ -97,7 +105,7 @@ export default function HomePage() {
       <PostComposer />
 
       <div className="pb-20">
-        {feedLoading && posts.length === 0 ? (
+        {(feedLoading || (activeTab === 'global' && wotLoading && posts.length === 0)) && posts.length === 0 ? (
           <div className="space-y-4 p-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="animate-pulse flex space-x-4">
