@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, Users } from "lucide-react";
 
 export default function HomePage() {
-  const { isLoggedIn, user, isLoading: isAuthLoading } = useAuthStore();
+  const { isLoggedIn, user, isLoading: isAuthLoading, _hasHydrated } = useAuthStore();
   const { ndk, isReady } = useNDK();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"following" | "global">("global");
@@ -39,12 +39,12 @@ export default function HomePage() {
 
   // Protected route check
   useEffect(() => {
-    if (!isAuthLoading && !isLoggedIn) {
+    if (_hasHydrated && !isAuthLoading && !isLoggedIn) {
       router.push("/login");
     }
-  }, [isLoggedIn, isAuthLoading, router]);
+  }, [isLoggedIn, isAuthLoading, _hasHydrated, router]);
 
-  if (isAuthLoading) {
+  if (!_hasHydrated || isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
         <Loader2 className="animate-spin text-blue-500" size={48} />

@@ -9,7 +9,9 @@ interface AuthState {
   isLoggedIn: boolean;
   isLoading: boolean;
   loginType: 'nip07' | 'privateKey' | 'none';
+  _hasHydrated: boolean;
   
+  setHasHydrated: (state: boolean) => void;
   login: (ndk: NDK) => Promise<void>;
   loginWithPrivateKey: (ndk: NDK, privateKey: string) => Promise<void>;
   generateNewKey: (ndk: NDK) => Promise<string>;
@@ -26,7 +28,9 @@ export const useAuthStore = create<AuthState>()(
       isLoggedIn: false,
       isLoading: false,
       loginType: 'none',
+      _hasHydrated: false,
 
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
       setUser: (user) => set({ user }),
 
       login: async (ndk) => {
@@ -111,6 +115,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "sapa-auth",
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: (state) => {
+        return () => state?.setHasHydrated(true);
+      },
       // We don't want to persist the NDKUser object itself as it's complex and has circular refs
       // Instead, we persist the pubkey and re-instantiate if needed (this part is tricky)
       partialize: (state) => ({ 

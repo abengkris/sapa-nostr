@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import NDK, { NDKRelaySet, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
+import NDK, { NDKRelaySet, NDKPrivateKeySigner, NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import { useAuthStore } from "@/store/auth";
 
@@ -24,7 +24,7 @@ const NDKContext = createContext<NDKContextType>({
 export const NDKProvider = ({ children }: { children: ReactNode }) => {
   const [ndk, setNdk] = useState<NDK | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const { privateKey, isLoggedIn, loginType } = useAuthStore();
+  const { privateKey, isLoggedIn, loginType, publicKey, setUser } = useAuthStore();
 
   useEffect(() => {
     // Only run on client
@@ -37,20 +37,40 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
     });
 
     // Handle session restoration
-    if (isLoggedIn && loginType === 'privateKey' && privateKey) {
-      instance.signer = new NDKPrivateKeySigner(privateKey);
-    }
-    // Note: nip07 session restoration usually needs a fresh user interaction 
-    // or checking window.nostr availability, but we'll focus on privateKey first.
+    const restoreSession = async () => {
+      if (isLoggedIn) {
+        if (loginType === 'privateKey' && privateKey) {
+          instance.signer = new NDKPrivateKeySigner(privateKey);
+        } else if (loginType === 'nip07') {
+          // Check if window.nostr is available
+          if (window.nostr) {
+            instance.signer = new NDKNip07Signer();
+          }
+        }
+
+        // Re-populate the user object in the store
+        if (publicKey) {
+          const user = instance.getUser({ pubkey: publicKey });
+          user.ndk = instance;
+          // Trigger profile fetch in background
+          user.fetchProfile().finally(() => {
+            setUser(user);
+          });
+          setUser(user);
+        }
+      }
+    };
+
+    restoreSession();
 
     instance.connect().then(() => {
       setNdk(instance);
       setIsReady(true);
-      console.log("NDK connected with Dexie cache");
+      console.log("NDK connected and session restored");
     }).catch(err => {
       console.error("NDK connection failed:", err);
     });
-  }, [isLoggedIn, loginType, privateKey]);
+  }, [isLoggedIn, loginType, privateKey, publicKey, setUser]);
 
   return (
     <NDKContext.Provider value={{ ndk, isReady }}>
