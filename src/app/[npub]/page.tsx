@@ -11,6 +11,8 @@ import { useNDK } from "@/lib/ndk";
 import { follow, unfollow } from "@/lib/actions/follow";
 import { useFollowing } from "@/hooks/useFollowing";
 
+import Image from "next/image";
+
 export default function ProfilePage({ params }: { params: Promise<{ npub: string }> }) {
   const { npub } = use(params);
   const { profile, loading: profileLoading } = useProfile(npub);
@@ -51,16 +53,25 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   return (
     <MainLayout>
       {/* Header */}
-      <div className="h-48 bg-gray-200 dark:bg-gray-800 relative">
-        {profile?.banner && (
-          <img src={profile.banner} alt="Banner" className="w-full h-full object-cover" />
+      <div className="h-48 bg-gray-200 dark:bg-gray-800 relative overflow-hidden">
+        {profile?.banner ? (
+          <Image src={profile.banner} alt="Banner" fill className="object-cover" unoptimized />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500 opacity-20" />
         )}
       </div>
 
       <div className="px-4 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div className="relative flex justify-between items-end -mt-16 mb-4">
-          <div className="p-1 bg-white dark:bg-black rounded-full">
-            <img src={avatar} alt={displayName} className="w-32 h-32 rounded-full object-cover bg-gray-200" />
+          <div className="p-1 bg-white dark:bg-black rounded-full ring-4 ring-white dark:ring-black">
+            <Image 
+              src={avatar} 
+              alt={displayName} 
+              width={128} 
+              height={128} 
+              className="w-32 h-32 rounded-full object-cover bg-gray-200" 
+              unoptimized
+            />
           </div>
           
           {!isOwnProfile && currentUser && (

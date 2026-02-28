@@ -12,6 +12,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ noteId: s
   const { noteId } = use(params);
   const { ndk, isReady } = useNDK();
   const [rootPost, setRootPost] = useState<NDKEvent | null>(null);
+  const [parents, setParents] = useState<NDKEvent[]>([]);
   const [replies, setReplies] = useState<NDKEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -24,9 +25,21 @@ export default function PostDetailPage({ params }: { params: Promise<{ noteId: s
       try {
         // 1. Fetch the actual post
         const event = await ndk.fetchEvent(noteId);
-        if (event) setRootPost(event);
+        if (event) {
+          setRootPost(event);
 
-        // 2. Fetch replies
+          // 2. Fetch parents (ancestors)
+          const parentIds = event.tags
+            .filter(t => t[0] === 'e' && (t[3] === 'root' || t[3] === 'reply'))
+            .map(t => t[1]);
+          
+          if (parentIds.length > 0) {
+            const parentEvents = await ndk.fetchEvents({ ids: parentIds });
+            setParents(Array.from(parentEvents).sort((a, b) => (a.created_at ?? 0) - (b.created_at ?? 0)));
+          }
+        }
+
+        // 3. Fetch replies
         const filter: NDKFilter = {
           kinds: [1],
           "#e": [noteId],
@@ -59,7 +72,14 @@ export default function PostDetailPage({ params }: { params: Promise<{ noteId: s
           </div>
         ) : (
           <>
-            {rootPost && <PostCard event={rootPost} />}
+            {/* Thread Parents */}
+            {parents.map(parent => (
+              <div key={parent.id} className="opacity-70 scale-[0.98] origin-top transition-all hover:opacity-100">
+                <PostCard event={parent} />
+              </div>
+            ))}
+
+            {rootPost && <div className="border-l-4 border-blue-500 bg-blue-50/10 dark:bg-blue-900/5"><PostCard event={rootPost} /></div>}
             
             <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 text-sm font-bold text-gray-500 uppercase tracking-wider">
               Replies

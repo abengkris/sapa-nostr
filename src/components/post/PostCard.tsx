@@ -20,6 +20,8 @@ interface PostCardProps {
 export const PostCard: React.FC<PostCardProps> = ({ event }) => {
   const isRepost = event.kind === 6;
   const [repostedEvent, setRepostedEvent] = useState<NDKEvent | null>(null);
+  const { user: currentUser } = useAuthStore();
+  const { profile: repostAuthorProfile } = useProfile(isRepost ? event.pubkey : undefined);
   
   // Use the original event if it's a repost
   const displayEvent = isRepost && repostedEvent ? repostedEvent : event;
@@ -32,7 +34,6 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
 
   useEffect(() => {
     if (isRepost && isReady && ndk) {
-      // Extract original event ID from tags
       const eTag = event.tags.find(t => t[0] === 'e');
       if (eTag) {
         ndk.fetchEvent(eTag[1]).then(setRepostedEvent);
@@ -47,9 +48,14 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
   const displayName = profile?.name || profile?.displayName || `${displayEvent.pubkey.slice(0, 8)}...`;
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayEvent.pubkey}`;
 
-  // Get the pubkey we are replying to
-  const replyTag = displayEvent.tags.find(t => t[0] === 'p');
-  const replyingToPubkey = replyTag ? replyTag[1] : null;
+  const repostAuthorName = event.pubkey === currentUser?.pubkey 
+    ? "You" 
+    : (repostAuthorProfile?.name || `${event.pubkey.slice(0, 8)}...`);
+
+  // Get the pubkey we are replying to (look for p tag with 'reply' marker, or last p tag)
+  const replyPTag = displayEvent.tags.find(t => t[0] === 'p' && t[3] === 'reply') || 
+                    [...displayEvent.tags].reverse().find(t => t[0] === 'p');
+  const replyingToPubkey = replyPTag ? replyPTag[1] : null;
 
   return (
     <div 
@@ -60,7 +66,7 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
       {isRepost && (
         <div className="flex items-center space-x-2 text-gray-500 text-xs font-bold mb-2 ml-10">
           <Repeat2 size={14} />
-          <span>You reposted</span>
+          <span>{repostAuthorName} reposted</span>
         </div>
       )}
 
