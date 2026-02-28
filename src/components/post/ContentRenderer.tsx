@@ -29,6 +29,13 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
           // 1. Handle URLs
           if (part.match(URL_REGEX)) {
             const cleanUrl = part.replace(/[.,;]$/, "");
+            
+            // If it's an image or video, don't render the text/link here
+            // as it will be displayed in the Media Section below.
+            if (cleanUrl.match(IMAGE_REGEX) || cleanUrl.match(VIDEO_REGEX)) {
+              return null;
+            }
+
             return (
               <a key={i} href={cleanUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all" onClick={(e) => e.stopPropagation()}>
                 {part}
@@ -87,11 +94,13 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
           if (cleanUrl.match(IMAGE_REGEX)) {
             return (
               <div key={i} className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 max-h-[500px]" onClick={(e) => e.stopPropagation()}>
-                <img
+                <Image
                   src={cleanUrl}
                   alt="Post content"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
+                  width={800}
+                  height={500}
+                  className="w-full h-auto object-contain max-h-[500px]"
+                  unoptimized
                 />
               </div>
             );

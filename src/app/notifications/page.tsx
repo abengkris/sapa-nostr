@@ -6,6 +6,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { PostCard } from "@/components/post/PostCard";
 import { Loader2, Heart, Repeat2, MessageCircle, Zap, UserPlus } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const NotificationIcon = ({ type }: { type: string }) => {
   switch (type) {
@@ -53,13 +54,17 @@ export default function NotificationsPage() {
                     <NotificationIcon type={notif.type} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <img 
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`} 
-                        className="w-8 h-8 rounded-full bg-gray-200"
-                        alt="User"
-                      />
-                      <Link href={`/${notif.pubkey}`} className="font-bold hover:underline truncate">
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <Image 
+                                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`} 
+                                          width={32}
+                                          height={32}
+                                          className="w-8 h-8 rounded-full bg-gray-200"
+                                          alt="User"
+                                          unoptimized
+                                        />
+                                        <Link href={`/${notif.pubkey}`} className="font-bold hover:underline truncate">
+                    
                         {notif.pubkey.slice(0, 8)}...
                       </Link>
                       <span className="text-gray-500 text-sm">
