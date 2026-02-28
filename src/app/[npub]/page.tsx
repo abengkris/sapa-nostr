@@ -11,6 +11,7 @@ import { useNDK } from "@/hooks/useNDK";
 import { useFollowingList } from "@/hooks/useFollowingList";
 import { useFollowerCount } from "@/hooks/useFollowers";
 import { FollowButton } from "@/components/profile/FollowButton";
+import { ProfileEditModal } from "@/components/profile/ProfileEditModal";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -45,6 +46,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   
   const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([hexPubkey], feedKinds, disableFiltering);
 
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const isOwnProfile = currentUser?.pubkey === hexPubkey;
 
   if (profileLoading) {
@@ -91,7 +93,14 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             />
           </div>
           
-          {!isOwnProfile && currentUser && (
+          {isOwnProfile ? (
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="px-6 py-2 border border-gray-300 dark:border-gray-700 rounded-full font-bold hover:bg-gray-50 dark:hover:bg-gray-900 transition-all"
+            >
+              Edit Profile
+            </button>
+          ) : currentUser && (
             <FollowButton targetPubkey={hexPubkey} size="lg" />
           )}
         </div>
@@ -199,6 +208,16 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           </div>
         )}
       </div>
+
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        currentProfile={profile}
+        onSuccess={() => {
+          // Force reload to see changes
+          window.location.reload();
+        }}
+      />
     </MainLayout>
   );
 }
