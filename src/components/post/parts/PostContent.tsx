@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { tokenize, Token } from "@/lib/content/tokenizer";
 import { MentionLink } from "../tokens/MentionLink";
 import { HashtagLink } from "../tokens/HashtagLink";
