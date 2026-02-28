@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/lib/ndk";
 import { publishPost } from "@/lib/actions/post";
 import { ImageIcon, Calendar, Smile, MapPin } from "lucide-react";
+import Image from "next/image";
 
 export const PostComposer = () => {
   const [content, setContent] = useState("");
@@ -33,10 +34,13 @@ export const PostComposer = () => {
   return (
     <div className="flex p-4 border-b border-gray-200 dark:border-gray-800">
       <div className="mr-3 shrink-0">
-        <img
+        <Image
           src={user?.profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.pubkey}`}
           alt="Avatar"
+          width={48}
+          height={48}
           className="w-12 h-12 rounded-full object-cover bg-gray-200"
+          unoptimized={true}
         />
       </div>
       

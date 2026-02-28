@@ -8,6 +8,7 @@ import { useSearch } from "@/hooks/useSearch";
 import { useDebounce } from "use-debounce";
 import { PostCard } from "@/components/post/PostCard";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function SearchPage() {
   const [searchInput, setSearchInput] = useState("");
@@ -49,10 +50,13 @@ export default function SearchPage() {
                   href={`/p/${user.pubkey}`}
                   className="flex flex-col items-center min-w-[100px] text-center p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
                 >
-                  <img
+                  <Image
                     src={user.profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.pubkey}`}
-                    alt={user.profile?.name}
+                    alt={user.profile?.name || "Profile"}
+                    width={64}
+                    height={64}
                     className="w-16 h-16 rounded-full object-cover mb-2 bg-gray-200"
+                    unoptimized={true}
                   />
                   <p className="font-bold text-sm truncate w-24">
                     {user.profile?.name || `${user.pubkey.slice(0, 8)}...`}

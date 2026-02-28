@@ -7,6 +7,7 @@ import { useReactions } from "@/hooks/useReactions";
 import { formatDistanceToNow } from "date-fns";
 import { MessageCircle, Repeat2, Heart, Zap, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { ZapModal } from "@/components/common/ZapModal";
 
 interface PostCardProps {
@@ -53,10 +54,13 @@ export const PostCard: React.FC<PostCardProps> = ({ event }) => {
       {/* Avatar */}
       <div className="mr-3 shrink-0">
         <Link href={`/p/${event.pubkey}`}>
-          <img
+          <Image
             src={avatar}
             alt={displayName}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover bg-gray-200"
+            unoptimized={true}
           />
         </Link>
       </div>
