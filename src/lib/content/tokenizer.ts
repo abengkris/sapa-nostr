@@ -3,14 +3,18 @@ import { nip19 } from "nostr-tools";
 export type TokenType =
   | "text"
   | "mention"       // nostr:npub1 / nostr:nprofile1
-  | "note_ref"      // nostr:note1 / nostr:nevent1 → quote embed
+  | "note_ref"      // nostr:note1 / nostr:nevent1
+  | "naddr_ref"     // nostr:naddr1 (articles)
   | "hashtag"       // #bitcoin
-  | "image"         // URL .jpg .png .gif .webp .avif
+  | "image"         // URL .jpg .png .gif .webp .avif .svg
   | "video"         // URL .mp4 .mov .webm
-  | "url"           // URL lainnya
+  | "audio"         // URL .mp3 .wav .aac .flac .m4a
+  | "url"           // General URL
+  | "lightning"     // lnbc...
+  | "cashu"         // cashu...
   | "linebreak"     // \n
-  | "emoji"         // :emoji: (NIP-30)
-  | "nip08";        // #[0] (NIP-08)
+  | "emoji"         // :emoji: (handled via custom logic usually, but kept here for tokenizer flexibility)
+  | "nip08";        // #[0] (to be resolved before tokenization)
 
 export interface Token {
   type: TokenType;
@@ -19,36 +23,44 @@ export interface Token {
 }
 
 export interface DecodedRef {
-  type: "npub" | "nprofile" | "note" | "nevent";
-  pubkey?: string;   // untuk mention
-  eventId?: string;  // untuk note_ref
-  relays?: string[]; // untuk nprofile/nevent
+  type: "npub" | "nprofile" | "note" | "nevent" | "naddr";
+  pubkey?: string;   
+  eventId?: string;  
+  relays?: string[]; 
+  identifier?: string; // for naddr
+  kind?: number;       // for naddr
 }
 
-// Regex patterns — URUTAN PENTING
+// URUTAN KRITIS sesuai hasil investigasi
 const PATTERNS: { re: RegExp; type: TokenType }[] = [
-  // nostr: references (spesifik ke umum)
-  { re: /nostr:nevent1[a-z0-9]+/gi,   type: "note_ref"  },
-  { re: /nostr:nprofile1[a-z0-9]+/gi, type: "mention"   },
-  { re: /nostr:note1[a-z0-9]+/gi,     type: "note_ref"  },
-  { re: /nostr:npub1[a-z0-9]+/gi,     type: "mention"   },
-  // NIP-30 Custom Emoji
-  { re: /:\w+:/g,                     type: "emoji"     },
-  // NIP-08 Mentions
-  { re: /#\[\d+\]/g,                  type: "nip08"     },
-  // Media URL (sebelum URL biasa)
-  { re: /https?:\/\/\S+\.(?:jpg|jpeg|png|gif|webp|avif|svg)(\?\S*)?/gi, type: "image" },
-  { re: /https?:\/\/\S+\.(?:mp4|mov|webm|ogg)(\?\S*)?/gi,           type: "video" },
-  // URL biasa
-  { re: /https?:\/\/[^\s\])"']+/gi,   type: "url"       },
-  // Hashtag
-  { re: /#[a-zA-Z]\w*/g,              type: "hashtag"   },
+  // 1. Nostr references (spesifik -> umum)
+  { re: /nostr:nevent1[a-z0-9]+/gi,   type: "note_ref"   },
+  { re: /nostr:naddr1[a-z0-9]+/gi,    type: "naddr_ref"  },
+  { re: /nostr:nprofile1[a-z0-9]+/gi, type: "mention"    },
+  { re: /nostr:note1[a-z0-9]+/gi,     type: "note_ref"   },
+  { re: /nostr:npub1[a-z0-9]+/gi,     type: "mention"    },
+
+  // 2. Lightning invoice (SEBELUM URL)
+  { re: /\blnbc[a-zA-Z0-9]{20,}\b/g,    type: "lightning"  },
+
+  // 3. Cashu token
+  { re: /\bcashu[AB][a-zA-Z0-9+/=]{20,}\b/g, type: "cashu" },
+
+  // 4. Media URLs (SEBELUM URL biasa)
+  { re: /https?:\/\/\S+\.(?:jpg|jpeg|png|gif|webp|avif|svg)(?:\?\S*)?/gi, type: "image" },
+  { re: /https?:\/\/\S+\.(?:mp4|mov|webm|ogg)(?:\?\S*)?/gi,          type: "video" },
+  { re: /https?:\/\/\S+\.(?:mp3|wav|aac|flac|m4a)(?:\?\S*)?/gi,      type: "audio" },
+
+  // 5. URL biasa
+  { re: /https?:\/\/[^\s\])"'<>]+/g,  type: "url"        },
+
+  // 6. Hashtag
+  { re: /#[a-zA-Z]\w*/g,              type: "hashtag"    },
 ];
 
 export function tokenize(content: string): Token[] {
   if (!content) return [];
 
-  // Kumpulkan semua match dari semua pattern, simpan posisinya
   interface RawMatch {
     start: number;
     end: number;
@@ -59,7 +71,7 @@ export function tokenize(content: string): Token[] {
   const matches: RawMatch[] = [];
 
   for (const { re, type } of PATTERNS) {
-    re.lastIndex = 0; // reset stateful regex
+    re.lastIndex = 0; 
     let m: RegExpExecArray | null;
     while ((m = re.exec(content)) !== null) {
       matches.push({
@@ -71,7 +83,6 @@ export function tokenize(content: string): Token[] {
     }
   }
 
-  // Sort by position, hapus overlap (ambil yang lebih spesifik = lebih dulu di PATTERNS)
   matches.sort((a, b) => a.start - b.start);
 
   const filtered: RawMatch[] = [];
@@ -81,18 +92,14 @@ export function tokenize(content: string): Token[] {
       filtered.push(match);
       lastEnd = match.end;
     }
-    // overlap → skip (sudah tertangkap oleh pattern sebelumnya)
   }
 
-  // Build final tokens, sisipkan TEXT di antara match
   const tokens: Token[] = [];
   let cursor = 0;
 
   for (const match of filtered) {
-    // Teks sebelum match ini
     if (match.start > cursor) {
       const text = content.slice(cursor, match.start);
-      // Split berdasarkan newline
       tokens.push(...splitByLinebreak(text));
     }
 
@@ -105,7 +112,6 @@ export function tokenize(content: string): Token[] {
     cursor = match.end;
   }
 
-  // Sisa teks setelah match terakhir
   if (cursor < content.length) {
     tokens.push(...splitByLinebreak(content.slice(cursor)));
   }
@@ -124,7 +130,7 @@ function splitByLinebreak(text: string): Token[] {
 }
 
 function decodeRef(value: string, type: TokenType): DecodedRef | undefined {
-  if (type !== "mention" && type !== "note_ref") return undefined;
+  if (type !== "mention" && type !== "note_ref" && type !== "naddr_ref") return undefined;
 
   try {
     const bech32Part = value.replace(/^nostr:/, "");
@@ -142,8 +148,40 @@ function decodeRef(value: string, type: TokenType): DecodedRef | undefined {
     if (decoded.type === "nevent") {
       return { type: "nevent", eventId: decoded.data.id, relays: decoded.data.relays };
     }
+    if (decoded.type === "naddr") {
+      return { 
+        type: "naddr", 
+        pubkey: decoded.data.pubkey, 
+        identifier: decoded.data.identifier, 
+        kind: decoded.data.kind,
+        relays: decoded.data.relays 
+      };
+    }
   } catch {
-    // Bech32 tidak valid, abaikan
+    // ignore invalid
   }
   return undefined;
+}
+
+/**
+ * Resolves NIP-08 #[index] mentions into nostr: references
+ */
+export function resolveDeprecatedMentions(content: string, tags: string[][]): string {
+  return content.replace(/#\[(\d+)\]/g, (match, indexStr) => {
+    const index = parseInt(indexStr);
+    const tag = tags[index];
+    if (!tag) return match;
+
+    if (tag[0] === "p") {
+      try {
+        return `nostr:${nip19.npubEncode(tag[1])}`;
+      } catch { return match; }
+    }
+    if (tag[0] === "e") {
+      try {
+        return `nostr:${nip19.noteEncode(tag[1])}`;
+      } catch { return match; }
+    }
+    return match;
+  });
 }

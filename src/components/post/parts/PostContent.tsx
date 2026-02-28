@@ -2,12 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { tokenize, Token } from "@/lib/content/tokenizer";
+import { tokenize, Token, resolveDeprecatedMentions } from "@/lib/content/tokenizer";
 import { MentionLink } from "../tokens/MentionLink";
 import { HashtagLink } from "../tokens/HashtagLink";
 import { ImageEmbed } from "../tokens/ImageEmbed";
 import { VideoEmbed } from "../tokens/VideoEmbed";
 import { QuoteEmbed } from "../tokens/QuoteEmbed";
+import { LightningCard } from "../tokens/LightningCard";
+import { CashuCard } from "../tokens/CashuCard";
+import { ShortenedUrl } from "../tokens/ShortenedUrl";
 import { NDKEvent, NDKTag } from "@nostr-dev-kit/ndk";
 
 interface PostContentRendererProps {
@@ -33,26 +36,45 @@ export function PostContentRenderer({
 }: PostContentRendererProps) {
   const [showFull, setShowFull] = useState(false);
   const isLong = content.length > 600;
-  const displayContent = isLong && !showFull ? content.slice(0, 500) + "…" : content;
 
-  const tokens = useMemo(() => tokenize(displayContent), [displayContent]);
+  // 1. Resolve deprecated NIP-08 mentions first
+  const normalizedContent = useMemo(() => 
+    resolveDeprecatedMentions(content, event.tags), 
+  [content, event.tags]);
 
-  // Pisahkan media tokens — akan dirender di bawah teks, bukan inline
+  // 2. Parse custom emojis into a map
+  const emojiMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const tag of event.tags) {
+      if (tag[0] === "emoji" && tag[1] && tag[2]) {
+        map.set(`:${tag[1]}:`, tag[2]);
+      }
+    }
+    return map;
+  }, [event.tags]);
+
+  // 3. Tokenize the normalized content
+  const tokens = useMemo(() => tokenize(normalizedContent), [normalizedContent]);
+
+  // 4. Separate tokens for tiered rendering
   const textTokens: Token[] = [];
   const mediaTokens: Token[] = [];
   const quoteTokens: Token[] = [];
+  const cardTokens: Token[] = [];
 
   for (const token of tokens) {
     if (token.type === "image" || token.type === "video") {
       mediaTokens.push(token);
     } else if (token.type === "note_ref" && renderQuotes) {
       quoteTokens.push(token);
+    } else if (token.type === "lightning" || token.type === "cashu") {
+      cardTokens.push(token);
     } else {
       textTokens.push(token);
     }
   }
 
-  // Trim trailing whitespace/linebreak
+  // Trim trailing whitespace from textTokens
   while (
     textTokens.length > 0 &&
     (textTokens[textTokens.length - 1].type === "linebreak" ||
@@ -70,7 +92,7 @@ export function PostContentRenderer({
         </div>
       )}
 
-      {/* Teks utama */}
+      {/* Main Text Content */}
       {textTokens.length > 0 && (
         <div
           className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words text-gray-900 dark:text-gray-100 text-pretty min-w-0 ${
@@ -78,7 +100,7 @@ export function PostContentRenderer({
           }`}
         >
           {textTokens.map((token, i) => (
-            <TokenRenderer key={i} token={token} tags={event.tags} />
+            <TokenRenderer key={i} token={token} emojiMap={emojiMap} />
           ))}
           
           {isLong && !showFull && (
@@ -92,7 +114,18 @@ export function PostContentRenderer({
         </div>
       )}
 
-      {/* Media — gambar/video di bawah teks */}
+      {/* Payment Cards (Lightning/Cashu) */}
+      {cardTokens.length > 0 && (
+        <div className="space-y-1">
+          {cardTokens.map((token, i) => (
+            token.type === "lightning" 
+              ? <LightningCard key={i} invoice={token.value} />
+              : <CashuCard key={i} token={token.value} />
+          ))}
+        </div>
+      )}
+
+      {/* Media — image/video below text */}
       {renderMedia && mediaTokens.length > 0 && (
         <div className="space-y-2 w-full">
           {mediaTokens.map((token, i) =>
@@ -105,7 +138,7 @@ export function PostContentRenderer({
         </div>
       )}
 
-      {/* Quote embeds — paling bawah */}
+      {/* Quote embeds — bottom */}
       {renderQuotes && quoteTokens.map((token, i) => (
         <QuoteEmbed
           key={i}
@@ -116,10 +149,31 @@ export function PostContentRenderer({
   );
 }
 
-function TokenRenderer({ token, tags }: { token: Token; tags: NDKTag[] }) {
+function TokenRenderer({ token, emojiMap }: { token: Token; emojiMap: Map<string, string> }) {
   switch (token.type) {
-    case "text":
-      return <span>{token.value}</span>;
+    case "text": {
+      // Split text by :shortcode: for custom emojis
+      const parts = token.value.split(/(:[a-zA-Z0-9_]+:)/g);
+      return (
+        <>
+          {parts.map((part, i) => {
+            const emojiUrl = emojiMap.get(part);
+            if (emojiUrl) {
+              return (
+                <img
+                  key={i}
+                  src={emojiUrl}
+                  alt={part}
+                  className="inline-block w-5 h-5 align-middle mx-0.5"
+                  loading="lazy"
+                />
+              );
+            }
+            return <span key={i}>{part}</span>;
+          })}
+        </>
+      );
+    }
 
     case "linebreak":
       return <br />;
@@ -135,61 +189,14 @@ function TokenRenderer({ token, tags }: { token: Token; tags: NDKTag[] }) {
     case "hashtag":
       return <HashtagLink tag={token.value.slice(1)} />;
 
-    case "emoji": {
-      const shortcode = token.value.slice(1, -1);
-      const emojiTag = tags.find(t => t[0] === 'emoji' && t[1] === shortcode);
-      if (emojiTag) {
-        return (
-          <img 
-            src={emojiTag[2]} 
-            alt={shortcode} 
-            title={shortcode}
-            className="inline-block w-5 h-5 object-contain vertical-align-middle mx-px" 
-          />
-        );
-      }
-      return <span>{token.value}</span>;
-    }
-
-    case "nip08": {
-      const index = parseInt(token.value.slice(2, -1));
-      const tag = tags[index];
-      if (tag) {
-        if (tag[0] === 'p') {
-          return <MentionLink pubkey={tag[1]} raw={token.value} />;
-        }
-        if (tag[0] === 'e' || tag[0] === 'a') {
-          return (
-            <Link
-              href={`/post/${tag[1]}`}
-              className="text-blue-500 hover:text-blue-600 hover:underline font-mono text-sm"
-              onClick={e => e.stopPropagation()}
-            >
-              {tag[1].slice(0, 12)}…
-            </Link>
-          );
-        }
-      }
-      return <span>{token.value}</span>;
-    }
-
     case "url":
-      return (
-        <a
-          href={token.value}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:text-blue-600 hover:underline break-all"
-          onClick={e => e.stopPropagation()}
-        >
-          {shortenUrl(token.value)}
-        </a>
-      );
+      return <ShortenedUrl url={token.value} />;
 
     case "note_ref":
+    case "naddr_ref":
       return (
         <Link
-          href={`/post/${token.decoded?.eventId}`}
+          href={`/post/${token.decoded?.eventId || token.value}`}
           className="text-blue-500 hover:text-blue-600 hover:underline font-mono text-sm"
           onClick={e => e.stopPropagation()}
         >
@@ -199,17 +206,5 @@ function TokenRenderer({ token, tags }: { token: Token; tags: NDKTag[] }) {
 
     default:
       return null;
-  }
-}
-
-function shortenUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    const path = u.pathname.length > 20
-      ? u.pathname.slice(0, 20) + "…"
-      : u.pathname;
-    return u.hostname + path;
-  } catch {
-    return url.slice(0, 40) + "…";
   }
 }

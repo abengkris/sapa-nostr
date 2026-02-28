@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Fix mobile overflow for long strings like pubkeys or invoices */
+* {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Ensure flex children don't overflow their containers */
+.min-w-0 {
+  min-width: 0;
+}
