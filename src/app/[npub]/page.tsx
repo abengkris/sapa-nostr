@@ -110,7 +110,19 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
         </div>
 
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold">{displayName}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">{displayName}</h1>
+            {profile?.pronouns && (
+              <span className="text-xs text-gray-500 font-medium bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                {profile.pronouns}
+              </span>
+            )}
+            {profile?.bot && (
+              <span className="text-[10px] bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">
+                Bot
+              </span>
+            )}
+          </div>
           {profile?.nip05 && <p className="text-blue-500 text-sm font-medium">{profile.nip05}</p>}
           <p className="text-gray-500 text-xs font-mono break-all bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
             {npub}

@@ -96,6 +96,8 @@ export const PostCard: React.FC<PostCardProps> = ({
             createdAt={displayEvent.created_at}
             isRepost={isRepost}
             repostAuthorName={repostAuthorName}
+            pronouns={profile?.pronouns}
+            bot={profile?.bot}
           />
 
           <PostContentRenderer

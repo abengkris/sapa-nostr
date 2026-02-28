@@ -2,12 +2,17 @@ import { useEffect, useState } from "react";
 import { useNDK } from "@/hooks/useNDK";
 import { NDKUserProfile } from "@nostr-dev-kit/ndk";
 
-export interface ProfileMetadata extends NDKUserProfile {
+export interface ProfileMetadata {
   name?: string;
   picture?: string;
   about?: string;
   nip05?: string;
   lud16?: string;
+  banner?: string;
+  displayName?: string;
+  website?: string;
+  pronouns?: string;
+  bot?: boolean | string;
 }
 
 export function useProfile(pubkey?: string) {
