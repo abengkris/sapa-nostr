@@ -15,7 +15,6 @@ interface PostHeaderProps {
   isRepost?: boolean;
   repostAuthorName?: string;
   onMoreClick?: (e: React.MouseEvent) => void;
-  pronouns?: string;
   bot?: boolean | string;
 }
 
@@ -27,7 +26,6 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   isRepost,
   repostAuthorName,
   onMoreClick,
-  pronouns,
   bot
 }) => {
   const formattedTime = createdAt
@@ -62,11 +60,6 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
             <Link href={`/${userNpub}`} className="font-bold hover:underline truncate min-w-0">
               {displayName}
             </Link>
-            {pronouns && (
-              <span className="text-[10px] text-gray-500 font-medium shrink-0 bg-gray-100 dark:bg-gray-800 px-1 rounded">
-                {pronouns}
-              </span>
-            )}
             {bot && (
               <span className="text-[9px] bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1 rounded font-bold uppercase tracking-tighter shrink-0">
                 Bot

@@ -82,11 +82,6 @@ function QuoteEmbedContent({ event, className }: { event: NDKEvent; className: s
         <span className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate min-w-0">
           {profile?.name ?? npub.slice(0, 8) + "…"}
         </span>
-        {profile?.pronouns && (
-          <span className="text-[9px] text-gray-500 font-medium shrink-0 bg-gray-100 dark:bg-gray-800 px-1 rounded">
-            {profile.pronouns}
-          </span>
-        )}
         {profile?.bot && (
           <span className="text-[8px] bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1 rounded font-bold uppercase tracking-tighter shrink-0">
             Bot
