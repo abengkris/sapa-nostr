@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import NDK, { NDKUser, NDKNip07Signer, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
+import { resetWoT } from "@/hooks/useWoT";
 
 interface AuthState {
   user: NDKUser | null;
@@ -103,6 +104,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        resetWoT();
         set({ 
           user: null, 
           publicKey: null, 

@@ -1,67 +1,82 @@
-import { useState, useEffect } from "react";
-import { useNDK } from "@/hooks/useNDK";
-import { NDKEvent } from "@nostr-dev-kit/ndk";
+"use client";
 
-export function useWoT(rootPubkey?: string, depth: number = 2) {
+import { useState, useEffect, useRef } from "react";
+import { NDKWoT } from "@nostr-dev-kit/wot";
+import { useNDK } from "@/hooks/useNDK";
+
+type WoTStatus = "idle" | "loading" | "ready" | "error";
+
+interface UseWoTReturn {
+  wot: NDKWoT | null;
+  status: WoTStatus;
+  pubkeyCount: number;
+}
+
+let wotSingleton: NDKWoT | null = null;
+let wotLoadPromise: Promise<void> | null = null;
+
+export function useWoT(viewerPubkey: string | undefined): UseWoTReturn {
   const { ndk, isReady } = useNDK();
-  const [wotPubkeys, setWoTPubkeys] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<WoTStatus>(
+    wotSingleton ? "ready" : "idle"
+  );
+  const [pubkeyCount, setPubkeyCount] = useState(
+    wotSingleton ? wotSingleton.followDistance.size : 0
+  );
+  const [wot, setWot] = useState<NDKWoT | null>(wotSingleton);
 
   useEffect(() => {
-    if (!ndk || !isReady || !rootPubkey) return;
+    if (!ndk || !isReady || !viewerPubkey) return;
+    
+    if (wotSingleton) {
+      setWot(wotSingleton);
+      setStatus("ready");
+      setPubkeyCount(wotSingleton.followDistance.size);
+      return;
+    }
 
-    const buildWoT = async () => {
-      setLoading(true);
-      try {
-        const discovered = new Set<string>([rootPubkey]);
-        let currentLevel = [rootPubkey];
+    if (wotLoadPromise) {
+      setStatus("loading");
+      wotLoadPromise.then(() => {
+        setWot(wotSingleton);
+        setStatus("ready");
+        setPubkeyCount(wotSingleton?.followDistance.size ?? 0);
+      });
+      return;
+    }
 
-        for (let d = 0; d < depth; d++) {
-          const nextLevel: string[] = [];
-          
-          // To prevent massive queries, limit the breadth of crawling
-          // We only crawl the first 50 contacts of each user at each level
-          const authorsToCrawl = currentLevel.slice(0, 50);
-          
-          if (authorsToCrawl.length === 0) break;
+    setStatus("loading");
+    const instance = new NDKWoT(ndk);
 
-          const contactEvents = await ndk.fetchEvents(
-            {
-              kinds: [3],
-              authors: authorsToCrawl,
-            },
-            {
-              groupable: true,
-              groupableDelay: 500,
-              groupableDelayType: "at-most"
-            }
-          );
+    wotLoadPromise = instance
+      .load({
+        pubkey: viewerPubkey,
+        maxDepth: 2,           
+      })
+      .then(() => {
+        instance.enableAutoFilter({
+          maxDepth: 2,
+          minScore: 0.1,       
+          includeUnknown: false, 
+        });
 
-          for (const event of contactEvents) {
-            const pTags = event.tags.filter(t => t[0] === 'p').map(t => t[1]);
-            for (const pubkey of pTags) {
-              if (!discovered.has(pubkey)) {
-                discovered.add(pubkey);
-                nextLevel.push(pubkey);
-              }
-            }
-          }
-          
-          currentLevel = nextLevel;
-          // Safety break if WoT gets too large for simple filters
-          if (discovered.size > 1000) break;
-        }
+        wotSingleton = instance;
+        setWot(instance);
+        setStatus("ready");
+        setPubkeyCount(instance.followDistance.size);
+        console.log(`[WoT] Loaded ${instance.followDistance.size} pubkeys in trust graph`);
+      })
+      .catch(err => {
+        console.error("[WoT] Load failed:", err);
+        setStatus("error");
+        wotLoadPromise = null; 
+      });
+  }, [ndk, isReady, viewerPubkey]);
 
-        setWoTPubkeys(Array.from(discovered));
-      } catch (err) {
-        console.error("Error building WoT:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  return { wot, status, pubkeyCount };
+}
 
-    buildWoT();
-  }, [ndk, isReady, rootPubkey, depth]);
-
-  return { wotPubkeys, loading };
+export function resetWoT() {
+  wotSingleton = null;
+  wotLoadPromise = null;
 }

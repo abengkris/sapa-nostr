@@ -116,7 +116,7 @@ export default function HomePage() {
 }
 
 function ForYouFeedTab({ viewerPubkey, followingList }: { viewerPubkey: string; followingList: string[] }) {
-  const { posts, newCount, isLoading, isEnriching, flushNewPosts, loadMore, hasMore } = 
+  const { posts, newCount, isLoading, wotStatus, wotSize, flushNewPosts, loadMore, hasMore } = 
     useForYouFeed({ viewerPubkey, followingList });
 
   const handleFlush = useCallback(() => {
@@ -128,12 +128,7 @@ function ForYouFeedTab({ viewerPubkey, followingList }: { viewerPubkey: string; 
     <div className="relative">
       <NewPostsIsland count={newCount} onFlush={handleFlush} />
       
-      {isEnriching && (
-        <div className="flex items-center justify-center gap-2 py-3 bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest border-b border-gray-100 dark:border-gray-900">
-          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-          Personalizing your feed…
-        </div>
-      )}
+      <WoTStatusBanner status={wotStatus} size={wotSize} />
 
       <FeedList 
         posts={posts}
@@ -144,6 +139,42 @@ function ForYouFeedTab({ viewerPubkey, followingList }: { viewerPubkey: string; 
       />
     </div>
   );
+}
+
+function WoTStatusBanner({
+  status,
+  size,
+}: {
+  status: "idle" | "loading" | "ready" | "error";
+  size: number;
+}) {
+  if (status === "ready" && size > 0) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 bg-blue-50/30 dark:bg-blue-900/5 text-[10px] text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-900 font-bold uppercase tracking-widest">
+        <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+        <span>Web of Trust active · {size.toLocaleString()} users in your network</span>
+      </div>
+    );
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 bg-blue-50/30 dark:bg-blue-900/5 text-[10px] text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-900 font-bold uppercase tracking-widest">
+        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+        <span>Building Web of Trust…</span>
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 bg-red-50/30 dark:bg-red-900/5 text-[10px] text-red-600 dark:text-red-400 border-b border-gray-100 dark:border-gray-900 font-bold uppercase tracking-widest">
+        <span>⚠️ WoT failed to load — showing following feed only</span>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function FollowingFeedTab({ followingList, viewerPubkey }: { followingList: string[]; viewerPubkey: string }) {
