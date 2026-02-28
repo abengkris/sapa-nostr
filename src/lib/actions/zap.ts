@@ -1,4 +1,4 @@
-import NDK, { NDKEvent, NDKZapRequest, NDKUser } from "@nostr-dev-kit/ndk";
+import NDK, { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
 
 /**
  * Handle the zap process for a specific event or user.
