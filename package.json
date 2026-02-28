@@ -9,19 +9,35 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@nostr-dev-kit/ndk": "^3.0.3",
+    "@nostr-dev-kit/ndk-cache-dexie": "^2.6.44",
+    "@nostr-dev-kit/ndk-wallet": "^0.7.1",
+    "date-fns": "^4.1.0",
+    "dexie": "^4.3.0",
+    "lucide-react": "^0.575.0",
     "next": "16.1.6",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "use-debounce": "^10.1.0",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20.19.35",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.4",
+    "@vitest/ui": "^4.0.18",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "jsdom": "^28.1.0",
+    "nostr-tools": "^2.23.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.18"
   }
 }
