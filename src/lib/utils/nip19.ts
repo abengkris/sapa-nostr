@@ -20,8 +20,9 @@ export function decodeToHex(nip19String: string): string {
       case "note":
         return decoded.data;
       case "nprofile":
+        return decoded.data.pubkey;
       case "nevent":
-        return decoded.data.id || (decoded.data as any).pubkey;
+        return decoded.data.id;
       case "naddr":
         // For naddr, we usually want the identifier or the pubkey? 
         // In many cases we want the pubkey, but let's return the identifier for now if needed.
