@@ -20,7 +20,7 @@ export const PostContent: React.FC<PostContentProps> = ({
       {/* Replying to label */}
       {replyingToNpub && !isRepost && (
         <div className="text-gray-500 text-xs mb-1" onClick={(e) => e.stopPropagation()}>
-          Replying to <Link href={`/${replyingToNpub}`} className="text-blue-500 hover:underline">@{replyingToNpub.slice(0, 12)}...</Link>
+          Replying to <Link href={`/${replyingToNpub}`} className="text-blue-500 hover:underline">@{replyingToNpub.slice(0, 12)}…</Link>
         </div>
       )}
 

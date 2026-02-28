@@ -50,7 +50,10 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
 
       {/* Mobile FAB */}
       {isLoggedIn && (
-        <button className="sm:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 active:scale-95 transition-all">
+        <button 
+          aria-label="Create new post"
+          className="sm:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 active:scale-95 transition-all"
+        >
           <Plus size={30} />
         </button>
       )}

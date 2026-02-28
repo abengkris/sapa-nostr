@@ -62,7 +62,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   }
 
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${npub}`;
-  const displayName = profile?.name || profile?.displayName || `${npub.slice(0, 8)}...`;
+  const displayName = profile?.name || profile?.displayName || `${npub.slice(0, 8)}…`;
 
   // Custom filter for "Replies" tab since NDK might return both root and replies
   const filteredPosts = activeTab === "replies" 

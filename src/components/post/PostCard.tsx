@@ -48,7 +48,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   }, [isRepost, event, isReady, ndk]);
 
   const displayName = useMemo(() => 
-    profile?.name || profile?.displayName || `${displayEvent.pubkey.slice(0, 8)}...`,
+    profile?.name || profile?.displayName || `${displayEvent.pubkey.slice(0, 8)}…`,
   [profile, displayEvent.pubkey]);
 
   const avatar = useMemo(() => 
@@ -58,7 +58,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const repostAuthorName = useMemo(() => 
     event.pubkey === currentUser?.pubkey 
       ? "You" 
-      : (repostAuthorProfile?.name || `${event.pubkey.slice(0, 8)}...`),
+      : (repostAuthorProfile?.name || `${event.pubkey.slice(0, 8)}…`),
   [event.pubkey, currentUser?.pubkey, repostAuthorProfile]);
 
   const userNpub = displayEvent.author.npub;

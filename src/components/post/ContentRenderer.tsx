@@ -98,7 +98,7 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({ content }) => 
               quotedIds.add(uriWithoutScheme);
               return (
                 <Link key={i} href={`/post/${uriWithoutScheme}`} className="text-blue-500 hover:underline break-all font-mono text-[10px] bg-gray-100 dark:bg-gray-900 px-1 rounded inline-block translate-y-[-1px]" onClick={(e) => e.stopPropagation()}>
-                  {uriWithoutScheme.slice(0, 12)}...{uriWithoutScheme.slice(-4)}
+                  {uriWithoutScheme.slice(0, 12)}…{uriWithoutScheme.slice(-4)}
                 </Link>
               );
             }
