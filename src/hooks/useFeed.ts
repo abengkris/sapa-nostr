@@ -27,8 +27,14 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
   }, []);
 
   const fetchFeed = useCallback((isLoadMore = false) => {
-    if (!ndk || !isReady || authors.length === 0) {
+    if (!ndk || !isReady) {
       setLoading(false);
+      return;
+    }
+
+    if (authors.length === 0) {
+      setLoading(false);
+      setPosts([]);
       return;
     }
 
@@ -115,6 +121,25 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
     sub.on("event", (event: NDKEvent) => {
       setPosts((prev) => {
         if (prev.find((p) => p.id === event.id)) return prev;
+        
+        // Filter based on Concept #5: Feed filtering (same as fetchFeed)
+        let shouldInclude = true;
+        if (!disableFiltering && kinds.includes(1)) {
+          const eTags = event.tags.filter(t => t[0] === 'e');
+          const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
+          
+          if (isReply) {
+            shouldInclude = false;
+            // 1. Thread continuation (reply to self)
+            const replyPTag = event.tags.find(t => t[0] === 'p');
+            if (replyPTag && replyPTag[1] === event.pubkey) shouldInclude = true;
+            // 2. Reply to someone followed
+            if (replyPTag && authors.includes(replyPTag[1])) shouldInclude = true;
+          }
+        }
+
+        if (!shouldInclude) return prev;
+
         const newPosts = [event, ...prev].sort(
           (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
         );
