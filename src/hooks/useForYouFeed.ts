@@ -48,7 +48,7 @@ export function useForYouFeed({
     setPosts([]);
 
     const authors = wot
-      ? getWoTAuthors(wot, followingList)
+      ? wot.getAllPubkeys({ maxDepth: 2 }).slice(0, 500)
       : followingList;
 
     if (!authors.length) {
@@ -112,7 +112,7 @@ export function useForYouFeed({
     if (!ndk || !hasMore || !posts.length) return;
 
     const oldest = Math.min(...posts.map(p => p.created_at ?? Infinity));
-    const authors = wot ? getWoTAuthors(wot, followingList) : followingList;
+    const authors = wot ? wot.getAllPubkeys({ maxDepth: 2 }).slice(0, 500) : followingList;
 
     const older = await ndk.fetchEvents({
       kinds: [1],
@@ -142,22 +142,6 @@ export function useForYouFeed({
     loadMore,
     hasMore,
   };
-}
-
-function getWoTAuthors(wot: NDKWoT, followingList: string[]): string[] {
-  const depth1 = new Set(followingList);
-  const depth2: string[] = [];
-
-  for (const [pubkey, distance] of wot.followDistance.entries()) {
-    if (distance === 2) depth2.push(pubkey);
-  }
-
-  const allAuthors = [
-    ...Array.from(depth1),
-    ...depth2.slice(0, 300),
-  ];
-
-  return [...new Set(allAuthors)]; 
 }
 
 function rankByWoT(events: NDKEvent[], wot: NDKWoT): NDKEvent[] {
