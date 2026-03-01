@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Camera, Image as ImageIcon, Loader2 } from "lucide-react";
+import { X, Camera, Image as ImageIcon, Loader2, AlertCircle } from "lucide-react";
 import { ProfileMetadata } from "@/hooks/useProfile";
 import { updateProfile } from "@/lib/actions/profile";
 import { useNDK } from "@/hooks/useNDK";
+import { useUIStore } from "@/store/ui";
 import Image from "next/image";
 
 interface ProfileEditModalProps {
@@ -21,6 +22,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   onSuccess
 }) => {
   const { ndk } = useNDK();
+  const { addToast } = useUIStore();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ProfileMetadata>({
     name: "",
@@ -60,14 +62,15 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
     try {
       const success = await updateProfile(ndk, formData);
       if (success) {
+        addToast("Profile updated successfully!", "success");
         onSuccess?.();
         onClose();
       } else {
-        alert("Failed to update profile. Please try again.");
+        addToast("Failed to update profile. Please try again.", "error");
       }
     } catch (err) {
       console.error(err);
-      alert("An error occurred while updating profile.");
+      addToast("An error occurred while updating profile.", "error");
     } finally {
       setLoading(false);
     }
@@ -80,10 +83,14 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-black w-full max-w-xl rounded-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border border-gray-200 dark:border-gray-800">
+      <div className="bg-white dark:bg-black w-full max-w-xl rounded-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border border-gray-200 dark:border-gray-800 animate-in zoom-in-95">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-4">
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors">
+            <button 
+              onClick={onClose} 
+              aria-label="Close modal"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors"
+            >
               <X size={20} />
             </button>
             <h2 className="text-xl font-bold">Edit Profile</h2>
@@ -98,57 +105,63 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* Banner Preview & Input */}
-          <div className="relative h-40 bg-gray-200 dark:bg-gray-800 group">
+          {/* Banner Preview */}
+          <div className="relative h-40 bg-gray-200 dark:bg-gray-800">
             {formData.banner ? (
-              <Image src={formData.banner} alt="Banner" fill className="object-cover" unoptimized />
+              <Image src={formData.banner} alt="Banner preview" fill className="object-cover" unoptimized />
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500 opacity-20" />
             )}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-              <div className="flex flex-col items-center gap-2">
-                <ImageIcon className="text-white" size={32} />
-                <input
-                  type="text"
-                  name="banner"
-                  placeholder="Banner URL"
-                  value={formData.banner}
-                  onChange={handleChange}
-                  className="bg-black/60 text-white text-xs p-2 rounded border border-white/20 w-64 outline-none"
-                />
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+              <ImageIcon className="text-white drop-shadow-md" size={32} />
             </div>
           </div>
 
           <div className="px-6 pb-6 relative">
-            {/* Avatar Preview & Input */}
-            <div className="relative -mt-12 mb-6 group inline-block">
+            {/* Avatar Preview */}
+            <div className="relative -mt-12 mb-6 inline-block">
               <div className="w-24 h-24 rounded-full border-4 border-white dark:border-black overflow-hidden bg-gray-100 dark:bg-gray-900 shadow-md">
                 <Image 
                   src={formData.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=placeholder`} 
-                  alt="Avatar" 
+                  alt="Avatar preview" 
                   width={96} 
                   height={96} 
                   className="w-full h-full object-cover"
                   unoptimized
                 />
               </div>
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-full">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full pointer-events-none">
                 <Camera className="text-white" size={24} />
-              </div>
-              <div className="mt-2 absolute left-full ml-4 top-1/2 -translate-y-1/2 w-64 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                <input
-                  type="text"
-                  name="picture"
-                  placeholder="Avatar URL"
-                  value={formData.picture}
-                  onChange={handleChange}
-                  className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 text-sm p-2 rounded w-full shadow-lg outline-none"
-                />
               </div>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {/* Media Inputs moved to form for accessibility */}
+              <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Avatar URL</label>
+                  <input
+                    type="text"
+                    name="picture"
+                    value={formData.picture}
+                    onChange={handleChange}
+                    placeholder="https://example.com/avatar.jpg"
+                    className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Banner URL</label>
+                  <input
+                    type="text"
+                    name="banner"
+                    value={formData.banner}
+                    onChange={handleChange}
+                    placeholder="https://example.com/banner.jpg"
+                    className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Display Name</label>
                 <input

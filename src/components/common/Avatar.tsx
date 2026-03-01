@@ -20,7 +20,8 @@ export const Avatar: React.FC<AvatarProps> = ({ pubkey, src, size = 40, classNam
     >
       <Image
         src={avatarUrl}
-        alt={`Avatar for ${pubkey}`}
+        alt=""
+        aria-hidden="true"
         width={size}
         height={size}
         className="object-cover w-full h-full"

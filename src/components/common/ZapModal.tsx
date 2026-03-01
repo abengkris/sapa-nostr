@@ -164,7 +164,11 @@ export const ZapModal: React.FC<ZapModalProps> = ({ event, user, onClose, onSucc
             </div>
           ) : (
             <div className="space-y-6 text-center">
-              <div className="bg-white p-4 rounded-3xl inline-block mx-auto border-4 border-yellow-500/10 shadow-xl">
+              <div 
+                className="bg-white p-4 rounded-3xl inline-block mx-auto border-4 border-yellow-500/10 shadow-xl"
+                role="img"
+                aria-label="Lightning Network Invoice QR Code"
+              >
                 <QRCodeSVG value={`lightning:${invoice}`} size={220} />
               </div>
               

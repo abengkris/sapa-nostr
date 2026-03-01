@@ -191,6 +191,7 @@ export const PostComposer = () => {
               className="hidden"
             />
             <button 
+              title="Add image"
               aria-label="Add image"
               onClick={handleImageClick}
               disabled={isUploading}
@@ -201,33 +202,38 @@ export const PostComposer = () => {
               <ImageIcon size={20} />
             </button>
             <button 
+              title="Add emoji"
               aria-label="Add emoji"
               className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
             >
               <Smile size={20} />
             </button>
             <button 
+              title="Schedule post"
               aria-label="Schedule post"
               className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
             >
               <Calendar size={20} />
             </button>
             <button 
+              title="Add location"
               aria-label="Add location"
               className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
             >
               <MapPin size={20} />
             </button>
             <button 
+              title="Add content warning"
               aria-label="Content Warning"
+              aria-pressed={isSensitive}
               onClick={() => setIsSensitive(!isSensitive)}
-              className={`p-3 rounded-full transition-colors ${
+              className={`p-3 rounded-full transition-all ${
                 isSensitive 
-                  ? "bg-amber-500/10 text-amber-500" 
+                  ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-110" 
                   : "hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500"
               }`}
             >
-              <AlertTriangle size={20} />
+              <AlertTriangle size={20} fill={isSensitive ? "currentColor" : "none"} />
             </button>
           </div>
           
