@@ -1,29 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
-import { ImageIcon, Calendar, Smile, MapPin } from "lucide-react";
+import { ImageIcon, Calendar, Smile, MapPin, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useUIStore } from "@/store/ui";
+import { useBlossom } from "@/hooks/useBlossom";
+import { imetaTagToTag, NDKImetaTag } from "@nostr-dev-kit/ndk";
 
 export const PostComposer = () => {
   const [content, setContent] = useState("");
+  const [imetaTags, setImetaTags] = useState<NDKImetaTag[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { user, isLoggedIn } = useAuthStore();
   const { ndk } = useNDK();
   const { addToast } = useUIStore();
+  const { uploadFile } = useBlossom();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePost = async () => {
     if (!ndk || !content.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      await publishPost(ndk, content);
+      const tags = imetaTags.map(imetaTagToTag);
+      await publishPost(ndk, content, { tags });
       setContent("");
+      setImetaTags([]);
       addToast("Post published successfully!", "success");
-      // Success: ideally trigger a feed refresh here
     } catch (err) {
       console.error("Failed to post:", err);
       addToast("Failed to publish post.", "error");
@@ -32,7 +40,54 @@ export const PostComposer = () => {
     }
   };
 
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const result = await uploadFile(file, (progress) => {
+        const percent = Math.round((progress.loaded / progress.total) * 100);
+        setUploadProgress(percent);
+      });
+
+      if (result && result.url) {
+        // Collect imeta tag
+        setImetaTags((prev) => [...prev, result]);
+
+        // Standard Nostr behavior: append URL to content
+        setContent((prev) => {
+          const suffix = prev.endsWith("\n") || prev === "" ? "" : "\n";
+          return `${prev}${suffix}${result.url}`;
+        });
+        addToast("Media uploaded successfully!", "success");
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+      addToast("Failed to upload media.", "error");
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   if (!isLoggedIn) return null;
+
+  const removeMedia = (index: number) => {
+    const tag = imetaTags[index];
+    if (!tag.url) return;
+    
+    setImetaTags((prev) => prev.filter((_, i) => i !== index));
+    // Remove URL from content
+    setContent((prev) => prev.replace(tag.url!, "").trim());
+  };
 
   return (
     <div className="flex p-4 border-b border-gray-200 dark:border-gray-800">
@@ -57,12 +112,63 @@ export const PostComposer = () => {
           rows={2}
           className="w-full text-xl bg-transparent border-none focus:ring-0 resize-none placeholder-gray-500 min-h-[100px]"
         />
+
+        {imetaTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {imetaTags.map((tag, i) => (
+              <div key={i} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+                {tag.m?.startsWith("image/") ? (
+                  <img src={tag.url} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                    Video
+                  </div>
+                )}
+                <button
+                  onClick={() => removeMedia(i)}
+                  className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isUploading && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+              <span className="flex items-center gap-1">
+                <Loader2 size={12} className="animate-spin" />
+                Uploading media...
+              </span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-500 transition-all duration-300" 
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
         
         <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-900 pt-3 mt-3">
           <div className="flex items-center space-x-1 text-blue-500">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*,video/*"
+              className="hidden"
+            />
             <button 
               aria-label="Add image"
-              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+              onClick={handleImageClick}
+              disabled={isUploading}
+              className={`p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors ${
+                isUploading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               <ImageIcon size={20} />
             </button>
@@ -88,9 +194,9 @@ export const PostComposer = () => {
           
           <button
             onClick={handlePost}
-            disabled={!content.trim() || isSubmitting}
+            disabled={!content.trim() || isSubmitting || isUploading}
             className={`px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-colors ${
-              (!content.trim() || isSubmitting) ? "opacity-50 cursor-not-allowed" : ""
+              (!content.trim() || isSubmitting || isUploading) ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
             {isSubmitting ? "Posting..." : "Post"}

@@ -3,6 +3,7 @@ import { nip19 } from "nostr-tools";
 
 interface PostOptions {
   replyTo?: NDKEvent;
+  tags?: NDKTag[];
 }
 
 export const publishPost = async (
@@ -13,6 +14,10 @@ export const publishPost = async (
   const event = new NDKEvent(ndk);
   event.kind = 1;
   event.content = content;
+
+  if (options?.tags) {
+    event.tags = [...options.tags];
+  }
 
   // 1. Handle Hashtags (#nostr) -> t tags
   const hashtagRegex = /#(\w+)/g;
