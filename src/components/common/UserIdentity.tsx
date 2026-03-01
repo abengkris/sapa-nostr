@@ -22,12 +22,17 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
   const status = useNIP05(pubkey, nip05);
 
   const isPost = variant === 'post';
+  
+  // Hard limit for display names to prevent weird layout issues even before CSS truncation
+  const processedName = displayName && displayName.length > 50 
+    ? displayName.slice(0, 47) + "..." 
+    : (displayName || pubkey.slice(0, 8));
 
   return (
-    <div className={`flex flex-col ${isPost ? 'gap-0' : 'gap-1'} ${className}`}>
+    <div className={`flex flex-col min-w-0 ${isPost ? 'gap-0' : 'gap-1'} ${className}`}>
       <div className="flex items-center gap-1 min-w-0">
         <span className={`font-bold truncate ${isPost ? 'text-sm' : 'text-xl'}`}>
-          {displayName || pubkey.slice(0, 8)}
+          {processedName}
         </span>
 
         {/* Badge logic */}

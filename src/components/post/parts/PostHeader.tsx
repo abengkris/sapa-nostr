@@ -70,9 +70,9 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
     <>
       {/* Repost Header */}
       {isRepost && (
-        <div className="flex items-center space-x-2 text-gray-500 text-xs font-bold mb-2 ml-10">
-          <Repeat2 size={14} />
-          <span>{repostAuthorName} reposted</span>
+        <div className="flex items-center space-x-2 text-gray-500 text-xs font-bold mb-2 ml-10 truncate min-w-0">
+          <Repeat2 size={14} className="shrink-0" />
+          <span className="truncate">{repostAuthorName} reposted</span>
         </div>
       )}
 

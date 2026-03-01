@@ -65,11 +65,13 @@ export const PostCard: React.FC<PostCardProps> = ({
     profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayEvent.pubkey}`,
   [profile, displayEvent.pubkey]);
 
-  const repostAuthorName = useMemo(() => 
-    event.pubkey === currentUser?.pubkey 
+  const repostAuthorName = useMemo(() => {
+    const name = event.pubkey === currentUser?.pubkey 
       ? "You" 
-      : (repostAuthorProfile?.name || `${event.pubkey.slice(0, 8)}…`),
-  [event.pubkey, currentUser?.pubkey, repostAuthorProfile]);
+      : (repostAuthorProfile?.name || repostAuthorProfile?.displayName || `${event.pubkey.slice(0, 8)}…`);
+    
+    return name.length > 30 ? name.slice(0, 27) + "..." : name;
+  }, [event.pubkey, currentUser?.pubkey, repostAuthorProfile]);
 
   const userNpub = displayEvent.author.npub;
   const eventNoteId = displayEvent.encode();
