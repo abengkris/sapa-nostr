@@ -81,7 +81,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     return pubkey ? ndk?.getUser({ pubkey }).npub : null;
   }, [displayEvent.tags, ndk]);
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDelete = async () => {
     if (!ndk || !displayEvent.id) return;
     
     try {

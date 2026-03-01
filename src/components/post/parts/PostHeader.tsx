@@ -3,11 +3,12 @@
 import React from "react";
 import { NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { formatDistanceToNow } from "date-fns";
-import { Repeat2, MoreHorizontal, Trash2, Flag } from "lucide-react";
+import { Repeat2, MoreHorizontal, Trash2, Flag, Code } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 import { UserIdentity } from "@/components/common/UserIdentity";
+import { DropdownMenu } from "@/components/common/DropdownMenu";
 
 interface PostHeaderProps {
   displayName: string;
@@ -18,9 +19,9 @@ interface PostHeaderProps {
   createdAt: number | undefined;
   isRepost?: boolean;
   repostAuthorName?: string;
-  onMoreClick?: (e: React.MouseEvent) => void;
-  onDeleteClick?: (e: React.MouseEvent) => void;
-  onReportClick?: (e: React.MouseEvent) => void;
+  onMoreClick?: () => void;
+  onDeleteClick?: () => void;
+  onReportClick?: () => void;
   bot?: boolean | string;
 }
 
@@ -41,6 +42,29 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   const formattedTime = createdAt
     ? formatDistanceToNow(new Date(createdAt * 1000), { addSuffix: true })
     : "unknown";
+
+  const menuItems = [
+    ...(onDeleteClick ? [{
+      label: "Delete Post",
+      icon: <Trash2 size={16} />,
+      variant: "danger" as const,
+      onClick: () => {
+        if (confirm("Delete this post? This sends a request to relays, but decentralized deletion is not guaranteed across all clients and relays.")) {
+          onDeleteClick();
+        }
+      }
+    }] : []),
+    ...(onReportClick ? [{
+      label: "Report Content",
+      icon: <Flag size={16} />,
+      onClick: onReportClick
+    }] : []),
+    ...(onMoreClick ? [{
+      label: "View Raw Data",
+      icon: <Code size={16} />,
+      onClick: onMoreClick
+    }] : [])
+  ];
 
   return (
     <>
@@ -86,44 +110,18 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
             {formattedTime}
           </span>
         </div>
-        <div className="flex items-center gap-1">
-          {onReportClick && (
+        
+        <DropdownMenu
+          trigger={
             <button 
-              className="text-gray-400 hover:text-red-500 transition-colors shrink-0 p-1" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onReportClick(e);
-              }}
-              title="Report Content"
+              className="text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 rounded-full transition-colors shrink-0" 
+              title="Options"
             >
-              <Flag size={18} />
+              <MoreHorizontal size={18} />
             </button>
-          )}
-          {onDeleteClick && (
-            <button 
-              className="text-gray-400 hover:text-red-500 transition-colors shrink-0 p-1" 
-              onClick={(e) => {
-                e.stopPropagation();
-                if (confirm("Delete this post? This sends a request to relays, but decentralized deletion is not guaranteed across all clients and relays.")) {
-                  onDeleteClick(e);
-                }
-              }}
-              title="Delete Post"
-            >
-              <Trash2 size={18} />
-            </button>
-          )}
-          <button 
-            className="text-gray-400 hover:text-blue-500 transition-colors shrink-0 p-1" 
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoreClick?.(e);
-            }}
-            title="More Options"
-          >
-            <MoreHorizontal size={18} />
-          </button>
-        </div>
+          }
+          items={menuItems}
+        />
       </div>
     </>
   );
