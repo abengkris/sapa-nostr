@@ -59,15 +59,33 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   if (profileLoading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="animate-spin text-blue-500" size={32} />
+        <div className="h-48 bg-gray-200 dark:bg-gray-800 animate-pulse" />
+        <div className="px-4 pb-4 animate-pulse">
+          <div className="relative flex justify-between items-end -mt-16 mb-4">
+            <div className="w-32 h-32 rounded-full bg-gray-300 dark:bg-gray-700 ring-4 ring-white dark:ring-black" />
+            <div className="w-32 h-10 rounded-full bg-gray-200 dark:bg-gray-800" />
+          </div>
+          <div className="space-y-3">
+            <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-1/3" />
+            <div className="h-4 bg-gray-100 dark:bg-gray-900 rounded w-full" />
+            <div className="h-4 bg-gray-100 dark:bg-gray-900 rounded w-2/3" />
+          </div>
         </div>
+        <FeedSkeleton />
       </MainLayout>
     );
   }
 
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${hexPubkey}`;
   const displayName = profile?.name || profile?.displayName || `${npubParam.slice(0, 8)}…`;
+
+  const safeHostname = (url: string) => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  };
 
   // Custom filter for "Replies" tab
   const filteredPosts = activeTab === "replies" 
@@ -155,9 +173,9 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
 
         <div className="mt-4 flex flex-wrap gap-4 text-gray-500 text-sm">
           {profile?.website && (
-            <a href={profile.website} target="_blank" className="flex items-center space-x-1 hover:underline text-blue-500">
+            <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 hover:underline text-blue-500">
               <LinkIcon size={16} />
-              <span>{new URL(profile.website).hostname}</span>
+              <span>{safeHostname(profile.website)}</span>
             </a>
           )}
           <div className="flex items-center space-x-1">
@@ -203,10 +221,12 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-800">
+      <div className="flex border-b border-gray-200 dark:border-gray-800" role="tablist">
         {(["posts", "replies", "media", "likes"] as const).map((tab) => (
           <button
             key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-4 text-sm font-bold capitalize transition-colors relative ${
               activeTab === tab ? "text-blue-500" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900"
@@ -226,15 +246,22 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           <FeedSkeleton />
         ) : filteredPosts.length > 0 ? (
           <>
-            {filteredPosts.map(post => <PostCard key={post.id} event={post} />)}
+            <div className="divide-y divide-gray-100 dark:divide-gray-900">
+              {filteredPosts.map(post => <PostCard key={post.id} event={post} />)}
+            </div>
             {hasMore && (
               <div className="p-8 text-center border-t border-gray-100 dark:border-gray-900">
                 <button 
                   onClick={() => loadMore()}
                   disabled={feedLoading}
-                  className="text-blue-500 text-sm font-bold hover:underline disabled:opacity-50"
+                  className="px-6 py-2 bg-gray-100 dark:bg-gray-900 rounded-full text-blue-500 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
                 >
-                  {feedLoading ? "Loading..." : "Load more"}
+                  {feedLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" />
+                      Loading...
+                    </span>
+                  ) : "Show more results"}
                 </button>
               </div>
             )}
