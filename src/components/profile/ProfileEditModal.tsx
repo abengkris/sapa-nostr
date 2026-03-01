@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Camera, Image as ImageIcon, Loader2, AlertCircle } from "lucide-react";
+import { X, Camera, Image as ImageIcon, Loader2, AlertCircle, Check, Globe } from "lucide-react";
 import { ProfileMetadata } from "@/hooks/useProfile";
 import { updateProfile } from "@/lib/actions/profile";
 import { useNDK } from "@/hooks/useNDK";
@@ -36,6 +36,11 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
     pronouns: "",
   });
 
+  const [validations, setValidations] = useState({
+    website: true,
+    nip05: true
+  });
+
   useEffect(() => {
     if (currentProfile) {
       setFormData({
@@ -51,6 +56,17 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       });
     }
   }, [currentProfile, isOpen]);
+
+  // Simple validation logic
+  useEffect(() => {
+    const isWebsiteValid = !formData.website || /^https?:\/\/.+\..+/.test(formData.website);
+    const isNip05Valid = !formData.nip05 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.nip05);
+    
+    setValidations({
+      website: isWebsiteValid,
+      nip05: isNip05Valid
+    });
+  }, [formData.website, formData.nip05]);
 
   if (!isOpen) return null;
 
@@ -199,16 +215,27 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 relative">
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Website</label>
-                  <input
-                    type="url"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleChange}
-                    placeholder="https://example.com"
-                    className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  />
+                  <div className="relative">
+                    <input
+                      type="url"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleChange}
+                      placeholder="https://example.com"
+                      className={`w-full bg-transparent border rounded-xl p-3 pr-10 outline-none focus:ring-2 transition-all ${
+                        !validations.website && formData.website 
+                          ? "border-red-500 focus:ring-red-500/20" 
+                          : "border-gray-200 dark:border-gray-800 focus:ring-blue-500/20 focus:border-blue-500"
+                      }`}
+                    />
+                    {formData.website && (
+                      <div className="absolute right-3 top-3 text-gray-400">
+                        {validations.website ? <Check size={18} className="text-green-500" /> : <AlertCircle size={18} className="text-red-500" />}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Pronouns</label>
@@ -225,14 +252,25 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">NIP-05 Verification</label>
-                <input
-                  type="text"
-                  name="nip05"
-                  value={formData.nip05}
-                  onChange={handleChange}
-                  placeholder="name@example.com"
-                  className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="nip05"
+                    value={formData.nip05}
+                    onChange={handleChange}
+                    placeholder="name@example.com"
+                    className={`w-full bg-transparent border rounded-xl p-3 pr-10 outline-none focus:ring-2 transition-all ${
+                      !validations.nip05 && formData.nip05
+                        ? "border-red-500 focus:ring-red-500/20" 
+                        : "border-gray-200 dark:border-gray-800 focus:ring-blue-500/20 focus:border-blue-500"
+                    }`}
+                  />
+                  {formData.nip05 && (
+                    <div className="absolute right-3 top-3 text-gray-400">
+                      {validations.nip05 ? <Check size={18} className="text-green-500" /> : <AlertCircle size={18} className="text-red-500" />}
+                    </div>
+                  )}
+                </div>
               </div>
             </form>
           </div>
