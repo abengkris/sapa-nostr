@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Flag, Loader2, AlertCircle } from "lucide-react";
+import { X, Flag, Loader2, AlertCircle, Ban } from "lucide-react";
 import { useNDK } from "@/hooks/useNDK";
 import { reportContent, ReportType } from "@/lib/actions/report";
 import { useUIStore } from "@/store/ui";
+import { useLists } from "@/hooks/useLists";
 
 interface ReportModalProps {
   targetPubkey: string;
@@ -31,11 +32,31 @@ export const ReportModal: React.FC<ReportModalProps> = ({
 }) => {
   const { ndk } = useNDK();
   const { addToast } = useUIStore();
+  const { muteUser } = useLists();
   const [selectedType, setSelectedType] = useState<ReportType | null>(null);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMuting, setIsMuting] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleMute = async () => {
+    setIsMuting(true);
+    try {
+      const success = await muteUser(targetPubkey);
+      if (success) {
+        addToast("User muted successfully.", "success");
+        onClose();
+      } else {
+        addToast("Failed to mute user.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      addToast("Error muting user.", "error");
+    } finally {
+      setIsMuting(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!ndk || !selectedType) return;
@@ -107,6 +128,21 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           </div>
 
           <div className="space-y-3 pb-2">
+            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl flex items-center justify-between mb-4">
+              <div className="text-sm">
+                <p className="font-bold">Don't want to see this user?</p>
+                <p className="text-gray-500 text-xs">Muting hides their posts and replies globally.</p>
+              </div>
+              <button
+                onClick={handleMute}
+                disabled={isMuting}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-xl text-sm font-bold transition-colors flex items-center gap-2"
+              >
+                {isMuting ? <Loader2 className="animate-spin" size={14} /> : <Ban size={14} />}
+                <span>Mute</span>
+              </button>
+            </div>
+
             <label className="text-sm font-bold text-gray-500 uppercase tracking-wider px-1">Additional Context (Optional)</label>
             <textarea
               value={reason}
