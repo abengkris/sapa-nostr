@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Camera, Image as ImageIcon, Loader2, AlertCircle, Check, Globe } from "lucide-react";
+import { X, Camera, Image as ImageIcon, Loader2, AlertCircle, Check, Globe, Activity as StatusIcon } from "lucide-react";
 import { ProfileMetadata } from "@/hooks/useProfile";
-import { updateProfile } from "@/lib/actions/profile";
+import { updateProfile, updateStatus } from "@/lib/actions/profile";
 import { useNDK } from "@/hooks/useNDK";
 import { useUIStore } from "@/store/ui";
+import { useUserStatus } from "@/hooks/useUserStatus";
 import Image from "next/image";
 
 interface ProfileEditModalProps {
@@ -23,6 +24,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 }) => {
   const { ndk } = useNDK();
   const { addToast } = useUIStore();
+  const { generalStatus } = useUserStatus(currentProfile?.pubkey || "");
+  
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ProfileMetadata>({
     name: "",
@@ -36,6 +39,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
     pronouns: "",
   });
 
+  const [status, setStatus] = useState("");
   const [validations, setValidations] = useState({
     website: true,
     nip05: true
@@ -55,7 +59,11 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
         pronouns: currentProfile.pronouns || "",
       });
     }
-  }, [currentProfile, isOpen]);
+
+    if (generalStatus?.content) {
+      setStatus(generalStatus.content);
+    }
+  }, [currentProfile, generalStatus, isOpen]);
 
   // Simple validation logic
   useEffect(() => {
@@ -76,8 +84,14 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
     setLoading(true);
     try {
-      const success = await updateProfile(ndk, formData);
-      if (success) {
+      const profileSuccess = await updateProfile(ndk, formData);
+      
+      // Also update status if it changed
+      if (status !== (generalStatus?.content || "")) {
+        await updateStatus(ndk, status, "general");
+      }
+
+      if (profileSuccess) {
         addToast("Profile updated successfully!", "success");
         onSuccess?.();
         onClose();
@@ -271,6 +285,22 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Status Field */}
+              <div className="space-y-1.5 border-t border-gray-100 dark:border-gray-800 pt-4 mt-4">
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  <StatusIcon size={16} />
+                  Current Status
+                </label>
+                <input
+                  type="text"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  placeholder="What are you doing? (e.g. Building Sapa 🚀)"
+                  className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+                <p className="text-[10px] text-gray-400 font-medium">This live status appears on your profile and next to your name in posts.</p>
               </div>
             </form>
           </div>

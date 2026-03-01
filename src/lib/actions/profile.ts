@@ -28,3 +28,44 @@ export async function updateProfile(
     return false;
   }
 }
+
+/**
+ * Update user status (kind 30315).
+ */
+export async function updateStatus(
+  ndk: NDK,
+  content: string,
+  type: string = "general",
+  expiration?: number,
+  link?: string
+): Promise<boolean> {
+  if (!ndk.signer) return false;
+
+  try {
+    const event = new NDKEvent(ndk);
+    event.kind = 30315;
+    event.content = content;
+    event.tags = [["d", type]];
+    
+    if (expiration) {
+      event.tags.push(["expiration", expiration.toString()]);
+    }
+    
+    if (link) {
+      event.tags.push(["r", link]);
+    }
+
+    await event.publish();
+    return true;
+  } catch (error) {
+    console.error("Failed to update status:", error);
+    return false;
+  }
+}
+
+/**
+ * Clear a specific user status.
+ */
+export async function clearStatus(ndk: NDK, type: string = "general"): Promise<boolean> {
+  return updateStatus(ndk, "", type);
+}
