@@ -11,6 +11,17 @@ import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { UserIdentity } from "@/components/common/UserIdentity";
 import { shortenPubkey } from "@/lib/utils/nip19";
 
+interface Notification {
+  id: string;
+  pubkey: string;
+  type: 'like' | 'repost' | 'reply' | 'zap' | 'mention';
+  content?: string;
+  created_at: number;
+  author: {
+    npub: string;
+  };
+}
+
 const NotificationIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'like': return <Heart size={20} className="text-pink-500" fill="currentColor" />;
@@ -22,7 +33,7 @@ const NotificationIcon = ({ type }: { type: string }) => {
   }
 };
 
-const NotificationItem = ({ notif }: { notif: any }) => {
+const NotificationItem = ({ notif }: { notif: Notification }) => {
   const { profile } = useProfile(notif.pubkey);
   const displayName = profile?.name || profile?.displayName || shortenPubkey(notif.pubkey);
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`;
@@ -71,7 +82,7 @@ const NotificationItem = ({ notif }: { notif: any }) => {
 };
 
 export default function NotificationsPage() {
-  const { notifications, unreadCount, markAsRead, loading, loadMore, hasMore } = useNotifications();
+  const { notifications, markAsRead, loading, loadMore, hasMore } = useNotifications();
 
   React.useEffect(() => {
     markAsRead();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { ArrowUp } from "lucide-react";
 
 interface NewPostsIslandProps {
@@ -10,12 +10,15 @@ interface NewPostsIslandProps {
 
 export function NewPostsIsland({ count, onFlush }: NewPostsIslandProps) {
   const prevCount = useRef(0);
+  const [shakeKey, setShakeKey] = useState(0);
   const isVisible = count > 0;
 
-  // Track if count increased to potentially trigger internal component animations
-  const shakeKey = useRef(0);
-  if (count > prevCount.current) shakeKey.current++;
-  prevCount.current = count;
+  useEffect(() => {
+    if (count > prevCount.current) {
+      setShakeKey(prev => prev + 1);
+    }
+    prevCount.current = count;
+  }, [count]);
 
   if (!isVisible) return null;
 

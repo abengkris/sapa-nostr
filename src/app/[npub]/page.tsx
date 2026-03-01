@@ -61,6 +61,17 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const [showZapModal, setShowZapModal] = React.useState(false);
   const isOwnProfile = currentUser?.pubkey === hexPubkey;
 
+  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${hexPubkey}`;
+  const displayName = profile?.name || profile?.displayName || shortenPubkey(npubParam);
+
+  const safeHostname = (url: string) => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  };
+
   if (profileLoading) {
     return (
       <MainLayout>
@@ -80,17 +91,6 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
       </MainLayout>
     );
   }
-
-  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${hexPubkey}`;
-  const displayName = profile?.name || profile?.displayName || shortenPubkey(npubParam);
-
-  const safeHostname = (url: string) => {
-    try {
-      return new URL(url).hostname;
-    } catch {
-      return url;
-    }
-  };
 
   // Custom filter for "Replies" tab
   const filteredPosts = activeTab === "replies" 

@@ -1,7 +1,7 @@
 // src/hooks/useFollowingList.ts
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NDKUser } from "@nostr-dev-kit/ndk";
 import { getNDK } from "@/lib/ndk";
 
@@ -20,7 +20,7 @@ export function useFollowingList(
   const [followingUsers, setFollowingUsers] = useState<NDKUser[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!pubkey) return;
     setLoading(true);
     try {
@@ -38,11 +38,11 @@ export function useFollowingList(
     } finally {
       setLoading(false);
     }
-  }
+  }, [pubkey]);
 
   useEffect(() => {
     load();
-  }, [pubkey]);
+  }, [load]);
 
   return {
     following,

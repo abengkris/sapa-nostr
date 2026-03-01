@@ -28,7 +28,10 @@ export function useFollowers(pubkey: string | undefined): UseFollowersReturn {
   const [isEstimate, setIsEstimate] = useState(false);
 
   useEffect(() => {
-    if (!pubkey) return;
+    if (!pubkey) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     const ndk = getNDK();
@@ -82,7 +85,11 @@ export function useFollowerCount(pubkey: string | undefined): {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!pubkey) return;
+    if (!pubkey) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
 
     const ndk = getNDK();
 

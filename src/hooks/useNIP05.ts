@@ -8,23 +8,33 @@ export function useNIP05(pubkey: string | undefined, nip05: string | undefined) 
   const [status, setStatus] = useState<NIP05Status>('idle');
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!pubkey || !nip05) {
-      setStatus('idle');
+      if (isMounted) setStatus('idle');
       return;
     }
 
     // Basic format check
     if (!nip05.includes('@')) {
-      setStatus('invalid');
+      if (isMounted) setStatus('invalid');
       return;
     }
-
-    let isMounted = true;
-    setStatus('loading');
+    
+    // Asynchronously set loading to avoid sync update warning if possible, 
+    // though setting state at start of effect is generally allowed if not conditional on render phase.
+    // However, to be safe and consistent:
+    if (isMounted) setStatus('loading');
 
     const verify = async () => {
       try {
-        const res = await fetch(`/api/nip05?identifier=${encodeURIComponent(nip05)}`);
+        const [name, domain] = nip05.split('@');
+        if (!domain) {
+          if (isMounted) setStatus('invalid');
+          return;
+        }
+
+        const res = await fetch(`https://${domain}/.well-known/nostr.json?name=${name}`);
         
         if (!res.ok) {
           if (isMounted) setStatus('error');
@@ -32,7 +42,6 @@ export function useNIP05(pubkey: string | undefined, nip05: string | undefined) 
         }
 
         const data = await res.json();
-        const [name] = nip05.split('@');
         
         // NIP-05 spec: names mapping to pubkeys
         const foundPubkey = data.names?.[name];

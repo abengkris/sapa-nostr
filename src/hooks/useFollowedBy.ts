@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { NDKEvent, NDKUser, NDKSubscriptionCacheUsage } from "@nostr-dev-kit/ndk";
+import { useState, useEffect } from "react";
+import { NDKUser, NDKSubscriptionCacheUsage } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
 import { useFollowingList } from "@/hooks/useFollowingList";
