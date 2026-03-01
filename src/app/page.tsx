@@ -160,6 +160,7 @@ function ForYouFeedTab({ viewerPubkey, followingList }: { viewerPubkey: string; 
         loadMore={loadMore}
         hasMore={hasMore}
         emptyMessage="Looking for something for you… Try following more people!"
+        showSuggestions={true}
       />
     </div>
   );
@@ -260,6 +261,7 @@ function GlobalFeedTab() {
         loadMore={loadMore}
         hasMore={hasMore}
         emptyMessage="The global feed is empty? That's impossible!" 
+        showSuggestions={true}
       />
     </div>
   );

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { PostCard } from "@/components/post/PostCard";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
+import { WhoToFollow } from "@/components/profile/WhoToFollow";
 
 interface FeedListProps {
   posts: NDKEvent[];
@@ -11,6 +12,7 @@ interface FeedListProps {
   loadMore: () => void;
   hasMore: boolean;
   emptyMessage?: string;
+  showSuggestions?: boolean;
 }
 
 export function FeedList({ 
@@ -18,7 +20,8 @@ export function FeedList({
   isLoading, 
   loadMore, 
   hasMore, 
-  emptyMessage = "Nothing to see here yet." 
+  emptyMessage = "Nothing to see here yet.",
+  showSuggestions = false
 }: FeedListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   
@@ -56,8 +59,11 @@ export function FeedList({
 
       {/* Feed */}
       <div className="divide-y divide-gray-100 dark:divide-gray-900">
-        {posts.map((event) => (
-          <PostCard key={event.id} event={event} />
+        {posts.map((event, index) => (
+          <React.Fragment key={event.id}>
+            <PostCard event={event} />
+            {showSuggestions && index === 4 && <WhoToFollow />}
+          </React.Fragment>
         ))}
       </div>
 
