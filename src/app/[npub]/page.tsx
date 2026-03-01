@@ -15,6 +15,7 @@ import { ProfileEditModal } from "@/components/profile/ProfileEditModal";
 import { UserIdentity } from "@/components/common/UserIdentity";
 import { ZapModal } from "@/components/common/ZapModal";
 import { useZaps } from "@/hooks/useZaps";
+import { FollowedBy } from "@/components/profile/FollowedBy";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -164,6 +165,8 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             </span>
           </div>
         </div>
+
+        {!isOwnProfile && <FollowedBy pubkey={hexPubkey} />}
 
         {/* Stats */}
         <div className="flex gap-5 mt-4">
