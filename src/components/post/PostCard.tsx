@@ -24,12 +24,14 @@ interface PostCardProps {
   event: NDKEvent;
   threadLine?: ThreadLine;
   isFocal?: boolean;
+  indent?: number;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ 
   event, 
   threadLine = "none",
-  isFocal = false 
+  isFocal = false,
+  indent = 0
 }) => {
   const [repostedEvent, setRepostedEvent] = useState<NDKEvent | null>(null);
   const [isDeleted, setIsDeleted] = useState(false);
@@ -107,6 +109,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       className={`group relative flex flex-col p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors dark:border-gray-800 dark:hover:bg-gray-900/50 ${
         isFocal ? "bg-blue-50/5 dark:bg-blue-900/5 border-l-4 border-l-blue-500" : ""
       }`}
+      style={{ paddingLeft: `${1 + indent * 1.5}rem` }}
     >
       {/* Stretched Link for Accessibility */}
       <Link 
@@ -118,10 +121,10 @@ export const PostCard: React.FC<PostCardProps> = ({
       <div className="flex relative min-w-0 z-10 pointer-events-none">
         {/* Thread Lines */}
         {(threadLine === "top" || threadLine === "both") && (
-          <div className="absolute top-[-1rem] left-6 w-0.5 h-4 bg-gray-200 dark:bg-gray-800" />
+          <div className="absolute top-[-1.5rem] left-6 w-0.5 h-[2.5rem] bg-gray-200 dark:bg-gray-800" />
         )}
         {(threadLine === "bottom" || threadLine === "both") && (
-          <div className="absolute top-12 bottom-[-1rem] left-6 w-0.5 bg-gray-200 dark:bg-gray-800" />
+          <div className="absolute top-[3rem] bottom-[-1.5rem] left-6 w-0.5 bg-gray-200 dark:bg-gray-800" />
         )}
 
         {/* Content Area */}

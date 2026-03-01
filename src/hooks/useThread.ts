@@ -117,5 +117,28 @@ export function useThread(focalId?: string, hintRelays?: string[]) {
     }
   };
 
-  return { focalPost, ancestors, replies, loading, loadingReplies, hasMoreReplies, loadMoreReplies };
+  const fetchRepliesFor = useCallback(async (eventId: string) => {
+    if (!ndk) return [];
+    try {
+      const events = await ndk.fetchEvents({
+        kinds: [1],
+        "#e": [eventId],
+        limit: 10
+      }, undefined, relaySet);
+      
+      return Array.from(events)
+        .filter(ev => {
+          const replyTag = ev.tags.find(t => t[0] === 'e' && t[3] === 'reply');
+          if (replyTag) return replyTag[1] === eventId;
+          const eTags = ev.tags.filter(t => t[0] === 'e');
+          return eTags[eTags.length - 1]?.[1] === eventId;
+        })
+        .sort((a, b) => (a.created_at ?? 0) - (a.created_at ?? 0));
+    } catch (e) {
+      console.error("Error fetching nested replies:", e);
+      return [];
+    }
+  }, [ndk, relaySet]);
+
+  return { focalPost, ancestors, replies, loading, loadingReplies, hasMoreReplies, loadMoreReplies, fetchRepliesFor };
 }
