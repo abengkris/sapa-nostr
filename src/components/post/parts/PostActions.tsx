@@ -45,17 +45,17 @@ export const PostActions: React.FC<PostActionsProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between max-w-md text-gray-500">
+    <div className="flex items-center justify-between max-w-md text-gray-500 -ml-2">
       <button 
         onClick={(e) => {
           e.stopPropagation();
           onReplyClick?.(e);
         }}
         aria-label="Reply"
-        className="group flex items-center space-x-2 hover:text-blue-500 transition-colors"
+        className="group flex items-center space-x-1 hover:text-blue-500 transition-colors"
       >
-        <div className="p-2 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 rounded-full transition-colors">
-          <MessageCircle size={18} />
+        <div className="p-3 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 rounded-full transition-colors">
+          <MessageCircle size={20} />
         </div>
         <span className="text-xs">0</span>
       </button>
@@ -63,10 +63,10 @@ export const PostActions: React.FC<PostActionsProps> = ({
       <button 
         onClick={handleRepost}
         aria-label="Repost"
-        className={`group flex items-center space-x-2 hover:text-green-500 transition-colors ${optimisticReposted ? 'text-green-500' : ''}`}
+        className={`group flex items-center space-x-1 hover:text-green-500 transition-colors ${optimisticReposted ? 'text-green-500' : ''}`}
       >
-        <div className="p-2 group-hover:bg-green-50 dark:group-hover:bg-green-900/20 rounded-full transition-colors">
-          <Repeat2 size={18} className={optimisticReposted ? "animate-in spin-in-180 duration-500" : ""} />
+        <div className="p-3 group-hover:bg-green-50 dark:group-hover:bg-green-900/20 rounded-full transition-colors">
+          <Repeat2 size={20} className={optimisticReposted ? "animate-in spin-in-180 duration-500" : ""} />
         </div>
         <span className="text-xs">0</span>
       </button>
@@ -74,10 +74,10 @@ export const PostActions: React.FC<PostActionsProps> = ({
       <button 
         onClick={handleLike}
         aria-label={optimisticReacted === '+' ? "Unlike" : "Like"}
-        className={`group flex items-center space-x-2 hover:text-pink-500 transition-colors ${optimisticReacted === '+' ? 'text-pink-500' : ''}`}
+        className={`group flex items-center space-x-1 hover:text-pink-500 transition-colors ${optimisticReacted === '+' ? 'text-pink-500' : ''}`}
       >
-        <div className="p-2 group-hover:bg-pink-50 dark:group-hover:bg-pink-900/20 rounded-full transition-colors">
-          <Heart size={18} fill={optimisticReacted === '+' ? 'currentColor' : 'none'} className={optimisticReacted === '+' ? "animate-in zoom-in-125 duration-300" : ""} />
+        <div className="p-3 group-hover:bg-pink-50 dark:group-hover:bg-pink-900/20 rounded-full transition-colors">
+          <Heart size={20} fill={optimisticReacted === '+' ? 'currentColor' : 'none'} className={optimisticReacted === '+' ? "animate-in zoom-in-125 duration-300" : ""} />
         </div>
         <span className="text-xs">{optimisticLikes}</span>
       </button>
@@ -88,10 +88,10 @@ export const PostActions: React.FC<PostActionsProps> = ({
           onZapClick?.(e);
         }}
         aria-label="Zap"
-        className="group flex items-center space-x-2 hover:text-yellow-500 transition-colors"
+        className="group flex items-center space-x-1 hover:text-yellow-500 transition-colors"
       >
-        <div className="p-2 group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/20 rounded-full transition-colors">
-          <Zap size={18} />
+        <div className="p-3 group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/20 rounded-full transition-colors">
+          <Zap size={20} />
         </div>
         <span className="text-xs">0</span>
       </button>

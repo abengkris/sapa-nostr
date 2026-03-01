@@ -11,6 +11,7 @@ import { FeedList } from "@/components/feed/FeedList";
 import { NewPostsIsland } from "@/components/feed/NewPostsIsland";
 import { usePausedFeed } from "@/hooks/usePausedFeed";
 import { useForYouFeed } from "@/hooks/useForYouFeed";
+import { ProfileSetupCard } from "@/components/profile/ProfileSetupCard";
 
 type FeedTab = "following" | "forYou" | "global";
 
@@ -114,6 +115,10 @@ export default function HomePage() {
       </div>
 
       <PostComposer />
+
+      {isLoggedIn && user && (
+        <ProfileSetupCard pubkey={user.pubkey} npub={user.npub} />
+      )}
 
       <div className="pb-20">
         {activeTab === "forYou" ? (

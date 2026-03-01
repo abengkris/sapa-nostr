@@ -33,6 +33,7 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   isRepost,
   repostAuthorName,
   onMoreClick,
+  onDeleteClick,
   bot
 }) => {
   const formattedTime = createdAt

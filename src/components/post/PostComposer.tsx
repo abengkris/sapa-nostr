@@ -182,7 +182,7 @@ export const PostComposer = () => {
         )}
         
         <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-900 pt-3 mt-3">
-          <div className="flex items-center space-x-1 text-blue-500">
+          <div className="flex items-center -ml-2 text-blue-500">
             <input
               type="file"
               ref={fileInputRef}
@@ -194,7 +194,7 @@ export const PostComposer = () => {
               aria-label="Add image"
               onClick={handleImageClick}
               disabled={isUploading}
-              className={`p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors ${
+              className={`p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors ${
                 isUploading ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
@@ -202,26 +202,26 @@ export const PostComposer = () => {
             </button>
             <button 
               aria-label="Add emoji"
-              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+              className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
             >
               <Smile size={20} />
             </button>
             <button 
               aria-label="Schedule post"
-              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
+              className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
             >
               <Calendar size={20} />
             </button>
             <button 
               aria-label="Add location"
-              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
+              className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
             >
               <MapPin size={20} />
             </button>
             <button 
               aria-label="Content Warning"
               onClick={() => setIsSensitive(!isSensitive)}
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-3 rounded-full transition-colors ${
                 isSensitive 
                   ? "bg-amber-500/10 text-amber-500" 
                   : "hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500"
