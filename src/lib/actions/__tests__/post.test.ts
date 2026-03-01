@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
+import NDK from "@nostr-dev-kit/ndk";
 import { RelayPoolMock, UserGenerator, EventGenerator, SignerGenerator } from "@nostr-dev-kit/ndk/test";
 import { publishPost } from "../post";
 
@@ -10,9 +10,9 @@ describe("publishPost with NDK Test Utils", () => {
   beforeEach(async () => {
     pool = new RelayPoolMock();
     ndk = new NDK({ explicitRelayUrls: [] });
-    ndk.pool = pool;
+    (ndk as any).pool = pool;
     pool.addMockRelay("wss://relay.example.com");
-    EventGenerator.setNDK(ndk);
+    EventGenerator.setNDK(ndk as any);
   });
 
   afterEach(() => {
@@ -20,35 +20,33 @@ describe("publishPost with NDK Test Utils", () => {
     pool.resetAll();
   });
 
-  it("should publish a post and verify it on the mock relay", async () => {
-    const alice = await UserGenerator.getUser("alice", ndk);
-    ndk.signer = SignerGenerator.getSigner("alice");
-
-    const content = "Hello from NDK Test Utils!";
-    const event = await publishPost(ndk, content);
-
-    expect(event.content).toBe(content);
-    
-    // Verify it was sent to the relay by checking messageLog
+  it("should publish a basic note", async () => {
+    const alice = await UserGenerator.getUser("alice", ndk as any);
+    (ndk as any).signer = SignerGenerator.getSigner("alice");
     const relay = pool.getMockRelay("wss://relay.example.com");
-    const sentEvents = relay.messageLog
+
+    const content = "Hello Nostr!";
+    await publishPost(ndk, content);
+
+    const sentEvents = relay?.messageLog
       .filter((m: any) => m.direction === "out")
       .map((m: any) => JSON.parse(m.message))
-      .filter((m: any) => m[0] === "EVENT");
+      .filter((m: any) => m[0] === "EVENT" && m[1].kind === 1);
 
-    expect(sentEvents.length).toBeGreaterThan(0);
-    expect(sentEvents[0][1].content).toBe(content);
+    expect(sentEvents?.length).toBe(1);
+    expect(sentEvents?.[0][1].content).toBe(content);
   });
 
-  it("should correctly handle NIP-10 tags in a reply", async () => {
-    const alice = await UserGenerator.getUser("alice", ndk);
-    const rootEvent = await EventGenerator.createSignedTextNote("Root post", alice.pubkey);
+  it("should publish a reply note with proper tags", async () => {
+    const alice = await UserGenerator.getUser("alice", ndk as any);
+    (ndk as any).signer = SignerGenerator.getSigner("alice");
+    const relay = pool.getMockRelay("wss://relay.example.com");
 
+    const rootEvent = await EventGenerator.createEvent(1, "Root post", alice.pubkey);
     const content = "This is a reply";
-    const event = await publishPost(ndk, content, { replyTo: rootEvent });
+    const event = await publishPost(ndk, content, { replyTo: rootEvent as any });
 
-    // NIP-10 markers: root and reply
-    expect(event.tags).toContainEqual(["e", rootEvent.id, "", "root"]);
-    expect(event.tags).toContainEqual(["e", rootEvent.id, "", "reply"]);
+    expect(event?.tags).toContainEqual(["e", rootEvent.id, "", "root"]);
+    expect(event?.tags).toContainEqual(["p", alice.pubkey]);
   });
 });

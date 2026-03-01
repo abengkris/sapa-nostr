@@ -7,6 +7,7 @@ import { useReactions } from "@/hooks/useReactions";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ZapModal } from "@/components/common/ZapModal";
 import { PostHeader } from "./parts/PostHeader";
 import { PostContentRenderer } from "./parts/PostContent";
