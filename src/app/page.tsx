@@ -6,13 +6,13 @@ import { PostComposer } from "@/components/post/PostComposer";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, Users } from "lucide-react";
+import { Loader2, Sparkles, Users, Globe } from "lucide-react";
 import { FeedList } from "@/components/feed/FeedList";
 import { NewPostsIsland } from "@/components/feed/NewPostsIsland";
 import { usePausedFeed } from "@/hooks/usePausedFeed";
 import { useForYouFeed } from "@/hooks/useForYouFeed";
 
-type FeedTab = "following" | "forYou";
+type FeedTab = "following" | "forYou" | "global";
 
 export default function HomePage() {
   const { isLoggedIn, user, isLoading: isAuthLoading, _hasHydrated } = useAuthStore();
@@ -93,6 +93,23 @@ export default function HomePage() {
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-blue-500 rounded-full" />
             )}
           </button>
+
+          <button
+            role="tab"
+            aria-selected={activeTab === "global"}
+            onClick={() => setActiveTab("global")}
+            className={`flex-1 py-4 text-sm font-bold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 relative ${
+              activeTab === "global" ? "text-blue-500" : "text-gray-500"
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <Globe size={16} />
+              <span>Global</span>
+            </div>
+            {activeTab === "global" && (
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-blue-500 rounded-full" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -104,11 +121,13 @@ export default function HomePage() {
             viewerPubkey={user.pubkey} 
             followingList={followingPubkeys} 
           />
-        ) : (
+        ) : activeTab === "following" ? (
           <FollowingFeedTab 
             followingList={followingPubkeys} 
             viewerPubkey={user.pubkey}
           />
+        ) : (
+          <GlobalFeedTab />
         )}
       </div>
     </MainLayout>
@@ -209,6 +228,33 @@ function FollowingFeedTab({ followingList, viewerPubkey }: { followingList: stri
         loadMore={loadMore}
         hasMore={hasMore}
         emptyMessage="Try following some people to see their posts here!" 
+      />
+    </div>
+  );
+}
+
+function GlobalFeedTab() {
+  const { posts, newCount, isLoading, flushNewPosts, loadMore, hasMore } =
+    usePausedFeed({
+      filter: {
+        kinds: [1],
+      },
+    });
+
+  const handleFlush = useCallback(() => {
+    flushNewPosts();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [flushNewPosts]);
+
+  return (
+    <div className="relative">
+      <NewPostsIsland count={newCount} onFlush={handleFlush} />
+      <FeedList 
+        posts={posts}
+        isLoading={isLoading}
+        loadMore={loadMore}
+        hasMore={hasMore}
+        emptyMessage="The global feed is empty? That's impossible!" 
       />
     </div>
   );
