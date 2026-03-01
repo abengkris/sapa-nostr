@@ -56,12 +56,14 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
       setLoading(false);
     }, 10000); // 10s safety timeout
 
+    let eventsReceived = 0;
     const sub = ndk.subscribe(
       filter, 
       { 
         closeOnEose: true,
         onEvent: (event: NDKEvent) => {
           clearTimeout(loadingTimeout);
+          eventsReceived++;
 
           // NIP-51: Mute List Filtering
           if (mutedPubkeys.has(event.pubkey)) return;
@@ -77,25 +79,48 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
             let filteredPosts = newPosts;
             if (!disableFiltering && kinds.includes(1)) {
               filteredPosts = newPosts.filter(ev => {
+                // Determine if it's a reply using NIP-10 tags or simple check
                 const eTags = ev.tags.filter(t => t[0] === 'e');
+                if (eTags.length === 0) return true;
+
+                // If it has e tags, check if it's explicitly marked as reply or if it's just a root thread
                 const isReply = eTags.some(t => t[3] === 'reply' || t[3] === 'root');
+                if (!isReply && eTags.length > 0) {
+                  // If it's Kind 1 but has e tags without markers, 
+                  // it's likely an old-style reply or a quote.
+                  // For profile feeds, we usually only want the author's root posts.
+                  if (authors.length > 0) {
+                     // Only include if it's a mention/quote, but standard Nostr 
+                     // profile feeds usually separate these into a 'Replies' tab.
+                     return false;
+                  }
+                }
                 
-                if (!isReply) return true;
-                
-                // If global feed, show replies for now to ensure data appears
-                if (authors.length === 0) return true;
+                if (isReply) {
+                  // Global feed: show replies to provide activity
+                  if (authors.length === 0) return true;
 
-                const replyPTag = ev.tags.find(t => t[0] === 'p');
-                if (replyPTag && authors.includes(replyPTag[1])) return true;
-                if (replyPTag && replyPTag[1] === ev.pubkey) return true;
+                  // Profile feed: show reply only if it's to someone in authors (or self)
+                  const replyPTag = ev.tags.find(t => t[0] === 'p');
+                  if (replyPTag && authors.includes(replyPTag[1])) return true;
+                  if (replyPTag && replyPTag[1] === ev.pubkey) return true;
 
-                return false;
+                  return false;
+                }
+
+                return true;
               });
             }
 
+            // Slice AFTER filtering to ensure we have enough content
             const slicedPosts = filteredPosts.slice(0, MAX_POSTS);
-            const lastPost = slicedPosts[slicedPosts.length - 1];
-            oldestTimestampRef.current = lastPost?.created_at;
+            
+            // Update oldest timestamp based on the last post in the FULL list
+            // to ensure next page fetch works correctly even if current page is heavily filtered
+            const lastPost = newPosts[newPosts.length - 1];
+            if (lastPost?.created_at) {
+              oldestTimestampRef.current = lastPost.created_at;
+            }
 
             return slicedPosts;
           });
@@ -103,6 +128,10 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
         onEose: () => {
           clearTimeout(loadingTimeout);
           setLoading(false);
+          // If we received fewer events than the limit, we probably reached the end
+          if (eventsReceived < fetchLimit) {
+            setHasMore(false);
+          }
         }
       }
     );
@@ -171,6 +200,7 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
   // Initial fetch and global cleanup
   useEffect(() => {
     setPosts([]);
+    setHasMore(true);
     oldestTimestampRef.current = undefined;
     fetchFeed();
     

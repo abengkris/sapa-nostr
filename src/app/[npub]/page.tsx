@@ -23,6 +23,7 @@ import { FollowedBy } from "@/components/profile/FollowedBy";
 import Image from "next/image";
 import Link from "next/link";
 
+import { FeedList } from "@/components/feed/FeedList";
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { format } from "date-fns";
 import { decodeNip19, shortenPubkey } from "@/lib/utils/nip19";
@@ -92,12 +93,23 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
     );
   }
 
-  // Custom filter for "Replies" tab
-  const filteredPosts = activeTab === "replies" 
-    ? posts.filter(p => p.tags.some(t => t[0] === 'e'))
-    : activeTab === "posts"
-    ? posts.filter(p => !p.tags.some(t => t[0] === 'e'))
-    : posts;
+  // Custom filter for tabs
+  const filteredPosts = React.useMemo(() => {
+    if (activeTab === "replies") {
+      return posts.filter(p => p.tags.some(t => t[0] === 'e'));
+    }
+    if (activeTab === "posts") {
+      return posts.filter(p => !p.tags.some(t => t[0] === 'e'));
+    }
+    if (activeTab === "media") {
+      return posts.filter(p => {
+        const hasMediaUrl = p.content.match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mov|mp4|webm)/i);
+        const hasImeta = p.tags.some(t => t[0] === 'imeta');
+        return hasMediaUrl || hasImeta;
+      });
+    }
+    return posts;
+  }, [posts, activeTab]);
 
   return (
     <MainLayout>
@@ -284,35 +296,13 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
 
       {/* Feed */}
       <div className="pb-20">
-        {feedLoading && filteredPosts.length === 0 ? (
-          <FeedSkeleton />
-        ) : filteredPosts.length > 0 ? (
-          <>
-            <div className="divide-y divide-gray-100 dark:divide-gray-900">
-              {filteredPosts.map(post => <PostCard key={post.id} event={post} />)}
-            </div>
-            {hasMore && (
-              <div className="p-8 text-center border-t border-gray-100 dark:border-gray-900">
-                <button 
-                  onClick={() => loadMore()}
-                  disabled={feedLoading}
-                  className="px-6 py-2 bg-gray-100 dark:bg-gray-900 rounded-full text-blue-500 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
-                >
-                  {feedLoading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 size={16} className="animate-spin" />
-                      Loading...
-                    </span>
-                  ) : "Show more results"}
-                </button>
-              </div>
-            )}
-          </>
-        ) : !feedLoading && (
-          <div className="p-12 text-center text-gray-500">
-            No {activeTab} to show.
-          </div>
-        )}
+        <FeedList 
+          posts={filteredPosts}
+          isLoading={feedLoading}
+          loadMore={loadMore}
+          hasMore={hasMore}
+          emptyMessage={`No ${activeTab} to show.`}
+        />
       </div>
 
       <ProfileEditModal
