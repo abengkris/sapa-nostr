@@ -14,6 +14,7 @@ import { PostActions } from "./parts/PostActions";
 import { deletePost } from "@/lib/actions/post";
 import { useUIStore } from "@/store/ui";
 import { useZaps } from "@/hooks/useZaps";
+import { RawEventModal } from "./parts/RawEventModal";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
 
@@ -34,6 +35,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const { ndk, isReady } = useNDK();
   const router = useRouter();
   const [showZapModal, setShowZapModal] = useState(false);
+  const [showRawModal, setShowRawModal] = useState(false);
   const { addToast } = useUIStore();
 
   const isRepost = event.kind === 6;
@@ -125,6 +127,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             repostAuthorName={repostAuthorName}
             bot={profile?.bot}
             onDeleteClick={currentUser?.pubkey === displayEvent.pubkey ? handleDelete : undefined}
+            onMoreClick={() => setShowRawModal(true)}
           />
 
           <PostContentRenderer
@@ -147,6 +150,14 @@ export const PostCard: React.FC<PostCardProps> = ({
         <ZapModal
           event={displayEvent}
           onClose={() => setShowZapModal(false)}
+        />
+      )}
+
+      {showRawModal && (
+        <RawEventModal
+          event={displayEvent}
+          isOpen={showRawModal}
+          onClose={() => setShowRawModal(false)}
         />
       )}
     </div>

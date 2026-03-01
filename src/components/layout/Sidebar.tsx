@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useRelayStatus } from "@/hooks/useRelayStatus";
+import { RelayModal } from "@/components/common/RelayModal";
 
 const SidebarItem = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: number }) => {
   const pathname = usePathname();
@@ -41,6 +42,7 @@ export const Sidebar = () => {
   const { ndk } = useNDK();
   const { unreadCount } = useNotifications();
   const { connectedCount, totalCount } = useRelayStatus();
+  const [isRelayModalOpen, setIsRelayModalOpen] = React.useState(false);
 
   return (
     <div className="flex sm:flex-col items-center sm:items-start justify-around sm:justify-between h-16 sm:h-screen w-full sm:sticky sm:top-0 p-2 sm:p-4">
@@ -63,12 +65,15 @@ export const Sidebar = () => {
 
       <div className="flex sm:flex-col w-full sm:mt-auto gap-2">
         {/* Relay Indicator */}
-        <div className="hidden sm:flex items-center space-x-4 p-3 text-xs text-gray-500">
+        <button 
+          onClick={() => setIsRelayModalOpen(true)}
+          className="hidden sm:flex items-center space-x-4 p-3 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors w-full text-left outline-none"
+        >
           <Activity size={26} className={connectedCount > 0 ? "text-green-500" : "text-red-500"} />
           <span className="hidden lg:block text-sm">
             {connectedCount}/{totalCount} relays
           </span>
-        </div>
+        </button>
 
         {isLoggedIn ? (
           <button
@@ -90,6 +95,11 @@ export const Sidebar = () => {
           </button>
         )}
       </div>
+
+      <RelayModal 
+        isOpen={isRelayModalOpen} 
+        onClose={() => setIsRelayModalOpen(false)} 
+      />
     </div>
   );
 };
