@@ -3,7 +3,7 @@
 import React from "react";
 import { NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { formatDistanceToNow } from "date-fns";
-import { Repeat2, MoreHorizontal, Trash2 } from "lucide-react";
+import { Repeat2, MoreHorizontal, Trash2, Flag } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -20,6 +20,7 @@ interface PostHeaderProps {
   repostAuthorName?: string;
   onMoreClick?: (e: React.MouseEvent) => void;
   onDeleteClick?: (e: React.MouseEvent) => void;
+  onReportClick?: (e: React.MouseEvent) => void;
   bot?: boolean | string;
 }
 
@@ -34,6 +35,7 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   repostAuthorName,
   onMoreClick,
   onDeleteClick,
+  onReportClick,
   bot
 }) => {
   const formattedTime = createdAt
@@ -85,6 +87,18 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {onReportClick && (
+            <button 
+              className="text-gray-400 hover:text-red-500 transition-colors shrink-0 p-1" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onReportClick(e);
+              }}
+              title="Report Content"
+            >
+              <Flag size={18} />
+            </button>
+          )}
           {onDeleteClick && (
             <button 
               className="text-gray-400 hover:text-red-500 transition-colors shrink-0 p-1" 

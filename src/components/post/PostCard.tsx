@@ -15,6 +15,7 @@ import { deletePost } from "@/lib/actions/post";
 import { useUIStore } from "@/store/ui";
 import { useZaps } from "@/hooks/useZaps";
 import { RawEventModal } from "./parts/RawEventModal";
+import { ReportModal } from "./parts/ReportModal";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
 
@@ -36,6 +37,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const router = useRouter();
   const [showZapModal, setShowZapModal] = useState(false);
   const [showRawModal, setShowRawModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const { addToast } = useUIStore();
 
   const isRepost = event.kind === 6;
@@ -127,6 +129,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             repostAuthorName={repostAuthorName}
             bot={profile?.bot}
             onDeleteClick={currentUser?.pubkey === displayEvent.pubkey ? handleDelete : undefined}
+            onReportClick={currentUser?.pubkey !== displayEvent.pubkey ? () => setShowReportModal(true) : undefined}
             onMoreClick={() => setShowRawModal(true)}
           />
 
@@ -158,6 +161,15 @@ export const PostCard: React.FC<PostCardProps> = ({
           event={displayEvent}
           isOpen={showRawModal}
           onClose={() => setShowRawModal(false)}
+        />
+      )}
+
+      {showReportModal && (
+        <ReportModal
+          targetPubkey={displayEvent.pubkey}
+          targetEventId={displayEvent.id}
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
         />
       )}
     </div>
