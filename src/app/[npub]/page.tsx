@@ -5,7 +5,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { useProfile } from "@/hooks/useProfile";
 import { useFeed } from "@/hooks/useFeed";
 import { PostCard } from "@/components/post/PostCard";
-import { Loader2, Calendar, MapPin, Link as LinkIcon, Zap } from "lucide-react";
+import { Loader2, Calendar, MapPin, Link as LinkIcon, Zap, Activity } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { useFollowingList } from "@/hooks/useFollowingList";
@@ -15,6 +15,7 @@ import { ProfileEditModal } from "@/components/profile/ProfileEditModal";
 import { UserIdentity } from "@/components/common/UserIdentity";
 import { ZapModal } from "@/components/common/ZapModal";
 import { useZaps } from "@/hooks/useZaps";
+import { useRelayList } from "@/hooks/useRelayList";
 import { FollowedBy } from "@/components/profile/FollowedBy";
 
 import Image from "next/image";
@@ -38,6 +39,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   
   const [activeTab, setActiveTab] = React.useState<ProfileTab>("posts");
   const { profile, loading: profileLoading } = useProfile(hexPubkey);
+  const { relays: userRelays, loading: relaysLoading } = useRelayList(hexPubkey);
   
   const { count: followingCount, loading: fwLoading } = useFollowingList(hexPubkey);
   const { count: followerCount, loading: fLoading } = useFollowerCount(hexPubkey);
@@ -217,6 +219,16 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             </span>
             <span className="text-gray-500">Sats</span>
           </div>
+
+          {!relaysLoading && userRelays.length > 0 && (
+            <div className="flex items-center gap-1 cursor-default" title={userRelays.map(r => r.url).join("\n")}>
+              <Activity size={14} className="text-green-500" />
+              <span className="font-bold text-gray-900 dark:text-white">
+                {userRelays.length}
+              </span>
+              <span className="text-gray-500">Relays</span>
+            </div>
+          )}
         </div>
       </div>
 
