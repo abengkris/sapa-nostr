@@ -58,7 +58,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   }, [isRepost, event, isReady, ndk]);
 
   const displayName = useMemo(() => 
-    profile?.name || profile?.displayName || `${displayEvent.pubkey.slice(0, 8)}…`,
+    profile?.name || profile?.displayName || displayEvent.pubkey,
   [profile, displayEvent.pubkey]);
 
   const avatar = useMemo(() => 
@@ -66,11 +66,9 @@ export const PostCard: React.FC<PostCardProps> = ({
   [profile, displayEvent.pubkey]);
 
   const repostAuthorName = useMemo(() => {
-    const name = event.pubkey === currentUser?.pubkey 
+    return event.pubkey === currentUser?.pubkey 
       ? "You" 
-      : (repostAuthorProfile?.name || repostAuthorProfile?.displayName || `${event.pubkey.slice(0, 8)}…`);
-    
-    return name.length > 30 ? name.slice(0, 27) + "..." : name;
+      : (repostAuthorProfile?.name || repostAuthorProfile?.displayName || event.pubkey);
   }, [event.pubkey, currentUser?.pubkey, repostAuthorProfile]);
 
   const userNpub = displayEvent.author.npub;
@@ -83,7 +81,8 @@ export const PostCard: React.FC<PostCardProps> = ({
     return pubkey ? ndk?.getUser({ pubkey }).npub : null;
   }, [displayEvent.tags, ndk]);
 
-  const handleDelete = async () => {
+  const handleDelete = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!ndk || !displayEvent.id) return;
     
     try {
@@ -103,13 +102,19 @@ export const PostCard: React.FC<PostCardProps> = ({
   if (isDeleted) return null;
 
   return (
-    <div 
-      onClick={() => router.push(`/post/${eventNoteId}`)}
-      className={`flex flex-col p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer dark:border-gray-800 dark:hover:bg-gray-900/50 ${
+    <article 
+      className={`group relative flex flex-col p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors dark:border-gray-800 dark:hover:bg-gray-900/50 ${
         isFocal ? "bg-blue-50/5 dark:bg-blue-900/5 border-l-4 border-l-blue-500" : ""
       }`}
     >
-      <div className="flex relative min-w-0">
+      {/* Stretched Link for Accessibility */}
+      <Link 
+        href={`/post/${eventNoteId}`}
+        className="absolute inset-0 z-0"
+        aria-label={`View post by ${displayName}`}
+      />
+
+      <div className="flex relative min-w-0 z-10 pointer-events-none">
         {/* Thread Lines */}
         {(threadLine === "top" || threadLine === "both") && (
           <div className="absolute top-[-1rem] left-6 w-0.5 h-4 bg-gray-200 dark:bg-gray-800" />
@@ -119,7 +124,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         )}
 
         {/* Content Area */}
-        <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="flex-1 min-w-0 overflow-hidden pointer-events-auto">
           <PostHeader
             displayName={displayName}
             avatar={avatar}
@@ -152,28 +157,34 @@ export const PostCard: React.FC<PostCardProps> = ({
       </div>
 
       {showZapModal && (
-        <ZapModal
-          event={displayEvent}
-          onClose={() => setShowZapModal(false)}
-        />
+        <div className="relative z-20">
+          <ZapModal
+            event={displayEvent}
+            onClose={() => setShowZapModal(false)}
+          />
+        </div>
       )}
 
       {showRawModal && (
-        <RawEventModal
-          event={displayEvent}
-          isOpen={showRawModal}
-          onClose={() => setShowRawModal(false)}
-        />
+        <div className="relative z-20">
+          <RawEventModal
+            event={displayEvent}
+            isOpen={showRawModal}
+            onClose={() => setShowRawModal(false)}
+          />
+        </div>
       )}
 
       {showReportModal && (
-        <ReportModal
-          targetPubkey={displayEvent.pubkey}
-          targetEventId={displayEvent.id}
-          isOpen={showReportModal}
-          onClose={() => setShowReportModal(false)}
-        />
+        <div className="relative z-20">
+          <ReportModal
+            targetPubkey={displayEvent.pubkey}
+            targetEventId={displayEvent.id}
+            isOpen={showReportModal}
+            onClose={() => setShowReportModal(false)}
+          />
+        </div>
       )}
-    </div>
+    </article>
   );
 };

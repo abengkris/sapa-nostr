@@ -23,10 +23,8 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
 
   const isPost = variant === 'post';
   
-  // Hard limit for display names to prevent weird layout issues even before CSS truncation
-  const processedName = displayName && displayName.length > 50 
-    ? displayName.slice(0, 47) + "..." 
-    : (displayName || pubkey.slice(0, 8));
+  // Use CSS truncation instead of manual slicing
+  const processedName = displayName || (pubkey ? `${pubkey.slice(0, 8)}…` : "Anonymous");
 
   return (
     <div className={`flex flex-col min-w-0 ${isPost ? 'gap-0' : 'gap-1'} ${className}`}>
