@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNDK } from "@/hooks/useNDK";
-import { NDKEvent, NDKSubscriptionCacheUsage } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKSubscriptionCacheUsage, NDKKind } from "@nostr-dev-kit/ndk";
 
 export interface UserStatus {
   content: string;
@@ -25,7 +25,7 @@ export function useUserStatus(pubkey?: string) {
 
     // Subscribe to kind 30315 (User Status)
     const sub = ndk.subscribe(
-      { kinds: [30315], authors: [pubkey] },
+      { kinds: [30315 as NDKKind], authors: [pubkey] },
       { 
         closeOnEose: false, 
         cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST 

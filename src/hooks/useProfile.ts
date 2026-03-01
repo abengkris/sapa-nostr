@@ -3,6 +3,7 @@ import { useNDK } from "@/hooks/useNDK";
 import { NDKUserProfile } from "@nostr-dev-kit/ndk";
 
 export interface ProfileMetadata {
+  pubkey?: string;
   name?: string;
   picture?: string;
   about?: string;
@@ -37,7 +38,7 @@ export function useProfile(pubkey?: string) {
         const userProfile = await user.fetchProfile();
         
         if (isMounted && userProfile) {
-          const metadata: ProfileMetadata = { ...userProfile };
+          const metadata: ProfileMetadata = { ...userProfile, pubkey };
           
           // Try to get published_at from kind 0 event tags
           const kind0 = await ndk.fetchEvent({ kinds: [0], authors: [pubkey] });
