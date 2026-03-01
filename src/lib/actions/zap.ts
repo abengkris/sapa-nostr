@@ -46,11 +46,21 @@ export const createZapInvoice = async (
 /**
  * Hook or function to listen for zap confirmation (kind:9735)
  */
-export function listenForZapReceipt(ndk: NDK, eventId: string, onReceipt: (receipt: NDKEvent) => void) {
-  const filter = {
+export function listenForZapReceipt(
+  ndk: NDK, 
+  targetId: string, 
+  onReceipt: (receipt: NDKEvent) => void,
+  isUser = false
+) {
+  const filter: any = {
     kinds: [9735],
-    "#e": [eventId],
   };
+
+  if (isUser) {
+    filter["#p"] = [targetId];
+  } else {
+    filter["#e"] = [targetId];
+  }
 
   const sub = ndk.subscribe(filter, { closeOnEose: false });
   sub.on("event", (event: NDKEvent) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
+import NDK, { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
 import { createZapInvoice, listenForZapReceipt } from "@/lib/actions/zap";
 import { X, Zap, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
@@ -9,12 +9,13 @@ import { QRCodeSVG } from "qrcode.react";
 import { useUIStore } from "@/store/ui";
 
 interface ZapModalProps {
-  event: NDKEvent;
+  event?: NDKEvent;
+  user?: NDKUser;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-export const ZapModal: React.FC<ZapModalProps> = ({ event, onClose, onSuccess }) => {
+export const ZapModal: React.FC<ZapModalProps> = ({ event, user, onClose, onSuccess }) => {
   const { ndk } = useNDK();
   const [amount, setAmount] = useState<number>(1000); // 1000 sat default
   const [comment, setComment] = useState("");
@@ -23,27 +24,32 @@ export const ZapModal: React.FC<ZapModalProps> = ({ event, onClose, onSuccess })
   const [paid, setPaid] = useState(false);
   const { addToast } = useUIStore();
 
+  const target = event || user;
+
   // Listen for zap confirmation (receipt)
   useEffect(() => {
-    if (!ndk || !event.id || !invoice) return;
+    if (!ndk || !target || !invoice) return;
 
-    const stopListening = listenForZapReceipt(ndk, event.id, (receipt) => {
+    const targetId = event ? event.id : user?.pubkey;
+    if (!targetId) return;
+
+    const stopListening = listenForZapReceipt(ndk, targetId, (receipt) => {
       console.log("Zap confirmed:", receipt);
       setPaid(true);
       addToast("Zap received!", "success");
       if (onSuccess) onSuccess();
-    });
+    }, !!user);
 
     return () => stopListening();
-  }, [ndk, event.id, invoice, onSuccess, addToast]);
+  }, [ndk, event, user, invoice, onSuccess, addToast, target]);
 
   const handleZap = async () => {
-    if (!ndk || loading) return;
+    if (!ndk || loading || !target) return;
 
     setLoading(true);
     try {
       // Amount in millisats (1 sat = 1000 millisats)
-      const bolt11 = await createZapInvoice(ndk, amount * 1000, event, comment);
+      const bolt11 = await createZapInvoice(ndk, amount * 1000, target, comment);
       
       if (bolt11) {
         setInvoice(bolt11);

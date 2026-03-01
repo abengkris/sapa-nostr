@@ -4,6 +4,7 @@ import { useUIStore } from "@/store/ui";
 
 interface PostActionsProps {
   likes: number;
+  zaps?: number;
   userReacted?: string | null;
   onReplyClick?: (e: React.MouseEvent) => void;
   onRepostClick?: (e: React.MouseEvent) => void;
@@ -13,6 +14,7 @@ interface PostActionsProps {
 
 export const PostActions: React.FC<PostActionsProps> = ({
   likes: initialLikes,
+  zaps = 0,
   userReacted: initialUserReacted,
   onReplyClick,
   onRepostClick,
@@ -42,6 +44,12 @@ export const PostActions: React.FC<PostActionsProps> = ({
     setOptimisticReposted(true);
     addToast("Reposted!", "success");
     onRepostClick?.(e);
+  };
+
+  const formatSats = (n: number) => {
+    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+    return n.toString();
   };
 
   return (
@@ -91,9 +99,11 @@ export const PostActions: React.FC<PostActionsProps> = ({
         className="group flex items-center space-x-1 hover:text-yellow-500 transition-colors"
       >
         <div className="p-3 group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/20 rounded-full transition-colors">
-          <Zap size={20} />
+          <Zap size={20} className={zaps > 0 ? "text-yellow-500 fill-yellow-500" : ""} />
         </div>
-        <span className="text-xs">0</span>
+        <span className={`text-xs ${zaps > 0 ? "text-yellow-600 dark:text-yellow-400 font-bold" : ""}`}>
+          {zaps > 0 ? formatSats(zaps) : "0"}
+        </span>
       </button>
     </div>
   );

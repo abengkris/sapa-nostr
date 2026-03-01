@@ -5,7 +5,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { useProfile } from "@/hooks/useProfile";
 import { useFeed } from "@/hooks/useFeed";
 import { PostCard } from "@/components/post/PostCard";
-import { Loader2, Calendar, MapPin, Link as LinkIcon } from "lucide-react";
+import { Loader2, Calendar, MapPin, Link as LinkIcon, Zap } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { useFollowingList } from "@/hooks/useFollowingList";
@@ -13,6 +13,8 @@ import { useFollowerCount } from "@/hooks/useFollowers";
 import { FollowButton } from "@/components/profile/FollowButton";
 import { ProfileEditModal } from "@/components/profile/ProfileEditModal";
 import { UserIdentity } from "@/components/common/UserIdentity";
+import { ZapModal } from "@/components/common/ZapModal";
+import { useZaps } from "@/hooks/useZaps";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -38,6 +40,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   
   const { count: followingCount, loading: fwLoading } = useFollowingList(hexPubkey);
   const { count: followerCount, loading: fLoading } = useFollowerCount(hexPubkey);
+  const { totalSats } = useZaps(hexPubkey, true);
 
   const { ndk } = useNDK();
   const { user: currentUser } = useAuthStore();
@@ -49,6 +52,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([hexPubkey], feedKinds, disableFiltering);
 
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [showZapModal, setShowZapModal] = React.useState(false);
   const isOwnProfile = currentUser?.pubkey === hexPubkey;
 
   if (profileLoading) {
@@ -95,16 +99,27 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             />
           </div>
           
-          {isOwnProfile ? (
-            <button
-              onClick={() => setIsEditModalOpen(true)}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-700 rounded-full font-bold hover:bg-gray-50 dark:hover:bg-gray-900 transition-all"
-            >
-              Edit Profile
-            </button>
-          ) : currentUser && (
-            <FollowButton targetPubkey={hexPubkey} size="lg" />
-          )}
+          <div className="flex gap-2 items-center">
+            {isOwnProfile ? (
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="px-6 py-2 border border-gray-300 dark:border-gray-700 rounded-full font-bold hover:bg-gray-50 dark:hover:bg-gray-900 transition-all"
+              >
+                Edit Profile
+              </button>
+            ) : currentUser && (
+              <>
+                <button
+                  onClick={() => setShowZapModal(true)}
+                  className="p-2 border border-gray-300 dark:border-gray-700 rounded-full hover:bg-yellow-50 dark:hover:bg-yellow-900/20 text-yellow-500 transition-all"
+                  aria-label="Zap User"
+                >
+                  <Zap size={20} fill="currentColor" />
+                </button>
+                <FollowButton targetPubkey={hexPubkey} size="lg" />
+              </>
+            )}
+          </div>
         </div>
 
         <div className="space-y-1">
@@ -168,6 +183,14 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             </span>
             <span className="text-gray-500">Followers</span>
           </Link>
+
+          <div className="flex items-center gap-1 cursor-default">
+            <Zap size={14} className="text-yellow-500" fill="currentColor" />
+            <span className="font-bold text-gray-900 dark:text-white">
+              {formatCount(totalSats)}
+            </span>
+            <span className="text-gray-500">Sats</span>
+          </div>
         </div>
       </div>
 
@@ -224,6 +247,13 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           window.location.reload();
         }}
       />
+
+      {showZapModal && ndk && (
+        <ZapModal
+          user={ndk.getUser({ pubkey: hexPubkey })}
+          onClose={() => setShowZapModal(false)}
+        />
+      )}
     </MainLayout>
   );
 }

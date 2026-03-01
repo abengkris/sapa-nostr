@@ -13,6 +13,7 @@ import { PostContentRenderer } from "./parts/PostContent";
 import { PostActions } from "./parts/PostActions";
 import { deletePost } from "@/lib/actions/post";
 import { useUIStore } from "@/store/ui";
+import { useZaps } from "@/hooks/useZaps";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
 
@@ -41,6 +42,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const displayEvent = isRepost && repostedEvent ? repostedEvent : event;
   const { profile } = useProfile(displayEvent.pubkey);
   const { likes, userReacted } = useReactions(displayEvent.id);
+  const { totalSats } = useZaps(displayEvent.id);
 
   useEffect(() => {
     if (isRepost && isReady && ndk) {
@@ -134,6 +136,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
           <PostActions
             likes={likes}
+            zaps={totalSats}
             userReacted={userReacted}
             onZapClick={() => setShowZapModal(true)}
           />
