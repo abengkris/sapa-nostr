@@ -16,6 +16,8 @@ import { UserIdentity } from "@/components/common/UserIdentity";
 import { ZapModal } from "@/components/common/ZapModal";
 import { useZaps } from "@/hooks/useZaps";
 import { useRelayList } from "@/hooks/useRelayList";
+import { useUserStatus } from "@/hooks/useUserStatus";
+import { Music, Activity as StatusIcon } from "lucide-react";
 import { FollowedBy } from "@/components/profile/FollowedBy";
 
 import Image from "next/image";
@@ -40,6 +42,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const [activeTab, setActiveTab] = React.useState<ProfileTab>("posts");
   const { profile, loading: profileLoading } = useProfile(hexPubkey);
   const { relays: userRelays, loading: relaysLoading } = useRelayList(hexPubkey);
+  const { generalStatus, musicStatus } = useUserStatus(hexPubkey);
   
   const { count: followingCount, loading: fwLoading } = useFollowingList(hexPubkey);
   const { count: followerCount, loading: fLoading } = useFollowerCount(hexPubkey);
@@ -162,6 +165,33 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
               </span>
             )}
           </div>
+          
+          {/* User Status Badges */}
+          <div className="flex flex-wrap gap-2 py-1">
+            {generalStatus?.content && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold animate-in fade-in zoom-in-95 duration-500">
+                <StatusIcon size={12} />
+                <span>{generalStatus.content}</span>
+                {generalStatus.link && (
+                  <a href={generalStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500">
+                    <LinkIcon size={10} />
+                  </a>
+                )}
+              </div>
+            )}
+            {musicStatus?.content && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-pink-50 dark:bg-pink-900/20 border border-pink-100 dark:border-pink-800 text-pink-600 dark:text-pink-400 rounded-full text-xs font-bold animate-in fade-in zoom-in-95 duration-500">
+                <Music size={12} />
+                <span>{musicStatus.content}</span>
+                {musicStatus.link && (
+                  <a href={musicStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-pink-500">
+                    <LinkIcon size={10} />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
           <p className="text-gray-500 text-xs font-mono break-all bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
             {npubParam}
           </p>
