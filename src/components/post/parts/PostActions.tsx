@@ -1,8 +1,10 @@
-import React, { useState } from "react";
-import { MessageCircle, Repeat2, Heart, Zap } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { MessageCircle, Repeat2, Heart, Zap, Bookmark } from "lucide-react";
 import { useUIStore } from "@/store/ui";
+import { useLists } from "@/hooks/useLists";
 
 interface PostActionsProps {
+  eventId: string;
   likes: number;
   zaps?: number;
   userReacted?: string | null;
@@ -13,6 +15,7 @@ interface PostActionsProps {
 }
 
 export const PostActions: React.FC<PostActionsProps> = ({
+  eventId,
   likes: initialLikes,
   zaps = 0,
   userReacted: initialUserReacted,
@@ -25,6 +28,20 @@ export const PostActions: React.FC<PostActionsProps> = ({
   const [optimisticReacted, setOptimisticReacted] = useState(initialUserReacted);
   const [optimisticReposted, setOptimisticReposted] = useState(false);
   const { addToast } = useUIStore();
+  const { bookmarkedEventIds, bookmarkPost, unbookmarkPost } = useLists();
+
+  const isBookmarked = useMemo(() => bookmarkedEventIds.has(eventId), [bookmarkedEventIds, eventId]);
+
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isBookmarked) {
+      const success = await unbookmarkPost(eventId);
+      if (success) addToast("Removed from bookmarks", "success");
+    } else {
+      const success = await bookmarkPost(eventId);
+      if (success) addToast("Saved to bookmarks!", "success");
+    }
+  };
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -104,6 +121,16 @@ export const PostActions: React.FC<PostActionsProps> = ({
         <span className={`text-xs ${zaps > 0 ? "text-yellow-600 dark:text-yellow-400 font-bold" : ""}`}>
           {zaps > 0 ? formatSats(zaps) : "0"}
         </span>
+      </button>
+
+      <button 
+        onClick={handleBookmark}
+        aria-label={isBookmarked ? "Remove Bookmark" : "Bookmark"}
+        className={`group flex items-center space-x-1 hover:text-blue-500 transition-colors ${isBookmarked ? 'text-blue-500' : ''}`}
+      >
+        <div className="p-3 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 rounded-full transition-colors">
+          <Bookmark size={20} fill={isBookmarked ? 'currentColor' : 'none'} className={isBookmarked ? "animate-in zoom-in-125 duration-300" : ""} />
+        </div>
       </button>
     </div>
   );
