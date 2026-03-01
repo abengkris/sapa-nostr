@@ -3,10 +3,12 @@
 import React from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useNotifications } from "@/hooks/useNotifications";
-import { PostCard } from "@/components/post/PostCard";
-import { Loader2, Heart, Repeat2, MessageCircle, Zap, UserPlus } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { Loader2, Heart, Repeat2, MessageCircle, Zap, UserPlus, Bell } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
+import { UserIdentity } from "@/components/common/UserIdentity";
 
 const NotificationIcon = ({ type }: { type: string }) => {
   switch (type) {
@@ -17,6 +19,54 @@ const NotificationIcon = ({ type }: { type: string }) => {
     case 'mention': return <MessageCircle size={20} className="text-purple-500" />;
     default: return null;
   }
+};
+
+const NotificationItem = ({ notif }: { notif: any }) => {
+  const { profile } = useProfile(notif.pubkey);
+  const displayName = profile?.name || profile?.displayName || `${notif.pubkey.slice(0, 8)}…`;
+  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`;
+
+  return (
+    <div className="border-b border-gray-100 dark:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+      <div className="flex p-4 space-x-3">
+        <div className="shrink-0 pt-1">
+          <NotificationIcon type={notif.type} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-2 mb-1">
+            <Link href={`/${notif.author.npub}`} className="shrink-0">
+              <Image 
+                src={avatar} 
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-full bg-gray-200 object-cover"
+                alt={displayName}
+                unoptimized
+              />
+            </Link>
+            <div className="flex flex-wrap items-center gap-x-1 min-w-0">
+              <Link href={`/${notif.author.npub}`} className="font-bold hover:underline truncate max-w-[150px]">
+                {displayName}
+              </Link>
+              <span className="text-gray-500 text-sm whitespace-nowrap">
+                {notif.type === 'like' && "liked your post"}
+                {notif.type === 'repost' && "reposted your post"}
+                {notif.type === 'reply' && "replied to your post"}
+                {notif.type === 'zap' && "zapped your post"}
+                {notif.type === 'mention' && "mentioned you"}
+              </span>
+            </div>
+          </div>
+          
+          {notif.content && (
+            <div className="text-gray-600 dark:text-gray-400 text-sm border-l-2 border-gray-200 dark:border-gray-800 pl-3 py-1 italic line-clamp-2">
+              {notif.content}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default function NotificationsPage() {
@@ -34,65 +84,49 @@ export default function NotificationsPage() {
 
       <div className="pb-20">
         {loading && notifications.length === 0 ? (
-          <div className="flex justify-center p-12">
-            <Loader2 className="animate-spin text-blue-500" size={32} />
+          <div className="divide-y divide-gray-100 dark:divide-gray-900 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="p-4 flex space-x-3">
+                <div className="w-5 h-5 bg-gray-200 dark:bg-gray-800 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full" />
+                    <div className="h-4 bg-gray-100 dark:bg-gray-900 rounded w-1/3" />
+                  </div>
+                  <div className="h-3 bg-gray-50 dark:bg-black rounded w-2/3 ml-10" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-gray-500 text-center">
             <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-full mb-4">
-              <MessageCircle size={48} className="opacity-20" />
+              <Bell size={48} className="opacity-20" />
             </div>
             <p className="text-lg font-medium">No notifications yet</p>
             <p className="text-sm mt-2">Interactions with your posts will appear here.</p>
           </div>
         ) : (
           <>
-            {notifications.map((notif) => (
-              <div key={notif.id} className="border-b border-gray-100 dark:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
-                <div className="flex p-4 space-x-3">
-                  <div className="shrink-0 pt-1">
-                    <NotificationIcon type={notif.type} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                                      <div className="flex items-center space-x-2 mb-2">
-                                                            <Image 
-                                                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`} 
-                                                              width={32}
-                                                              height={32}
-                                                              className="w-8 h-8 rounded-full bg-gray-200"
-                                                              alt="User"
-                                                              unoptimized
-                                                            />
-                                                                                <Link href={`/${notif.author.npub}`} className="font-bold hover:underline truncate">
-                                                                                  {notif.author.npub.slice(0, 12)}...
-                                                                                </Link>
-                                                                                  <span className="text-gray-500 text-sm">
-                        {notif.type === 'like' && "liked your post"}
-                        {notif.type === 'repost' && "reposted your post"}
-                        {notif.type === 'reply' && "replied to your post"}
-                        {notif.type === 'zap' && "zapped your post"}
-                        {notif.type === 'mention' && "mentioned you"}
-                      </span>
-                    </div>
-                    
-                    {notif.kind === 1 && (
-                      <div className="text-gray-600 dark:text-gray-400 text-sm border-l-2 border-gray-200 dark:border-gray-800 pl-3 py-1 italic">
-                        {notif.content.length > 100 ? notif.content.slice(0, 100) + "..." : notif.content}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+            <div className="divide-y divide-gray-100 dark:divide-gray-900">
+              {notifications.map((notif) => (
+                <NotificationItem key={notif.id} notif={notif} />
+              ))}
+            </div>
             
             {hasMore && (
               <div className="p-8 text-center">
                 <button 
                   onClick={() => loadMore()}
                   disabled={loading}
-                  className="text-blue-500 text-sm font-bold hover:underline disabled:opacity-50"
+                  className="px-6 py-2 bg-gray-100 dark:bg-gray-900 rounded-full text-blue-500 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
                 >
-                  {loading ? "Loading..." : "Load more"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" />
+                      Loading...
+                    </span>
+                  ) : "Show more notifications"}
                 </button>
               </div>
             )}
