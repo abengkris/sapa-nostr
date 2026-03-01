@@ -14,6 +14,7 @@ import { ShortenedUrl } from "../tokens/ShortenedUrl";
 import { UrlPreview } from "../tokens/UrlPreview";
 import { AsyncMediaEmbed } from "../tokens/AsyncMediaEmbed";
 import { NDKEvent, NDKTag } from "@nostr-dev-kit/ndk";
+import { shortenPubkey } from "@/lib/utils/nip19";
 
 interface PostContentRendererProps {
   content: string;
@@ -101,7 +102,7 @@ export function PostContentRenderer({
       {/* Frame 1: Immediate Label */}
       {replyingToNpub && !isRepost && (
         <div className="text-gray-500 text-xs mb-1" onClick={(e) => e.stopPropagation()}>
-          Replying to <span className="text-blue-500 hover:underline">@{replyingToNpub.slice(0, 12)}…</span>
+          Replying to <span className="text-blue-500 hover:underline">@{shortenPubkey(replyingToNpub)}</span>
         </div>
       )}
 

@@ -5,6 +5,7 @@ import { useFollowedBy } from "@/hooks/useFollowedBy";
 import { Avatar } from "@/components/common/Avatar";
 import Link from "next/link";
 import { NDKUser } from "@nostr-dev-kit/ndk";
+import { shortenPubkey } from "@/lib/utils/nip19";
 
 export const FollowedBy = ({ pubkey }: { pubkey: string }) => {
   const { followedBy, count, loading } = useFollowedBy(pubkey);
@@ -49,7 +50,7 @@ export const FollowedBy = ({ pubkey }: { pubkey: string }) => {
             {displayUsers.map((user, i) => (
               <React.Fragment key={user.pubkey}>
                 <Link href={`/${user.npub}`} className="text-gray-900 dark:text-gray-100 font-bold hover:underline">
-                  {user.name || user.pubkey.slice(0, 8)}
+                  {user.name || shortenPubkey(user.pubkey)}
                 </Link>
                 {i < displayUsers.length - 1 ? ", " : ""}
               </React.Fragment>

@@ -17,6 +17,7 @@ import { useUIStore } from "@/store/ui";
 import { useZaps } from "@/hooks/useZaps";
 import { RawEventModal } from "./parts/RawEventModal";
 import { ReportModal } from "./parts/ReportModal";
+import { shortenPubkey } from "@/lib/utils/nip19";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
 
@@ -61,7 +62,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   }, [isRepost, event, isReady, ndk]);
 
   const displayName = useMemo(() => 
-    profile?.name || profile?.displayName || displayEvent.pubkey,
+    profile?.name || profile?.displayName || shortenPubkey(displayEvent.pubkey),
   [profile, displayEvent.pubkey]);
 
   const avatar = useMemo(() => 
@@ -71,7 +72,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const repostAuthorName = useMemo(() => {
     return event.pubkey === currentUser?.pubkey 
       ? "You" 
-      : (repostAuthorProfile?.name || repostAuthorProfile?.displayName || event.pubkey);
+      : (repostAuthorProfile?.name || repostAuthorProfile?.displayName || shortenPubkey(event.pubkey));
   }, [event.pubkey, currentUser?.pubkey, repostAuthorProfile]);
 
   const userNpub = displayEvent.author.npub;

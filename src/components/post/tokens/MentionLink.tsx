@@ -3,6 +3,7 @@
 import { useProfile } from "@/hooks/useProfile";
 import Link from "next/link";
 import { nip19 } from "nostr-tools";
+import { shortenPubkey } from "@/lib/utils/nip19";
 
 interface MentionLinkProps {
   pubkey: string;
@@ -32,14 +33,4 @@ export function MentionLink({ pubkey, raw }: MentionLinkProps) {
       @{displayName}
     </Link>
   );
-}
-
-function shortenPubkey(pubkey: string): string {
-  if (!pubkey) return "unknown";
-  try {
-    const npub = nip19.npubEncode(pubkey);
-    return npub.slice(0, 8) + "…";
-  } catch {
-    return pubkey.slice(0, 8) + "…";
-  }
 }

@@ -3,6 +3,7 @@
 import React from 'react';
 import { BadgeCheck, Loader2, AlertCircle } from 'lucide-react';
 import { useNIP05 } from '@/hooks/useNIP05';
+import { shortenPubkey } from '@/lib/utils/nip19';
 
 interface UserIdentityProps {
   pubkey: string;
@@ -23,8 +24,8 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
 
   const isPost = variant === 'post';
   
-  // Use CSS truncation instead of manual slicing
-  const processedName = displayName || (pubkey ? `${pubkey.slice(0, 8)}…` : "Anonymous");
+  // Use shortenPubkey helper instead of manual slicing
+  const processedName = displayName || (pubkey ? shortenPubkey(pubkey) : "Anonymous");
 
   return (
     <div className={`flex flex-col min-w-0 ${isPost ? 'gap-0' : 'gap-1'} ${className}`}>

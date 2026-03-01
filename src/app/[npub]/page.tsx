@@ -25,7 +25,7 @@ import Link from "next/link";
 
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { format } from "date-fns";
-import { decodeNip19 } from "@/lib/utils/nip19";
+import { decodeNip19, shortenPubkey } from "@/lib/utils/nip19";
 
 type ProfileTab = "posts" | "replies" | "media" | "likes";
 
@@ -82,7 +82,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   }
 
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${hexPubkey}`;
-  const displayName = profile?.name || profile?.displayName || `${npubParam.slice(0, 8)}…`;
+  const displayName = profile?.name || profile?.displayName || shortenPubkey(npubParam);
 
   const safeHostname = (url: string) => {
     try {

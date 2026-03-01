@@ -62,3 +62,13 @@ export function toNote(eventId: string): string {
     return eventId;
   }
 }
+
+/**
+ * Shortens a pubkey (npub or hex) for display.
+ */
+export function shortenPubkey(pubkey: string, length = 8): string {
+  if (!pubkey) return "";
+  const str = pubkey.startsWith("npub") ? pubkey : toNpub(pubkey);
+  if (str.length <= length * 2) return str;
+  return `${str.slice(0, length)}…${str.slice(-4)}`;
+}

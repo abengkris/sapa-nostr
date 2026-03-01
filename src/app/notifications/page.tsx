@@ -9,6 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { UserIdentity } from "@/components/common/UserIdentity";
+import { shortenPubkey } from "@/lib/utils/nip19";
 
 const NotificationIcon = ({ type }: { type: string }) => {
   switch (type) {
@@ -23,7 +24,7 @@ const NotificationIcon = ({ type }: { type: string }) => {
 
 const NotificationItem = ({ notif }: { notif: any }) => {
   const { profile } = useProfile(notif.pubkey);
-  const displayName = profile?.name || profile?.displayName || `${notif.pubkey.slice(0, 8)}…`;
+  const displayName = profile?.name || profile?.displayName || shortenPubkey(notif.pubkey);
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`;
 
   return (

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { nip19 } from "nostr-tools";
 import Image from "next/image";
 import { PostContentRenderer } from "../parts/PostContent";
+import { shortenPubkey } from "@/lib/utils/nip19";
 
 interface QuoteEmbedProps {
   eventId: string;
@@ -80,7 +81,7 @@ function QuoteEmbedContent({ event, className }: { event: NDKEvent; className: s
           unoptimized
         />
         <span className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate min-w-0">
-          {profile?.name ?? npub.slice(0, 8) + "…"}
+          {profile?.name ?? shortenPubkey(event.pubkey)}
         </span>
         {profile?.bot && (
           <span className="text-[8px] bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1 rounded font-bold uppercase tracking-tighter shrink-0">

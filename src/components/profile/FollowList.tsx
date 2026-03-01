@@ -8,6 +8,7 @@ import { FollowButton } from "./FollowButton";
 import { Avatar } from "@/components/common/Avatar";
 import Link from "next/link";
 import { nip19 } from "nostr-tools";
+import { shortenPubkey } from "@/lib/utils/nip19";
 
 interface FollowListProps {
   pubkeys: string[];
@@ -91,7 +92,7 @@ export function FollowList({
       {pubkeys.map((pubkey) => {
         const user = users.get(pubkey);
         const npub = user?.npub ?? nip19.npubEncode(pubkey);
-        const displayName = user?.name ?? npub.slice(0, 12) + "...";
+        const displayName = user?.name ?? shortenPubkey(npub);
 
         return (
           <div
@@ -115,7 +116,7 @@ export function FollowList({
                   {displayName}
                 </p>
                 <p className="text-zinc-500 text-sm truncate">
-                  @{npub.slice(0, 16)}...
+                  @{shortenPubkey(npub, 16)}
                 </p>
               </Link>
               {user?.about && (

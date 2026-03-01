@@ -10,6 +10,7 @@ import { PostCard } from "@/components/post/PostCard";
 import Link from "next/link";
 import Image from "next/image";
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
+import { shortenPubkey } from "@/lib/utils/nip19";
 
 export default function SearchPage() {
   const [searchInput, setSearchInput] = useState("");
@@ -75,10 +76,10 @@ export default function SearchPage() {
                     unoptimized={true}
                   />
                   <p className="font-bold text-sm truncate w-24">
-                    {user.profile?.name || `${user.npub.slice(0, 8)}…`}
+                    {user.profile?.name || shortenPubkey(user.npub)}
                   </p>
                   <p className="text-xs text-gray-500 truncate w-24">
-                    {user.profile?.nip05 || `${user.npub.slice(-8)}`}
+                    {user.profile?.nip05 || shortenPubkey(user.npub, 6)}
                   </p>
                 </Link>
               ))}
