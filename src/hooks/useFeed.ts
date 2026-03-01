@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { NDKEvent, NDKFilter, NDKSubscription } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
+import { useLists } from "@/hooks/useLists";
 
 const MAX_POSTS = 100;
 
 export function useFeed(authors: string[], kinds: number[] = [1], disableFiltering: boolean = false) {
   const { ndk, isReady } = useNDK();
+  const { mutedPubkeys } = useLists();
   const [posts, setPosts] = useState<NDKEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -60,6 +62,10 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
         closeOnEose: true,
         onEvent: (event: NDKEvent) => {
           clearTimeout(loadingTimeout);
+
+          // NIP-51: Mute List Filtering
+          if (mutedPubkeys.has(event.pubkey)) return;
+
           setPosts((prev) => {
             if (prev.find((p) => p.id === event.id)) return prev;
             
@@ -123,6 +129,9 @@ export function useFeed(authors: string[], kinds: number[] = [1], disableFilteri
         groupableDelay: 200,
         groupableDelayType: "at-most",
         onEvent: (event: NDKEvent) => {
+          // NIP-51: Mute List Filtering
+          if (mutedPubkeys.has(event.pubkey)) return;
+
           setPosts((prev) => {
             if (prev.find((p) => p.id === event.id)) return prev;
             
