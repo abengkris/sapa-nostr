@@ -131,6 +131,11 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
               nip05={profile?.nip05}
               variant="profile"
             />
+            {profile?.pronouns && (
+              <span className="text-xs text-gray-500 font-medium bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded mt-1">
+                {profile.pronouns}
+              </span>
+            )}
             {profile?.bot && (
               <span className="text-[10px] bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest mt-1">
                 Bot
