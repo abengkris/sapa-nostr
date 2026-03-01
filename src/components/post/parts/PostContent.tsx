@@ -37,6 +37,13 @@ export function PostContentRenderer({
   isRepost,
 }: PostContentRendererProps) {
   const [showFull, setShowFull] = useState(false);
+  const [showSensitive, setShowSensitive] = useState(false);
+
+  const contentWarning = useMemo(() => {
+    const tag = event.tags.find(t => t[0] === "content-warning");
+    return tag ? tag[1] || "Sensitive content" : null;
+  }, [event.tags]);
+
   const isLong = content.length > 600;
 
   // Frame 1: Synchronous Preparations
@@ -98,74 +105,94 @@ export function PostContentRenderer({
         </div>
       )}
 
-      {/* Frame 1: Text Tokens */}
-      {textTokens.length > 0 && (
-        <div
-          className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words text-gray-900 dark:text-gray-100 text-pretty min-w-0 ${
-            maxLines && !showFull ? `line-clamp-${maxLines}` : ""
-          }`}
+      {contentWarning && !showSensitive ? (
+        <div 
+          className="bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 my-2 flex flex-col items-center gap-3"
+          onClick={(e) => e.stopPropagation()}
         >
-          {textTokens.map((token, i) => (
-            <TokenRenderer key={i} token={token} emojiMap={emojiMap} />
-          ))}
-          
-          {isLong && !showFull && (
-            <button 
-              onClick={(e) => { e.stopPropagation(); setShowFull(true); }}
-              className="text-blue-500 hover:underline ml-1 font-bold text-sm"
+          <div className="flex flex-col items-center text-center">
+            <span className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Content Warning</span>
+            <span className="text-xs text-gray-500">{contentWarning}</span>
+          </div>
+          <button
+            onClick={() => setShowSensitive(true)}
+            className="px-4 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-full text-xs font-bold transition-colors"
+          >
+            Show Content
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Frame 1: Text Tokens */}
+          {textTokens.length > 0 && (
+            <div
+              className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words text-gray-900 dark:text-gray-100 text-pretty min-w-0 ${
+                maxLines && !showFull ? `line-clamp-${maxLines}` : ""
+              }`}
             >
-              Show more
-            </button>
+              {textTokens.map((token, i) => (
+                <TokenRenderer key={i} token={token} emojiMap={emojiMap} />
+              ))}
+              
+              {isLong && !showFull && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowFull(true); }}
+                  className="text-blue-500 hover:underline ml-1 font-bold text-sm"
+                >
+                  Show more
+                </button>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      {/* Frame 1: Payment Cards (Local Decode) */}
-      {cardTokens.length > 0 && (
-        <div className="space-y-1">
-          {cardTokens.map((token, i) => (
-            token.type === "lightning" 
-              ? <LightningCard key={i} invoice={token.value} />
-              : <CashuCard key={i} token={token.value} />
-          ))}
-        </div>
-      )}
+          {/* Frame 1: Payment Cards (Local Decode) */}
+          {cardTokens.length > 0 && (
+            <div className="space-y-1">
+              {cardTokens.map((token, i) => (
+                token.type === "lightning" 
+                  ? <LightningCard key={i} invoice={token.value} />
+                  : <CashuCard key={i} token={token.value} />
+              ))}
+            </div>
+          )}
 
-      {/* Frame 2: Explicit Media (Images/Videos with extensions) */}
-      {renderMedia && mediaTokens.length > 0 && (
-        <div className="space-y-2 w-full">
-          {mediaTokens.map((token, i) => {
+          {/* Frame 2: Explicit Media (Images/Videos with extensions) */}
+          {renderMedia && mediaTokens.length > 0 && (
+            <div className="space-y-2 w-full">
+              {mediaTokens.map((token, i) => {
+                const cleanUrl = token.value.replace(/[.,;]$/, "");
+                const imeta = imetaMap.get(cleanUrl);
+                return token.type === "image" ? (
+                  <ImageEmbed key={i} url={cleanUrl} imeta={imeta} />
+                ) : (
+                  <VideoEmbed key={i} url={cleanUrl} />
+                );
+              })}
+            </div>
+          )}
+
+          {/* Frame 2: Async Media Detection (URLs without extensions) */}
+          {renderMedia && urlTokens.map((token, i) => {
             const cleanUrl = token.value.replace(/[.,;]$/, "");
             const imeta = imetaMap.get(cleanUrl);
-            return token.type === "image" ? (
-              <ImageEmbed key={i} url={cleanUrl} imeta={imeta} />
-            ) : (
-              <VideoEmbed key={i} url={cleanUrl} />
-            );
+            return <AsyncMediaEmbed key={i} url={cleanUrl} imeta={imeta} />;
           })}
-        </div>
+
+          {/* Frame 3: Quote Embeds (Fetch required) */}
+          {renderQuotes && quoteTokens.map((token, i) => (
+            <QuoteEmbed
+              key={i}
+              eventId={token.decoded?.eventId ?? ""}
+              hintRelays={token.decoded?.relays}
+            />
+          ))}
+
+          {/* Frame 3: URL Previews (Fetch OG required) */}
+          {urlTokens.map((token, i) => (
+            <UrlPreview key={i} url={token.value} />
+          ))}
+        </>
       )}
-
-      {/* Frame 2: Async Media Detection (URLs without extensions) */}
-      {renderMedia && urlTokens.map((token, i) => {
-        const cleanUrl = token.value.replace(/[.,;]$/, "");
-        const imeta = imetaMap.get(cleanUrl);
-        return <AsyncMediaEmbed key={i} url={cleanUrl} imeta={imeta} />;
-      })}
-
-      {/* Frame 3: Quote Embeds (Fetch required) */}
-      {renderQuotes && quoteTokens.map((token, i) => (
-        <QuoteEmbed
-          key={i}
-          eventId={token.decoded?.eventId ?? ""}
-          hintRelays={token.decoded?.relays}
-        />
-      ))}
-
-      {/* Frame 3: URL Previews (Fetch OG required) */}
-      {urlTokens.map((token, i) => (
-        <UrlPreview key={i} url={token.value} />
-      ))}
     </div>
   );
 }

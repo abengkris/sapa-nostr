@@ -4,15 +4,17 @@ import React, { useState, useRef } from "react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
-import { ImageIcon, Calendar, Smile, MapPin, Loader2, X } from "lucide-react";
+import { ImageIcon, Calendar, Smile, MapPin, Loader2, X, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { useUIStore } from "@/store/ui";
 import { useBlossom } from "@/hooks/useBlossom";
-import { imetaTagToTag, NDKImetaTag } from "@nostr-dev-kit/ndk";
+import { imetaTagToTag, NDKImetaTag, NDKTag } from "@nostr-dev-kit/ndk";
 
 export const PostComposer = () => {
   const [content, setContent] = useState("");
   const [imetaTags, setImetaTags] = useState<NDKImetaTag[]>([]);
+  const [isSensitive, setIsSensitive] = useState(false);
+  const [contentWarning, setContentWarning] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -27,10 +29,17 @@ export const PostComposer = () => {
 
     setIsSubmitting(true);
     try {
-      const tags = imetaTags.map(imetaTagToTag);
+      const tags: NDKTag[] = imetaTags.map(imetaTagToTag);
+      
+      if (isSensitive) {
+        tags.push(["content-warning", contentWarning]);
+      }
+
       await publishPost(ndk, content, { tags });
       setContent("");
       setImetaTags([]);
+      setIsSensitive(false);
+      setContentWarning("");
       addToast("Post published successfully!", "success");
     } catch (err) {
       console.error("Failed to post:", err);
@@ -113,6 +122,25 @@ export const PostComposer = () => {
           className="w-full text-xl bg-transparent border-none focus:ring-0 resize-none placeholder-gray-500 min-h-[100px]"
         />
 
+        {isSensitive && (
+          <div className="mb-3 px-3 py-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-center gap-3">
+            <AlertTriangle size={18} className="text-amber-500 shrink-0" />
+            <input
+              type="text"
+              value={contentWarning}
+              onChange={(e) => setContentWarning(e.target.value)}
+              placeholder="Reason (optional)"
+              className="flex-1 bg-transparent border-none focus:ring-0 text-sm p-0 placeholder-amber-500/50 text-amber-700 dark:text-amber-400 outline-none"
+            />
+            <button 
+              onClick={() => setIsSensitive(false)}
+              className="text-amber-500 hover:text-amber-600"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {imetaTags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {imetaTags.map((tag, i) => (
@@ -189,6 +217,17 @@ export const PostComposer = () => {
               className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
             >
               <MapPin size={20} />
+            </button>
+            <button 
+              aria-label="Content Warning"
+              onClick={() => setIsSensitive(!isSensitive)}
+              className={`p-2 rounded-full transition-colors ${
+                isSensitive 
+                  ? "bg-amber-500/10 text-amber-500" 
+                  : "hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500"
+              }`}
+            >
+              <AlertTriangle size={20} />
             </button>
           </div>
           
