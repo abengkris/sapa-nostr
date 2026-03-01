@@ -19,6 +19,7 @@ interface PostHeaderProps {
   isRepost?: boolean;
   repostAuthorName?: string;
   onMoreClick?: (e: React.MouseEvent) => void;
+  onDeleteClick?: (e: React.MouseEvent) => void;
   bot?: boolean | string;
 }
 
@@ -86,10 +87,16 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
           className="text-gray-400 hover:text-blue-500 transition-colors shrink-0" 
           onClick={(e) => {
             e.stopPropagation();
-            onMoreClick?.(e);
+            if (onDeleteClick) {
+              if (confirm("Delete this post? This sends a request to relays, but decentralized deletion is not guaranteed across all clients and relays.")) {
+                onDeleteClick(e);
+              }
+            } else {
+              onMoreClick?.(e);
+            }
           }}
         >
-          <MoreHorizontal size={18} />
+          <MoreHorizontal size={18} className={onDeleteClick ? "hover:text-red-500" : ""} />
         </button>
       </div>
     </>

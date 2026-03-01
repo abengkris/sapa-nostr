@@ -11,6 +11,8 @@ import { ZapModal } from "@/components/common/ZapModal";
 import { PostHeader } from "./parts/PostHeader";
 import { PostContentRenderer } from "./parts/PostContent";
 import { PostActions } from "./parts/PostActions";
+import { deletePost } from "@/lib/actions/post";
+import { useUIStore } from "@/store/ui";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
 
@@ -26,10 +28,12 @@ export const PostCard: React.FC<PostCardProps> = ({
   isFocal = false 
 }) => {
   const [repostedEvent, setRepostedEvent] = useState<NDKEvent | null>(null);
+  const [isDeleted, setIsDeleted] = useState(false);
   const { user: currentUser } = useAuthStore();
   const { ndk, isReady } = useNDK();
   const router = useRouter();
   const [showZapModal, setShowZapModal] = useState(false);
+  const { addToast } = useUIStore();
 
   const isRepost = event.kind === 6;
   const { profile: repostAuthorProfile } = useProfile(isRepost ? event.pubkey : undefined);
@@ -71,6 +75,25 @@ export const PostCard: React.FC<PostCardProps> = ({
     return pubkey ? ndk?.getUser({ pubkey }).npub : null;
   }, [displayEvent.tags, ndk]);
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    if (!ndk || !displayEvent.id) return;
+    
+    try {
+      const success = await deletePost(ndk, displayEvent.id);
+      if (success) {
+        setIsDeleted(true);
+        addToast("Post deletion request sent", "success");
+      } else {
+        addToast("Failed to delete post", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      addToast("Error deleting post", "error");
+    }
+  };
+
+  if (isDeleted) return null;
+
   return (
     <div 
       onClick={() => router.push(`/post/${eventNoteId}`)}
@@ -99,6 +122,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             isRepost={isRepost}
             repostAuthorName={repostAuthorName}
             bot={profile?.bot}
+            onDeleteClick={currentUser?.pubkey === displayEvent.pubkey ? handleDelete : undefined}
           />
 
           <PostContentRenderer

@@ -3,10 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, User, LogIn, LogOut, Bell, MessageSquare } from "lucide-react";
+import { Home, Search, User, LogIn, LogOut, Bell, MessageSquare, Activity } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useRelayStatus } from "@/hooks/useRelayStatus";
 
 const SidebarItem = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: number }) => {
   const pathname = usePathname();
@@ -39,6 +40,7 @@ export const Sidebar = () => {
   const { user, isLoggedIn, login, logout } = useAuthStore();
   const { ndk } = useNDK();
   const { unreadCount } = useNotifications();
+  const { connectedCount, totalCount } = useRelayStatus();
 
   return (
     <div className="flex sm:flex-col items-center sm:items-start justify-around sm:justify-between h-16 sm:h-screen w-full sm:sticky sm:top-0 p-2 sm:p-4">
@@ -59,7 +61,15 @@ export const Sidebar = () => {
         )}
       </div>
 
-      <div className="flex sm:flex-col w-full sm:mt-auto">
+      <div className="flex sm:flex-col w-full sm:mt-auto gap-2">
+        {/* Relay Indicator */}
+        <div className="hidden sm:flex items-center space-x-4 p-3 text-xs text-gray-500">
+          <Activity size={26} className={connectedCount > 0 ? "text-green-500" : "text-red-500"} />
+          <span className="hidden lg:block text-sm">
+            {connectedCount}/{totalCount} relays
+          </span>
+        </div>
+
         {isLoggedIn ? (
           <button
             onClick={logout}
