@@ -215,7 +215,7 @@ function FollowingFeedTab({ followingList, viewerPubkey }: { followingList: stri
   const { posts, newCount, isLoading, flushNewPosts, loadMore, hasMore } =
     usePausedFeed({
       filter: {
-        kinds: [1],
+        kinds: [1, 30023],
         authors,
       },
     });
@@ -243,7 +243,7 @@ function GlobalFeedTab() {
   const { posts, newCount, isLoading, flushNewPosts, loadMore, hasMore } =
     usePausedFeed({
       filter: {
-        kinds: [1],
+        kinds: [1, 30023],
       },
     });
 

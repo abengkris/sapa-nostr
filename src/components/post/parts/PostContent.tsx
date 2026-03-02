@@ -25,6 +25,7 @@ interface PostContentRendererProps {
   className?: string;
   replyingToNpub?: string | null;
   isRepost?: boolean;
+  isArticle?: boolean;
 }
 
 export function PostContentRenderer({
@@ -36,6 +37,7 @@ export function PostContentRenderer({
   className = "",
   replyingToNpub,
   isRepost,
+  isArticle,
 }: PostContentRendererProps) {
   const [showFull, setShowFull] = useState(false);
   const [showSensitive, setShowSensitive] = useState(false);
@@ -125,6 +127,13 @@ export function PostContentRenderer({
 
   return (
     <div className={`flex flex-col min-w-0 max-w-full overflow-hidden ${className}`}>
+      {/* Article Title */}
+      {isArticle && (
+        <h2 className="text-lg font-bold mb-2 text-gray-900 dark:text-gray-100 line-clamp-2">
+          {event.tags.find(t => t[0] === 'title')?.[1] || "Untitled Article"}
+        </h2>
+      )}
+
       {/* Frame 1: Immediate Label */}
       {replyingToNpub && !isRepost && (
         <div className="text-gray-500 text-xs mb-1" onClick={(e) => e.stopPropagation()}>

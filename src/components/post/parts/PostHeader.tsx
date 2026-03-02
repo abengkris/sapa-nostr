@@ -23,6 +23,7 @@ interface PostHeaderProps {
   onDeleteClick?: () => void;
   onReportClick?: () => void;
   bot?: boolean | string;
+  isArticle?: boolean;
 }
 
 export const PostHeader: React.FC<PostHeaderProps> = ({
@@ -37,7 +38,8 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   onMoreClick,
   onDeleteClick,
   onReportClick,
-  bot
+  bot,
+  isArticle
 }) => {
   const formattedTime = createdAt
     ? formatDistanceToNow(new Date(createdAt * 1000), { addSuffix: true })
@@ -99,6 +101,11 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
                 variant="post"
               />
             </Link>
+            {isArticle && (
+              <span className="text-[9px] bg-purple-500/10 text-purple-500 border border-purple-500/20 px-1 rounded font-bold uppercase tracking-tighter shrink-0 mt-1">
+                Article
+              </span>
+            )}
             {bot && (
               <span className="text-[9px] bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1 rounded font-bold uppercase tracking-tighter shrink-0 mt-1">
                 Bot

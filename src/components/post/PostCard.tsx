@@ -50,6 +50,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const { profile: repostAuthorProfile } = useProfile(isRepost ? event.pubkey : undefined);
   
   const displayEvent = isRepost && repostedEvent ? repostedEvent : event;
+  const isArticle = displayEvent.kind === 30023;
   const { profile } = useProfile(displayEvent.pubkey);
   const { 
     likes, 
@@ -155,6 +156,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             isRepost={isRepost}
             repostAuthorName={repostAuthorName}
             bot={profile?.bot}
+            isArticle={isArticle}
             onDeleteClick={currentUser?.pubkey === displayEvent.pubkey ? handleDelete : undefined}
             onReportClick={currentUser?.pubkey !== displayEvent.pubkey ? () => setShowReportModal(true) : undefined}
             onMoreClick={() => setShowRawModal(true)}
@@ -164,6 +166,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             content={displayEvent.content}
             replyingToNpub={replyingToNpub}
             isRepost={isRepost}
+            isArticle={isArticle}
             event={displayEvent}
           />
 
