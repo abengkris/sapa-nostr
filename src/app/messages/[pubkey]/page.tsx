@@ -17,7 +17,7 @@ import { PostContentRenderer } from "@/components/post/parts/PostContent";
 export default function ChatPage({ params }: { params: Promise<{ pubkey: string }> }) {
   const { pubkey: rawPubkey } = use(params);
   const { id: hexPubkey } = decodeNip19(rawPubkey);
-  const { messages, loading, user } = useChat(hexPubkey);
+  const { messages, loading, user, refresh } = useChat(hexPubkey);
   const { profile } = useProfile(hexPubkey);
   const { ndk, messenger } = useNDK();
   const { addToast } = useUIStore();
@@ -58,6 +58,7 @@ export default function ChatPage({ params }: { params: Promise<{ pubkey: string 
       const success = await sendMessage(messenger, recipient, content);
       if (success) {
         setContent("");
+        refresh();
       } else {
         addToast("Failed to send message", "error");
       }

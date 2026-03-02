@@ -24,14 +24,28 @@ export interface Conversation {
 }
 
 export function useMessages() {
-  const { messenger, isReady } = useNDK();
+  const { messenger, isReady, ndk } = useNDK();
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Map<string, Conversation>>(new Map());
   const [loading, setLoading] = useState(true);
   const isInitialLoad = useRef(true);
 
   const mapNDKMessage = useCallback((ndkMessage: any): Message => {
-    const event = ndkMessage.event;
+    // NDKMessage might have .event (NDKEvent) or just be a plain object with rumor data
+    let event = ndkMessage.event;
+    
+    // If no event instance, create one from rumor or the message itself
+    if (!event || !(event instanceof NDKEvent)) {
+      const rumor = ndkMessage.rumor || ndkMessage;
+      event = new NDKEvent(ndk || undefined);
+      event.id = ndkMessage.id || rumor.id;
+      event.pubkey = ndkMessage.sender?.pubkey || rumor.pubkey;
+      event.content = ndkMessage.content || rumor.content;
+      event.created_at = ndkMessage.timestamp || rumor.created_at;
+      event.kind = rumor.kind || 14;
+      event.tags = rumor.tags || [];
+    }
+
     const sender = ndkMessage.sender?.pubkey || event.pubkey || "";
     const recipient = ndkMessage.recipient?.pubkey || (event.getMatchingTags ? event.getMatchingTags("p")[0]?.[1] : "");
     
@@ -41,10 +55,10 @@ export function useMessages() {
       recipient: recipient,
       content: ndkMessage.content || event.content,
       timestamp: ndkMessage.created_at || event.created_at || 0,
-      event: event as NDKEvent,
+      event: event,
       isRead: ndkMessage.read ?? true
     };
-  }, []);
+  }, [ndk]);
 
   const fetchConversations = useCallback(async () => {
     if (!messenger || !user) return;
