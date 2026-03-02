@@ -5,6 +5,8 @@ import { PostCard } from "@/components/post/PostCard";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { WhoToFollow } from "@/components/profile/WhoToFollow";
+import { Search, Plus } from "lucide-react";
+import Link from "next/link";
 
 interface FeedListProps {
   posts: NDKEvent[];
@@ -51,9 +53,33 @@ export function FeedList({
 
       {/* Empty state */}
       {!isLoading && posts.length === 0 && (
-        <div className="py-16 text-center text-gray-500 px-4">
-          <p className="text-4xl mb-3">🌐</p>
-          <p className="text-lg font-medium">{emptyMessage}</p>
+        <div className="flex flex-col items-center">
+          <div className="py-16 text-center text-gray-500 px-4 w-full">
+            <p className="text-4xl mb-3">🌐</p>
+            <p className="text-lg font-black text-gray-900 dark:text-white">{emptyMessage}</p>
+            <p className="text-sm mt-2 mb-8 max-w-xs mx-auto">Nostr is better with friends. Start by following someone or share your first thought!</p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link 
+                href="/search"
+                className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+              >
+                <Search size={18} />
+                Find People to Follow
+              </Link>
+              <button 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black transition-all active:scale-95"
+              >
+                <Plus size={18} />
+                Create a Post
+              </button>
+            </div>
+          </div>
+          
+          <div className="w-full max-w-lg border-t border-gray-100 dark:border-gray-900">
+            <WhoToFollow />
+          </div>
         </div>
       )}
 
