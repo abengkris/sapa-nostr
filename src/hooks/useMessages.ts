@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
-import { NDKMessenger, NDKConversation } from "@nostr-dev-kit/messages";
+import { NDKMessenger } from "@nostr-dev-kit/messages";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
 
@@ -24,7 +24,7 @@ export interface Conversation {
 }
 
 export function useMessages() {
-  const { messenger, isReady, ndk } = useNDK();
+  const { messenger, isReady } = useNDK();
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Map<string, Conversation>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ export function useMessages() {
       content: ndkMessage.content || event.content,
       timestamp: ndkMessage.created_at || event.created_at || 0,
       event: event as NDKEvent,
-      isRead: true
+      isRead: ndkMessage.read ?? true
     };
   }, []);
 
@@ -69,12 +69,14 @@ export function useMessages() {
         const messages = events
           .map(msg => mapNDKMessage(msg))
           .sort((a, b) => b.timestamp - a.timestamp);
+        
+        const unreadCount = (conv as any).getUnreadCount ? (conv as any).getUnreadCount() : 0;
 
         next.set(chatPartnerPubkey, {
           pubkey: chatPartnerPubkey,
           messages: messages,
           lastMessage: messages[0],
-          unreadCount: 0,
+          unreadCount,
         });
       }
 

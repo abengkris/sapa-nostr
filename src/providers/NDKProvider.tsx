@@ -3,7 +3,7 @@
 import { createContext, useEffect, useState, ReactNode } from "react";
 import NDK, { NDKPrivateKeySigner, NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
-import { NDKMessenger } from "@nostr-dev-kit/messages";
+import { NDKMessenger, CacheModuleStorage } from "@nostr-dev-kit/messages";
 import { useAuthStore } from "@/store/auth";
 import { getNDK } from "@/lib/ndk";
 
@@ -73,10 +73,14 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
     restoreSession();
     setNdk(instance);
 
-    // Initialize Messenger safely
+    // Initialize Messenger safely with Storage
     let msgInstance: NDKMessenger | null = null;
     try {
-      msgInstance = new NDKMessenger(instance);
+      const storage = (dexieAdapter && publicKey) 
+        ? new CacheModuleStorage(dexieAdapter as any, publicKey) 
+        : undefined;
+      
+      msgInstance = new NDKMessenger(instance, { storage });
       setMessenger(msgInstance);
     } catch (e) {
       console.error("Failed to initialize NDKMessenger:", e);

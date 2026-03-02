@@ -41,8 +41,8 @@ export default function ChatPage({ params }: { params: Promise<{ pubkey: string 
     if (messenger && ndk && hexPubkey) {
       const recipientUser = ndk.getUser({ pubkey: hexPubkey });
       messenger.getConversation(recipientUser).then(conv => {
-        if (conv && (conv as any).setRead) {
-          (conv as any).setRead();
+        if (conv && (conv as any).markAsRead) {
+          (conv as any).markAsRead();
         }
       });
     }
