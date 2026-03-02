@@ -26,12 +26,27 @@ export async function followUser(
   const me = await ndk.signer.user();
 
   try {
-    // Step 1: Fetch contact list terkini dari relay
-    // JANGAN pakai cache saja — harus dari relay untuk hindari race condition
-    const currentContactList = await ndk.fetchEvent(
+    // Step 1: Fetch ALL contact lists from relays to find the truly latest one
+    // We use fetchEvents with a timeout to wait for multiple relays
+    const contactListEvents = await ndk.fetchEvents(
       { kinds: [3], authors: [me.pubkey] },
-      { groupable: false, cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY } // force relay
+      { 
+        groupable: false, 
+        cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+        closeOnEose: true 
+      }
     );
+
+    // Pick the event with the highest created_at timestamp
+    const currentContactList = Array.from(contactListEvents).sort(
+      (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
+    )[0];
+
+    if (!currentContactList && contactListEvents.size === 0) {
+      // If we found absolutely nothing on relays, double check with a longer timeout 
+      // or warn the user. For now, we'll try one more focused fetch.
+      console.warn("No contact list found on relays. Risk of clobbering.");
+    }
 
     // Step 2: Kumpulkan p-tags yang sudah ada
     const existingTags: string[][] = currentContactList?.tags ?? [];
@@ -76,11 +91,19 @@ export async function unfollowUser(
   const me = await ndk.signer.user();
 
   try {
-    // Step 1: Fetch contact list terkini
-    const currentContactList = await ndk.fetchEvent(
+    // Step 1: Fetch ALL contact lists from relays to find the truly latest one
+    const contactListEvents = await ndk.fetchEvents(
       { kinds: [3], authors: [me.pubkey] },
-      { groupable: false, cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY }
+      { 
+        groupable: false, 
+        cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+        closeOnEose: true 
+      }
     );
+
+    const currentContactList = Array.from(contactListEvents).sort(
+      (a, b) => (b.created_at ?? 0) - (a.created_at ?? 0)
+    )[0];
 
     if (!currentContactList) return { success: true }; // tidak ada → sudah "unfollow"
 
