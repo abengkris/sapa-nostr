@@ -10,6 +10,7 @@ import { decodeNip19 } from "@/lib/utils/nip19";
 
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { ThreadNode } from "@/components/post/ThreadNode";
+import { PostComposer } from "@/components/post/PostComposer";
 
 export default function PostDetailPage({ params }: { params: Promise<{ noteId: string }> }) {
   const { noteId } = use(params);
@@ -76,13 +77,23 @@ export default function PostDetailPage({ params }: { params: Promise<{ noteId: s
 
             {/* Focal Post - Highlighted and connected to ancestors */}
             {focalPost && (
-              <div className="relative">
-                <PostCard 
-                  event={focalPost} 
-                  isFocal={true} 
-                  threadLine={ancestors.length > 0 ? "top" : "none"} 
-                />
-              </div>
+              <>
+                <div className="relative border-b border-gray-100 dark:border-gray-900">
+                  <PostCard 
+                    event={focalPost} 
+                    isFocal={true} 
+                    threadLine={ancestors.length > 0 ? "top" : "none"} 
+                  />
+                </div>
+                
+                {/* Inline Reply Composer */}
+                <div className="border-b-8 border-gray-50 dark:border-gray-900/30">
+                  <PostComposer 
+                    replyTo={focalPost} 
+                    placeholder="Post your reply"
+                  />
+                </div>
+              </>
             )}
             
             <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center justify-between">
