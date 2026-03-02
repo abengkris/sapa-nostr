@@ -17,6 +17,7 @@ import { useUIStore } from "@/store/ui";
 import { useZaps } from "@/hooks/useZaps";
 import { RawEventModal } from "./parts/RawEventModal";
 import { ReportModal } from "./parts/ReportModal";
+import { ReplyModal } from "./parts/ReplyModal";
 import { shortenPubkey } from "@/lib/utils/nip19";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
@@ -42,6 +43,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [showZapModal, setShowZapModal] = useState(false);
   const [showRawModal, setShowRawModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showReplyModal, setShowReplyModal] = useState(false);
   const { addToast } = useUIStore();
 
   const isRepost = event.kind === 6;
@@ -158,9 +160,19 @@ export const PostCard: React.FC<PostCardProps> = ({
             zaps={totalSats}
             userReacted={userReacted}
             onZapClick={() => setShowZapModal(true)}
+            onReplyClick={() => setShowReplyModal(true)}
           />
         </div>
       </div>
+
+      {showReplyModal && (
+        <div className="relative z-30">
+          <ReplyModal
+            event={displayEvent}
+            onClose={() => setShowReplyModal(false)}
+          />
+        </div>
+      )}
 
       {showZapModal && (
         <div className="relative z-20">

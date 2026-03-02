@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
@@ -8,9 +8,21 @@ import { ImageIcon, Calendar, Smile, MapPin, Loader2, X, AlertTriangle } from "l
 import Image from "next/image";
 import { useUIStore } from "@/store/ui";
 import { useBlossom } from "@/hooks/useBlossom";
-import { imetaTagToTag, NDKImetaTag, NDKTag } from "@nostr-dev-kit/ndk";
+import { imetaTagToTag, NDKImetaTag, NDKTag, NDKEvent } from "@nostr-dev-kit/ndk";
 
-export const PostComposer = () => {
+interface PostComposerProps {
+  replyTo?: NDKEvent;
+  onSuccess?: () => void;
+  placeholder?: string;
+  autoFocus?: boolean;
+}
+
+export const PostComposer: React.FC<PostComposerProps> = ({ 
+  replyTo, 
+  onSuccess, 
+  placeholder = "What's happening?",
+  autoFocus = false 
+}) => {
   const [content, setContent] = useState("");
   const [imetaTags, setImetaTags] = useState<NDKImetaTag[]>([]);
   const [isSensitive, setIsSensitive] = useState(false);
@@ -23,6 +35,13 @@ export const PostComposer = () => {
   const { addToast } = useUIStore();
   const { uploadFile } = useBlossom();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (autoFocus && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [autoFocus]);
 
   const handlePost = async () => {
     if (!ndk || !content.trim() || isSubmitting) return;
@@ -35,12 +54,13 @@ export const PostComposer = () => {
         tags.push(["content-warning", contentWarning]);
       }
 
-      await publishPost(ndk, content, { tags });
+      await publishPost(ndk, content, { tags, replyTo });
       setContent("");
       setImetaTags([]);
       setIsSensitive(false);
       setContentWarning("");
-      addToast("Post published successfully!", "success");
+      addToast(replyTo ? "Reply sent!" : "Post published successfully!", "success");
+      onSuccess?.();
     } catch (err) {
       console.error("Failed to post:", err);
       addToast("Failed to publish post.", "error");
@@ -99,7 +119,7 @@ export const PostComposer = () => {
   };
 
   return (
-    <div className="flex p-4 border-b border-gray-200 dark:border-gray-800">
+    <div className={`flex p-4 ${!replyTo ? "border-b border-gray-200 dark:border-gray-800" : ""}`}>
       <div className="mr-3 shrink-0">
         <Image
           src={user?.profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.pubkey}`}
@@ -115,9 +135,10 @@ export const PostComposer = () => {
         <label htmlFor="post-content" className="sr-only">Post content</label>
         <textarea
           id="post-content"
+          ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="What's happening?"
+          placeholder={replyTo ? "Post your reply" : placeholder}
           rows={2}
           className="w-full text-xl bg-transparent border-none focus:ring-0 resize-none placeholder-gray-500 min-h-[100px]"
         />
@@ -244,7 +265,7 @@ export const PostComposer = () => {
               (!content.trim() || isSubmitting || isUploading) ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {isSubmitting ? "Posting..." : "Post"}
+            {isSubmitting ? "Posting..." : replyTo ? "Reply" : "Post"}
           </button>
         </div>
       </div>
