@@ -108,7 +108,7 @@ export function useMessages() {
   }, [messenger, isReady, user, updateConversations]);
 
   return { 
-    conversations: Array.from(conversations.values()), 
+    conversations: conversations ? Array.from(conversations.values()) : [], 
     loading, 
     refresh: updateConversations 
   };
