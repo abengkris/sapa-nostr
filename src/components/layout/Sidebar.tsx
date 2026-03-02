@@ -50,7 +50,7 @@ export const Sidebar = () => {
     <div className="flex sm:flex-col items-center sm:items-start justify-around sm:justify-between h-16 sm:h-screen w-full sm:sticky sm:top-0 p-2 sm:p-4">
       <div className="flex sm:flex-col space-y-0 sm:space-y-4 w-full">
         <div className="hidden sm:block p-3">
-          <div className="text-3xl font-bold text-blue-500">Sapa</div>
+          <div className="text-3xl font-bold text-blue-500">Tell it!</div>
         </div>
 
         <SidebarItem href="/" icon={Home} label="Home" />

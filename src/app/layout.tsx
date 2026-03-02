@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sapa - Nostr Microblogging",
-  description: "Connect with Nostr community",
+  title: "Tell it! - Whatever it is, just Tell It.",
+  description: "A decentralized microblogging platform built on Nostr. Whatever it is, just Tell It.",
+  metadataBase: new URL("https://tellit.id"),
 };
 
 export default function RootLayout({

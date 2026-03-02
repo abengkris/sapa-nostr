@@ -18,7 +18,7 @@ export default function SearchPage() {
   const { ndk, isReady } = useNDK();
   const { posts, profiles, loading, loadMore, hasMore } = useSearch(debouncedQuery);
 
-  const trendingTags = ["nostr", "bitcoin", "sapa", "art", "tech", "zap"];
+  const trendingTags = ["nostr", "bitcoin", "tellit", "art", "tech", "zap"];
 
   return (
     <MainLayout>

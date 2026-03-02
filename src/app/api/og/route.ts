@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const response = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; SapaBot/1.0)" },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; TellItBot/1.0)" },
       signal: AbortSignal.timeout(5000),
     });
 

@@ -119,7 +119,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "sapa-auth",
+      name: "tellit-auth",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: (state) => {
         return () => state?.setHasHydrated(true);

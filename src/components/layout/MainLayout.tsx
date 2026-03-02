@@ -43,7 +43,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
           <div className="w-8" />
         )}
         
-        <Link href="/" className="font-black text-xl text-blue-500 tracking-tighter">Sapa</Link>
+        <Link href="/" className="font-black text-xl text-blue-500 tracking-tighter">Tell it!</Link>
         
         <Link href="/notifications" className="p-1 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors relative">
           <Bell size={22} />

@@ -134,8 +134,8 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 text-white rounded-2xl mb-6 shadow-lg shadow-blue-500/30">
             <ShieldCheck size={32} />
           </div>
-          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Sapa</h1>
-          <p className="text-gray-500 dark:text-gray-400 mb-8">Nostr Microblogging made simple.</p>
+          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Tell it!</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-8">Whatever it is, just Tell It.</p>
 
           <div className="space-y-4">
             <button

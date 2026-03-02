@@ -3,24 +3,24 @@ import NDK, { NDKEvent, NDKFilter, NDKSubscription } from "@nostr-dev-kit/ndk";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 
-export interface SapaNotification extends NDKEvent {
+export interface TellItNotification extends NDKEvent {
   type: 'reply' | 'mention' | 'like' | 'repost' | 'zap' | 'follow';
 }
 
 export function useNotifications() {
   const { ndk, isReady } = useNDK();
   const { user, isLoggedIn } = useAuthStore();
-  const [notifications, setNotifications] = useState<SapaNotification[]>([]);
+  const [notifications, setNotifications] = useState<TellItNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const subscriptionRef = useRef<NDKSubscription | null>(null);
   const oldestTimestampRef = useRef<number | undefined>(undefined);
 
-  const processEvent = useCallback((event: NDKEvent): SapaNotification | null => {
+  const processEvent = useCallback((event: NDKEvent): TellItNotification | null => {
     if (!user || event.pubkey === user.pubkey) return null;
 
-    const notif = event as SapaNotification;
+    const notif = event as TellItNotification;
     
     // Kind 1: Reply or Mention
     if (event.kind === 1) {
@@ -78,7 +78,7 @@ export function useNotifications() {
 
     const processed = Array.from(events)
       .map(e => processEvent(e))
-      .filter((e): e is SapaNotification => e !== null);
+      .filter((e): e is TellItNotification => e !== null);
 
     setNotifications((prev) => {
       const combined = isLoadMore ? [...prev, ...processed] : processed;

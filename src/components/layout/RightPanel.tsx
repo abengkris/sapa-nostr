@@ -40,7 +40,7 @@ export const RightPanel = () => {
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
           <div className="p-4 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer transition-colors">
             <p className="text-xs text-gray-500 mb-0.5">Trending in Nostr</p>
-            <p className="font-bold text-sm">#SapaApp</p>
+            <p className="font-bold text-sm">#TellIt</p>
             <p className="text-xs text-gray-500 mt-0.5">1.2K notes</p>
           </div>
           <div className="p-4 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer transition-colors">

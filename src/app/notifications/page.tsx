@@ -2,7 +2,7 @@
 
 import React from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { useNotifications, SapaNotification } from "@/hooks/useNotifications";
+import { useNotifications, TellItNotification } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { Loader2, Heart, Repeat2, MessageCircle, Zap, UserPlus, Bell } from "lucide-react";
 import Link from "next/link";
@@ -25,7 +25,7 @@ const NotificationIcon = ({ type }: { type: string }) => {
   }
 };
 
-const NotificationItem = ({ event }: { event: SapaNotification }) => {
+const NotificationItem = ({ event }: { event: TellItNotification }) => {
   const { profile } = useProfile(event.pubkey);
   const router = useRouter();
   const displayName = profile?.name || profile?.displayName || shortenPubkey(event.pubkey);

@@ -65,7 +65,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
     try {
       const success = await reportContent(ndk, selectedType, targetPubkey, targetEventId, reason);
       if (success) {
-        addToast("Report sent successfully. Thank you for keeping Sapa safe.", "success");
+        addToast("Report sent successfully. Thank you for keeping Tell it! safe.", "success");
         onClose();
       } else {
         addToast("Failed to send report.", "error");

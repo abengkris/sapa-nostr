@@ -160,7 +160,7 @@ export const deletePost = async (ndk: NDK, eventId: string): Promise<boolean> =>
     const event = new NDKEvent(ndk);
     event.kind = 5;
     event.tags = [["e", eventId]];
-    event.content = "Deletion request from Sapa";
+    event.content = "Deletion request from Tell it!";
     
     await event.sign();
     await event.publish();

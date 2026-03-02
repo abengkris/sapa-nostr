@@ -76,7 +76,7 @@ export const UserStatusModal: React.FC<UserStatusModalProps> = ({
   };
 
   const suggestions = [
-    "Building Sapa 🚀",
+    "Building Tell it! 🚀",
     "Listening to music 🎵",
     "Coding in Termux 📱",
     "On a break ☕",

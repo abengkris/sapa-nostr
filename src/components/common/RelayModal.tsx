@@ -60,8 +60,7 @@ export const RelayModal: React.FC<RelayModalProps> = ({ isOpen, onClose }) => {
         <div className="p-4 overflow-y-auto">
           <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
             <p className="font-bold mb-1">User Sovereignty & Transparency</p>
-            Nostr is a decentralized protocol. Your data is stored across multiple independent servers (relays). Sapa connects to these relays to fetch and publish your content.
-          </div>
+            Nostr is a decentralized protocol. Your data is stored across multiple independent servers (relays). Tell it! connects to these relays to fetch and publish your content.          </div>
 
           <div className="space-y-2">
             {relays.map((relay) => (
