@@ -8,12 +8,16 @@ interface Toast {
 
 interface UIState {
   toasts: Toast[];
+  unreadMessagesCount: number;
   addToast: (message: string, type?: "success" | "error" | "info") => void;
   removeToast: (id: string) => void;
+  setUnreadMessagesCount: (count: number) => void;
+  incrementUnreadMessagesCount: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
   toasts: [],
+  unreadMessagesCount: 0,
   addToast: (message, type = "info") => {
     const id = Math.random().toString(36).substring(7);
     set((state) => ({
@@ -29,4 +33,6 @@ export const useUIStore = create<UIState>((set) => ({
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
     })),
+  setUnreadMessagesCount: (count) => set({ unreadMessagesCount: count }),
+  incrementUnreadMessagesCount: () => set((state) => ({ unreadMessagesCount: state.unreadMessagesCount + 1 })),
 }));

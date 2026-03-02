@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useRelayStatus } from "@/hooks/useRelayStatus";
+import { useUIStore } from "@/store/ui";
 import { RelayModal } from "@/components/common/RelayModal";
 
 const SidebarItem = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: number }) => {
@@ -41,6 +42,7 @@ export const Sidebar = () => {
   const { user, isLoggedIn, login, logout } = useAuthStore();
   const { ndk } = useNDK();
   const { unreadCount } = useNotifications();
+  const { unreadMessagesCount } = useUIStore();
   const { connectedCount, totalCount } = useRelayStatus();
   const [isRelayModalOpen, setIsRelayModalOpen] = React.useState(false);
 
@@ -57,7 +59,7 @@ export const Sidebar = () => {
         {isLoggedIn && (
           <>
             <SidebarItem href="/notifications" icon={Bell} label="Notifications" badge={unreadCount} />
-            <SidebarItem href="/messages" icon={MessageSquare} label="Messages" />
+            <SidebarItem href="/messages" icon={MessageSquare} label="Messages" badge={unreadMessagesCount} />
             <SidebarItem href="/article/new" icon={PenTool} label="Write" />
             <SidebarItem href="/bookmarks" icon={Bookmark} label="Bookmarks" />
             <SidebarItem href={`/${user?.npub}`} icon={User} label="Profile" />

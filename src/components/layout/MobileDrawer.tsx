@@ -6,6 +6,7 @@ import { X, User, Bookmark, Activity, LogOut, Settings, MessageSquare, PenTool, 
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { useRelayStatus } from "@/hooks/useRelayStatus";
+import { useUIStore } from "@/store/ui";
 import Image from "next/image";
 import { shortenPubkey } from "@/lib/utils/nip19";
 import { useFollowingList } from "@/hooks/useFollowingList";
@@ -20,6 +21,7 @@ interface MobileDrawerProps {
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose, onOpenRelays }) => {
   const { user, logout } = useAuthStore();
   const { ndk } = useNDK();
+  const { unreadMessagesCount } = useUIStore();
   const { connectedCount, totalCount } = useRelayStatus();
   const { count: followingCount } = useFollowingList(user?.pubkey);
   const { count: followerCount } = useFollowerCount(user?.pubkey);
@@ -115,6 +117,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose, onO
               href="/messages" 
               icon={<MessageSquare size={22} />} 
               label="Direct Messages" 
+              badge={unreadMessagesCount}
               onClick={onClose} 
             />
             <DrawerItem 
@@ -151,13 +154,20 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose, onO
   );
 };
 
-const DrawerItem = ({ href, icon, label, onClick }: { href: string; icon: React.ReactNode; label: string; onClick: () => void }) => (
+const DrawerItem = ({ href, icon, label, onClick, badge }: { href: string; icon: React.ReactNode; label: string; onClick: () => void; badge?: number }) => (
   <Link
     href={href}
     onClick={onClick}
-    className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors font-bold text-base"
+    className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors font-bold text-base relative"
   >
-    {icon}
+    <div className="relative">
+      {icon}
+      {badge !== undefined && badge > 0 && (
+        <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-full border border-white dark:border-black">
+          {badge > 9 ? "9+" : badge}
+        </div>
+      )}
+    </div>
     <span>{label}</span>
   </Link>
 );

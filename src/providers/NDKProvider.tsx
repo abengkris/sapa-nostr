@@ -5,6 +5,7 @@ import NDK, { NDKPrivateKeySigner, NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import { NDKMessenger, CacheModuleStorage } from "@nostr-dev-kit/messages";
 import { useAuthStore } from "@/store/auth";
+import { useUIStore } from "@/store/ui";
 import { getNDK } from "@/lib/ndk";
 
 export interface NDKContextType {
@@ -24,6 +25,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
   const [messenger, setMessenger] = useState<NDKMessenger | null>(null);
   const [isReady, setIsReady] = useState(false);
   const { privateKey, isLoggedIn, loginType, publicKey, setUser } = useAuthStore();
+  const { addToast, incrementUnreadMessagesCount } = useUIStore();
 
   useEffect(() => {
     // Only run on client
@@ -100,6 +102,20 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
         if (isLoggedIn && msgInstance) {
           try {
             await msgInstance.start();
+
+            // Global Message Listener for Notifications
+            msgInstance.on("message", (message: any) => {
+              // Only notify for INCOMING messages that are not from the current user
+              if (message.sender?.pubkey !== publicKey && message.recipient?.pubkey === publicKey) {
+                // Don't show toast if we are on the message page for this specific user
+                const isCurrentChat = window.location.pathname.includes(`/messages/${message.sender?.pubkey}`);
+                
+                if (!isCurrentChat) {
+                  incrementUnreadMessagesCount();
+                  addToast(`New message from ${message.sender?.pubkey.slice(0, 8)}...`, "info");
+                }
+              }
+            });
           } catch (e) {
             console.error("Failed to start NDKMessenger:", e);
           }
@@ -112,12 +128,23 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
         if (isLoggedIn && msgInstance) {
           try {
             await msgInstance.start();
+
+            // Global Message Listener for Notifications (Fallback)
+            msgInstance.on("message", (message: any) => {
+              if (message.sender?.pubkey !== publicKey && message.recipient?.pubkey === publicKey) {
+                const isCurrentChat = window.location.pathname.includes(`/messages/${message.sender?.pubkey}`);
+                if (!isCurrentChat) {
+                  incrementUnreadMessagesCount();
+                  addToast(`New message from ${message.sender?.pubkey.slice(0, 8)}...`, "info");
+                }
+              }
+            });
           } catch (e) {
             console.error("Failed to start NDKMessenger (fallback):", e);
           }
         }
       });
-  }, [isLoggedIn, loginType, privateKey, publicKey, setUser]);
+  }, [isLoggedIn, loginType, privateKey, publicKey, setUser, addToast, incrementUnreadMessagesCount]);
 
   return (
     <NDKContext.Provider value={{ ndk, messenger, isReady }}>

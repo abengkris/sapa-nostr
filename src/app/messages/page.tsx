@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useMessages, Conversation } from "@/hooks/useMessages";
 import { useProfile } from "@/hooks/useProfile";
+import { useUIStore } from "@/store/ui";
 import { Loader2, MessageSquare, Search, Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -12,6 +13,11 @@ import { shortenPubkey } from "@/lib/utils/nip19";
 
 export default function MessagesPage() {
   const { conversations, loading } = useMessages();
+  const { setUnreadMessagesCount } = useUIStore();
+
+  useEffect(() => {
+    setUnreadMessagesCount(0);
+  }, [setUnreadMessagesCount]);
 
   return (
     <MainLayout>
