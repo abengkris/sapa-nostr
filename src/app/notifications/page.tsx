@@ -29,7 +29,7 @@ const NotificationItem = ({ event }: { event: TellItNotification }) => {
   const { profile } = useProfile(event.pubkey);
   const router = useRouter();
   const displayName = profile?.name || profile?.displayName || shortenPubkey(event.pubkey);
-  const avatar = profile?.picture || `https://robohash.org/${event.pubkey}?set=set4`;
+  const avatar = profile?.picture || `https://robohash.org/${event.pubkey}?set=set1`;
 
   const getTargetHref = () => {
     if (event.type === 'follow') return `/${event.author.npub}`;

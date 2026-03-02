@@ -69,7 +69,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const [showZapModal, setShowZapModal] = React.useState(false);
   const isOwnProfile = currentUser?.pubkey === hexPubkey;
 
-  const avatar = profile?.picture || `https://robohash.org/${hexPubkey}?set=set4`;
+  const avatar = profile?.picture || `https://robohash.org/${hexPubkey}?set=set1`;
   const displayName = profile?.name || profile?.displayName || shortenPubkey(npubParam);
 
   const safeHostname = (url: string) => {

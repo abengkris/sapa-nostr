@@ -11,7 +11,7 @@ interface AvatarProps {
 }
 
 export const Avatar: React.FC<AvatarProps> = ({ pubkey, src, size = 40, className = "" }) => {
-  const avatarUrl = src || `https://robohash.org/${pubkey}?set=set4`;
+  const avatarUrl = src || `https://robohash.org/${pubkey}?set=set1`;
 
   return (
     <div 

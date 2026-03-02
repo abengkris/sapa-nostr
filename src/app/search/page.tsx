@@ -111,7 +111,7 @@ export default function SearchPage() {
                 >
                   <div className="relative mb-3">
                     <Image
-                      src={user.profile?.picture || `https://robohash.org/${user.pubkey}?set=set4`}
+                      src={user.profile?.picture || `https://robohash.org/${user.pubkey}?set=set1`}
                       alt={user.profile?.name || "Profile"}
                       width={80}
                       height={80}

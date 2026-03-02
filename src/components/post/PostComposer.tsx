@@ -122,7 +122,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     <div className={`flex p-4 ${!replyTo ? "border-b border-gray-200 dark:border-gray-800" : ""}`}>
       <div className="mr-3 shrink-0">
         <Image
-          src={user?.profile?.picture || `https://robohash.org/${user?.pubkey}?set=set4`}
+          src={user?.profile?.picture || `https://robohash.org/${user?.pubkey}?set=set1`}
           alt="Avatar"
           width={48}
           height={48}

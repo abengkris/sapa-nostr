@@ -28,7 +28,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         {isLoggedIn ? (
           <button onClick={() => setIsDrawerOpen(true)} className="outline-none relative">
             <Image
-              src={user?.profile?.picture || `https://robohash.org/${user?.pubkey}?set=set4`}
+              src={user?.profile?.picture || `https://robohash.org/${user?.pubkey}?set=set1`}
               alt="Profile"
               width={32}
               height={32}

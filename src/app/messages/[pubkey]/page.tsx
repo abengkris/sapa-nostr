@@ -28,7 +28,7 @@ export default function ChatPage({ params }: { params: Promise<{ pubkey: string 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const displayName = profile?.name || profile?.displayName || shortenPubkey(hexPubkey);
-  const avatar = profile?.picture || `https://robohash.org/${hexPubkey}?set=set4`;
+  const avatar = profile?.picture || `https://robohash.org/${hexPubkey}?set=set1`;
 
   useEffect(() => {
     if (scrollRef.current) {
