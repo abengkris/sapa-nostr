@@ -78,7 +78,7 @@ export const Sidebar = () => {
 
         {isLoggedIn ? (
           <button
-            onClick={logout}
+            onClick={() => logout(ndk || undefined)}
             aria-label="Logout"
             className="hidden sm:flex items-center space-x-4 p-3 rounded-full hover:bg-red-50 dark:hover:bg-red-900/10 text-red-500 transition-colors w-full"
           >

@@ -16,7 +16,7 @@ interface AuthState {
   login: (ndk: NDK) => Promise<void>;
   loginWithPrivateKey: (ndk: NDK, privateKey: string) => Promise<void>;
   generateNewKey: (ndk: NDK) => Promise<string>;
-  logout: () => void;
+  logout: (ndk?: NDK) => void;
   setUser: (user: NDKUser | null) => void;
 }
 
@@ -103,8 +103,12 @@ export const useAuthStore = create<AuthState>()(
         return privateKey;
       },
 
-      logout: () => {
+      logout: (ndk) => {
         resetWoT();
+        if (ndk) {
+          ndk.signer = undefined;
+          ndk.activeUser = undefined;
+        }
         set({ 
           user: null, 
           publicKey: null, 
