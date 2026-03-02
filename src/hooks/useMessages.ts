@@ -34,14 +34,14 @@ export function useMessages() {
 
     try {
       // 1. Decrypt Gift Wrap (Kind 1059) to get Seal (Kind 13)
-      const seal = await giftWrap.decrypt(user ?? undefined);
-      if (!seal || seal.kind !== 13) return null;
+      const seal = await (giftWrap as any).decrypt(user ?? undefined);
+      if (!seal || (seal as any).kind !== 13) return null;
 
       // 2. Decrypt Seal (Kind 13) to get Message (Kind 14)
       // Note: The sender of the seal is the actual sender of the message
-      const sender = seal.pubkey;
-      const messageEvent = await seal.decrypt(user ?? undefined);
-      if (!messageEvent || messageEvent.kind !== 14) return null;
+      const sender = (seal as any).pubkey;
+      const messageEvent = await (seal as any).decrypt(user ?? undefined);
+      if (!messageEvent || (messageEvent as any).kind !== 14) return null;
 
       // The recipient is the one tagged in the Kind 14 rumor
       const recipientTag = messageEvent.getMatchingTags("p")[0];
