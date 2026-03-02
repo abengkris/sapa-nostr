@@ -9,6 +9,7 @@ interface PostActionsProps {
   reposts: number;
   comments: number;
   quotes: number;
+  bookmarks: number;
   zaps?: number;
   userReacted?: string | null;
   userReposted?: boolean;
@@ -25,6 +26,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
   reposts: initialReposts,
   comments,
   quotes,
+  bookmarks,
   zaps = 0,
   userReacted: initialUserReacted,
   userReposted: initialUserReposted,
@@ -171,6 +173,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
         <div className="p-3 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 rounded-full transition-colors">
           <Bookmark size={20} fill={isBookmarked ? 'currentColor' : 'none'} className={isBookmarked ? "animate-in zoom-in-125 duration-300" : ""} />
         </div>
+        <span className="text-xs">{bookmarks > 0 ? formatCount(bookmarks) : ""}</span>
       </button>
     </div>
   );

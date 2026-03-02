@@ -9,6 +9,7 @@ export interface PostStats {
   reposts: number;
   comments: number;
   quotes: number;
+  bookmarks: number;
   totalSats: number;
   zapCount: number;
   userLiked: boolean;
@@ -25,6 +26,7 @@ export function usePostStats(eventId?: string) {
     reposts: 0,
     comments: 0,
     quotes: 0,
+    bookmarks: 0,
     totalSats: 0,
     zapCount: 0,
     userLiked: false,
@@ -43,6 +45,7 @@ export function usePostStats(eventId?: string) {
       reposts: 0,
       comments: 0,
       quotes: 0,
+      bookmarks: 0,
       totalSats: 0,
       zapCount: 0,
       userLiked: false,
@@ -51,7 +54,7 @@ export function usePostStats(eventId?: string) {
     seenEvents.current.clear();
 
     const filter: NDKFilter = {
-      kinds: [1, 6, 7, 9735],
+      kinds: [1, 6, 7, 9735, 10003],
       "#e": [eventId],
     };
 
@@ -116,6 +119,11 @@ export function usePostStats(eventId?: string) {
               }
             } catch (e) {}
           }
+        }
+
+        // 5. Bookmarks
+        else if (event.kind === 10003) {
+          newStats.bookmarks++;
         }
 
         return newStats;
