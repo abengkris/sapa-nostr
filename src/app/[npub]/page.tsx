@@ -12,6 +12,7 @@ import { useFollowingList } from "@/hooks/useFollowingList";
 import { useFollowerCount } from "@/hooks/useFollowers";
 import { FollowButton } from "@/components/profile/FollowButton";
 import { ProfileEditModal } from "@/components/profile/ProfileEditModal";
+import { UserStatusModal } from "@/components/profile/UserStatusModal";
 import { UserIdentity } from "@/components/common/UserIdentity";
 import { ZapModal } from "@/components/common/ZapModal";
 import { useZaps } from "@/hooks/useZaps";
@@ -64,6 +65,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([hexPubkey], feedKinds, disableFiltering);
 
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = React.useState(false);
   const [showZapModal, setShowZapModal] = React.useState(false);
   const isOwnProfile = currentUser?.pubkey === hexPubkey;
 
@@ -185,16 +187,28 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           
           {/* User Status Badges */}
           <div className="flex flex-wrap gap-2 py-1">
+            {isOwnProfile && !generalStatus?.content && (
+              <button 
+                onClick={() => setIsStatusModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 dark:bg-gray-900/20 border border-gray-100 dark:border-gray-800 text-gray-500 rounded-full text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              >
+                <StatusIcon size={12} />
+                <span>Set Status</span>
+              </button>
+            )}
             {generalStatus?.content && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold animate-in fade-in zoom-in-95 duration-500">
+              <button 
+                onClick={() => isOwnProfile && setIsStatusModalOpen(true)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold animate-in fade-in zoom-in-95 duration-500 ${isOwnProfile ? 'cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40' : ''}`}
+              >
                 <StatusIcon size={12} />
                 <span>{generalStatus.content}</span>
                 {generalStatus.link && (
-                  <a href={generalStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500">
+                  <a href={generalStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500" onClick={e => e.stopPropagation()}>
                     <LinkIcon size={10} />
                   </a>
                 )}
-              </div>
+              </button>
             )}
             {musicStatus?.content && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-pink-50 dark:bg-pink-900/20 border border-pink-100 dark:border-pink-800 text-pink-600 dark:text-pink-400 rounded-full text-xs font-bold animate-in fade-in zoom-in-95 duration-500">
@@ -318,6 +332,12 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           // Force reload to see changes
           window.location.reload();
         }}
+      />
+
+      <UserStatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        pubkey={hexPubkey}
       />
 
       {showZapModal && ndk && (
