@@ -29,18 +29,18 @@ export function useMessages() {
   const processedEventIds = useRef<Set<string>>(new Set());
 
   const processGiftWrap = useCallback(async (giftWrap: NDKEvent): Promise<Message | null> => {
-    if (processedEventIds.current.has(giftWrap.id)) return null;
+    if (!user || processedEventIds.current.has(giftWrap.id)) return null;
     processedEventIds.current.add(giftWrap.id);
 
     try {
       // 1. Decrypt Gift Wrap (Kind 1059) to get Seal (Kind 13)
-      const seal = await giftWrap.decrypt(user);
+      const seal = await giftWrap.decrypt(user ?? undefined);
       if (!seal || seal.kind !== 13) return null;
 
       // 2. Decrypt Seal (Kind 13) to get Message (Kind 14)
       // Note: The sender of the seal is the actual sender of the message
       const sender = seal.pubkey;
-      const messageEvent = await seal.decrypt(user);
+      const messageEvent = await seal.decrypt(user ?? undefined);
       if (!messageEvent || messageEvent.kind !== 14) return null;
 
       // The recipient is the one tagged in the Kind 14 rumor
