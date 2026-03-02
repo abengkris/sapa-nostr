@@ -1,9 +1,19 @@
 "use client";
 
 import React from "react";
-import { NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { formatDistanceToNow } from "date-fns";
-import { Repeat2, MoreHorizontal, Trash2, Flag, Code } from "lucide-react";
+import { 
+  Repeat2, 
+  MoreHorizontal, 
+  Trash2, 
+  Flag, 
+  Code, 
+  Pin, 
+  PinOff, 
+  VolumeX, 
+  Volume2, 
+  Bookmark 
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -22,6 +32,12 @@ interface PostHeaderProps {
   onMoreClick?: () => void;
   onDeleteClick?: () => void;
   onReportClick?: () => void;
+  onPinClick?: () => void;
+  onMuteClick?: () => void;
+  onBookmarkClick?: () => void;
+  isPinned?: boolean;
+  isMuted?: boolean;
+  isBookmarked?: boolean;
   bot?: boolean | string;
   isArticle?: boolean;
 }
@@ -38,6 +54,12 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   onMoreClick,
   onDeleteClick,
   onReportClick,
+  onPinClick,
+  onMuteClick,
+  onBookmarkClick,
+  isPinned,
+  isMuted,
+  isBookmarked,
   bot,
   isArticle
 }) => {
@@ -46,6 +68,22 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
     : "unknown";
 
   const menuItems = [
+    ...(onPinClick ? [{
+      label: isPinned ? "Unpin from Profile" : "Pin to Profile",
+      icon: isPinned ? <PinOff size={16} /> : <Pin size={16} />,
+      onClick: onPinClick
+    }] : []),
+    ...(onBookmarkClick ? [{
+      label: isBookmarked ? "Remove Bookmark" : "Save Bookmark",
+      icon: <Bookmark size={16} fill={isBookmarked ? "currentColor" : "none"} />,
+      onClick: onBookmarkClick
+    }] : []),
+    ...(onMuteClick ? [{
+      label: isMuted ? `Unmute @${displayName}` : `Mute @${displayName}`,
+      icon: isMuted ? <Volume2 size={16} /> : <VolumeX size={16} />,
+      variant: isMuted ? undefined : "danger" as const,
+      onClick: onMuteClick
+    }] : []),
     ...(onDeleteClick ? [{
       label: "Delete Post",
       icon: <Trash2 size={16} />,

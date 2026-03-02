@@ -20,6 +20,7 @@ import { ReportModal } from "./parts/ReportModal";
 import { ReplyModal } from "./parts/ReplyModal";
 import { shortenPubkey } from "@/lib/utils/nip19";
 import { nip19 } from "nostr-tools";
+import { useLists } from "@/hooks/useLists";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
 
@@ -46,6 +47,11 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [showReportModal, setShowReportModal] = useState(false);
   const [showReplyModal, setShowReplyModal] = useState(false);
   const { addToast } = useUIStore();
+  const { 
+    isPinned, pinPost, unpinPost, 
+    isMuted, muteUser, unmuteUser,
+    isBookmarked, bookmarkPost, unbookmarkPost
+  } = useLists();
 
   const isRepost = event.kind === 6;
   const { profile: repostAuthorProfile } = useProfile(isRepost ? event.pubkey : undefined);
@@ -139,7 +145,37 @@ export const PostCard: React.FC<PostCardProps> = ({
     addToast("Quote feature coming soon!", "info");
   };
 
-  if (isDeleted) return null;
+  const handlePin = async () => {
+    if (isPinned(displayEvent.id)) {
+      const success = await unpinPost(displayEvent.id);
+      if (success) addToast("Unpinned from profile", "success");
+    } else {
+      const success = await pinPost(displayEvent.id);
+      if (success) addToast("Pinned to profile!", "success");
+    }
+  };
+
+  const handleMute = async () => {
+    if (isMuted(displayEvent.pubkey)) {
+      const success = await unmuteUser(displayEvent.pubkey);
+      if (success) addToast(`Unmuted ${displayName}`, "success");
+    } else {
+      const success = await muteUser(displayEvent.pubkey);
+      if (success) addToast(`Muted ${displayName}. They will no longer appear in your feeds.`, "success");
+    }
+  };
+
+  const handleBookmarkToggle = async () => {
+    if (isBookmarked(displayEvent.id)) {
+      const success = await unbookmarkPost(displayEvent.id);
+      if (success) addToast("Removed from bookmarks", "success");
+    } else {
+      const success = await bookmarkPost(displayEvent.id);
+      if (success) addToast("Added to bookmarks!", "success");
+    }
+  };
+
+  if (isDeleted || (currentUser?.pubkey !== displayEvent.pubkey && isMuted(displayEvent.pubkey))) return null;
 
   return (
     <article 
@@ -177,6 +213,12 @@ export const PostCard: React.FC<PostCardProps> = ({
             repostAuthorName={repostAuthorName}
             bot={profile?.bot}
             isArticle={isArticle}
+            isPinned={isPinned(displayEvent.id)}
+            isMuted={isMuted(displayEvent.pubkey)}
+            isBookmarked={isBookmarked(displayEvent.id)}
+            onPinClick={currentUser?.pubkey === displayEvent.pubkey ? handlePin : undefined}
+            onMuteClick={currentUser?.pubkey !== displayEvent.pubkey ? handleMute : undefined}
+            onBookmarkClick={handleBookmarkToggle}
             onDeleteClick={currentUser?.pubkey === displayEvent.pubkey ? handleDelete : undefined}
             onReportClick={currentUser?.pubkey !== displayEvent.pubkey ? () => setShowReportModal(true) : undefined}
             onMoreClick={() => setShowRawModal(true)}
