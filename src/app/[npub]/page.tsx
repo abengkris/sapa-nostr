@@ -5,7 +5,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { useProfile } from "@/hooks/useProfile";
 import { useFeed } from "@/hooks/useFeed";
 import { PostCard } from "@/components/post/PostCard";
-import { Loader2, Calendar, MapPin, Link as LinkIcon, Zap, Activity } from "lucide-react";
+import { Loader2, Calendar, MapPin, Link as LinkIcon, Zap, Activity, Mail } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { useFollowingList } from "@/hooks/useFollowingList";
@@ -152,6 +152,13 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
               </button>
             ) : currentUser && (
               <>
+                <Link
+                  href={`/messages/${npubParam}`}
+                  className="p-2 border border-gray-300 dark:border-gray-700 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 transition-all"
+                  aria-label="Message User"
+                >
+                  <Mail size={20} />
+                </Link>
                 <button
                   onClick={() => setShowZapModal(true)}
                   className="p-2 border border-gray-300 dark:border-gray-700 rounded-full hover:bg-yellow-50 dark:hover:bg-yellow-900/20 text-yellow-500 transition-all"
