@@ -38,14 +38,15 @@ export default function ChatPage({ params }: { params: Promise<{ pubkey: string 
 
   // Mark as read when entering the chat
   useEffect(() => {
-    if (messenger && hexPubkey) {
-      messenger.getConversation(hexPubkey).then(conv => {
+    if (messenger && ndk && hexPubkey) {
+      const recipientUser = ndk.getUser({ pubkey: hexPubkey });
+      messenger.getConversation(recipientUser).then(conv => {
         if (conv && (conv as any).setRead) {
           (conv as any).setRead();
         }
       });
     }
-  }, [messenger, hexPubkey, messages.length]);
+  }, [messenger, ndk, hexPubkey, messages.length]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

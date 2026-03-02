@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
-import { NDKMessenger, NDKConversation, NDKMessage } from "@nostr-dev-kit/messages";
+import { NDKMessenger, NDKConversation } from "@nostr-dev-kit/messages";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
 
@@ -24,13 +24,13 @@ export interface Conversation {
 }
 
 export function useMessages() {
-  const { messenger, isReady } = useNDK();
+  const { messenger, isReady, ndk } = useNDK();
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Map<string, Conversation>>(new Map());
   const [loading, setLoading] = useState(true);
   const isInitialLoad = useRef(true);
 
-  const mapNDKMessage = useCallback((ndkMessage: NDKMessage): Message => {
+  const mapNDKMessage = useCallback((ndkMessage: any): Message => {
     const event = ndkMessage.event;
     const sender = ndkMessage.sender?.pubkey || event.pubkey || "";
     const recipient = ndkMessage.recipient?.pubkey || (event.getMatchingTags ? event.getMatchingTags("p")[0]?.[1] : "");
@@ -42,7 +42,7 @@ export function useMessages() {
       content: ndkMessage.content || event.content,
       timestamp: ndkMessage.created_at || event.created_at || 0,
       event: event as NDKEvent,
-      isRead: true // NDKMessenger doesn't expose isRead easily yet, defaulting to true
+      isRead: true
     };
   }, []);
 
@@ -56,25 +56,25 @@ export function useMessages() {
       for (const conv of ndkConversations) {
         const participants = Array.from(conv.participants);
         const chatPartnerUser = participants.find(p => {
-          const pPubkey = typeof p === "string" ? p : p.pubkey;
+          const pPubkey = typeof p === "string" ? p : (p as any).pubkey;
           return pPubkey !== user.pubkey;
         });
 
         if (!chatPartnerUser) continue;
-        const chatPartnerPubkey = typeof chatPartnerUser === "string" ? chatPartnerUser : chatPartnerUser.pubkey;
+        const chatPartnerPubkey = typeof chatPartnerUser === "string" ? chatPartnerUser : (chatPartnerUser as any).pubkey;
 
         const events = await conv.getMessages();
         if (events.length === 0) continue;
 
         const messages = events
-          .map(mapNDKMessage)
+          .map(msg => mapNDKMessage(msg))
           .sort((a, b) => b.timestamp - a.timestamp);
 
         next.set(chatPartnerPubkey, {
           pubkey: chatPartnerPubkey,
           messages: messages,
           lastMessage: messages[0],
-          unreadCount: 0, // Placeholder
+          unreadCount: 0,
         });
       }
 
@@ -95,10 +95,7 @@ export function useMessages() {
       });
     }
 
-    // Listen for new messages to update state incrementally or refresh
-    const handleMessage = async (message: NDKMessage) => {
-      // For simplicity and to ensure correct grouping, we refresh the list
-      // In a more optimized version, we would find the specific conversation and update it
+    const handleMessage = async () => {
       await fetchConversations();
     };
 

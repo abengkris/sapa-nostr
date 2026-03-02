@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Message } from "@/hooks/useMessages";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
-import { NDKMessage } from "@nostr-dev-kit/messages";
-import { NDKEvent } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
 
 export function useChat(targetPubkey: string) {
-  const { messenger, isReady } = useNDK();
+  const { messenger, isReady, ndk } = useNDK();
   const { user } = useAuthStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const mapNDKMessage = useCallback((ndkMessage: NDKMessage): Message => {
+  const mapNDKMessage = useCallback((ndkMessage: any): Message => {
     const event = ndkMessage.event;
     const sender = ndkMessage.sender?.pubkey || event.pubkey || "";
     const recipient = ndkMessage.recipient?.pubkey || (event.getMatchingTags ? event.getMatchingTags("p")[0]?.[1] : "");
@@ -30,14 +29,15 @@ export function useChat(targetPubkey: string) {
   }, []);
 
   const fetchChatMessages = useCallback(async () => {
-    if (!messenger || !user || !targetPubkey) return;
+    if (!messenger || !user || !targetPubkey || !ndk) return;
 
     try {
-      const conv = await messenger.getConversation(targetPubkey);
+      const recipientUser = ndk.getUser({ pubkey: targetPubkey });
+      const conv = await messenger.getConversation(recipientUser);
       if (conv) {
         const events = await conv.getMessages();
         const mapped = events
-          .map(mapNDKMessage)
+          .map(msg => mapNDKMessage(msg))
           .sort((a, b) => a.timestamp - b.timestamp);
         setMessages(mapped);
       }
@@ -46,7 +46,7 @@ export function useChat(targetPubkey: string) {
     } finally {
       setLoading(false);
     }
-  }, [messenger, user, targetPubkey, mapNDKMessage]);
+  }, [messenger, user, targetPubkey, ndk, mapNDKMessage]);
 
   useEffect(() => {
     if (!messenger || !isReady || !user || !targetPubkey) return;
@@ -54,7 +54,7 @@ export function useChat(targetPubkey: string) {
     fetchChatMessages();
 
     // Listen for new messages for this specific conversation
-    const handleMessage = async (message: NDKMessage) => {
+    const handleMessage = async (message: any) => {
       const sender = message.sender?.pubkey || message.event.pubkey;
       const recipient = message.recipient?.pubkey || message.event.getMatchingTags("p")[0]?.[1];
       
