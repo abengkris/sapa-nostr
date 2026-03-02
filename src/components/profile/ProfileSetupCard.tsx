@@ -22,7 +22,7 @@ export const ProfileSetupCard = ({ pubkey, npub }: { pubkey: string; npub: strin
   }, [profile]);
 
   const completedCount = steps.filter(s => s.completed).length;
-  const progressPercent = Math.round((completedCount / steps.length) * 100);
+  const progressPercent = steps.length > 0 ? Math.round((completedCount / steps.length) * 100) : 0;
 
   if (loading || progressPercent === 100 || !isVisible) return null;
 
