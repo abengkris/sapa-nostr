@@ -41,20 +41,20 @@ export function useSearch(query: string) {
         setProfiles(foundProfiles);
       }
 
-      // 2. Search Posts (kind:1)
+      // 2. Search Posts (kind:1) and Articles (kind:30023)
       let postFilter: NDKFilter;
 
       if (query.startsWith("#")) {
         // Hashtag search
         postFilter = {
-          kinds: [1],
+          kinds: [1, 30023],
           "#t": [query.slice(1).toLowerCase()],
           limit: 20,
         };
       } else {
         // NIP-50 Full-text search
         postFilter = {
-          kinds: [1],
+          kinds: [1, 30023],
           search: query,
           limit: 20,
         };
