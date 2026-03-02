@@ -7,6 +7,7 @@ import { PostComposer } from "../PostComposer";
 import { PostHeader } from "./PostHeader";
 import { shortenPubkey } from "@/lib/utils/nip19";
 import { useProfile } from "@/hooks/useProfile";
+import { PostContentRenderer } from "./PostContent";
 
 interface ReplyModalProps {
   event: NDKEvent;
@@ -18,6 +19,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({ event, onClose }) => {
   
   const displayName = profile?.name || profile?.displayName || shortenPubkey(event.pubkey);
   const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.pubkey}`;
+  const isArticle = event.kind === 30023;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
@@ -52,8 +54,14 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({ event, onClose }) => {
               <span className="font-bold truncate">{displayName}</span>
               <span className="text-gray-500 text-sm">@{shortenPubkey(event.pubkey)}</span>
             </div>
-            <div className="text-gray-600 dark:text-gray-300 line-clamp-3 break-words">
-              {event.content}
+            <div className="text-gray-600 dark:text-gray-300 line-clamp-3 overflow-hidden">
+              <PostContentRenderer 
+                content={event.content} 
+                event={event} 
+                renderMedia={false} 
+                renderQuotes={false}
+                isArticle={isArticle}
+              />
             </div>
             <div className="mt-2 text-sm text-gray-500">
               Replying to <span className="text-blue-500">@{shortenPubkey(event.pubkey)}</span>

@@ -3,7 +3,13 @@ import { nip19 } from "nostr-tools";
 /**
  * Decodes a NIP-19 string and returns its ID and any associated relays.
  */
-export function decodeNip19(nip19String: string): { id: string; relays?: string[] } {
+export function decodeNip19(nip19String: string): { 
+  id: string; 
+  relays?: string[]; 
+  kind?: number;
+  pubkey?: string;
+  identifier?: string;
+} {
   if (!nip19String) return { id: "" };
   
   if (/^[0-9a-fA-F]{64}$/.test(nip19String)) {
@@ -16,13 +22,19 @@ export function decodeNip19(nip19String: string): { id: string; relays?: string[
     switch (decoded.type) {
       case "npub":
       case "note":
-        return { id: decoded.data };
+        return { id: decoded.data as string };
       case "nprofile":
         return { id: decoded.data.pubkey, relays: decoded.data.relays };
       case "nevent":
-        return { id: decoded.data.id, relays: decoded.data.relays };
+        return { id: decoded.data.id, relays: decoded.data.relays, kind: decoded.data.kind };
       case "naddr":
-        return { id: decoded.data.identifier, relays: decoded.data.relays };
+        return { 
+          id: decoded.data.identifier, 
+          relays: decoded.data.relays, 
+          kind: decoded.data.kind, 
+          pubkey: decoded.data.pubkey,
+          identifier: decoded.data.identifier
+        };
       default:
         return { id: nip19String };
     }

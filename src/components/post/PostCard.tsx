@@ -19,6 +19,7 @@ import { RawEventModal } from "./parts/RawEventModal";
 import { ReportModal } from "./parts/ReportModal";
 import { ReplyModal } from "./parts/ReplyModal";
 import { shortenPubkey } from "@/lib/utils/nip19";
+import { nip19 } from "nostr-tools";
 
 type ThreadLine = "none" | "top" | "bottom" | "both";
 
@@ -87,7 +88,17 @@ export const PostCard: React.FC<PostCardProps> = ({
   }, [event.pubkey, currentUser?.pubkey, repostAuthorProfile]);
 
   const userNpub = displayEvent.author.npub;
-  const eventNoteId = displayEvent.encode();
+  const eventNoteId = useMemo(() => {
+    if (isArticle) {
+      const dTag = displayEvent.tags.find(t => t[0] === 'd')?.[1] || "";
+      return nip19.naddrEncode({
+        kind: 30023,
+        pubkey: displayEvent.pubkey,
+        identifier: dTag
+      });
+    }
+    return displayEvent.encode();
+  }, [displayEvent, isArticle]);
 
   const replyingToNpub = useMemo(() => {
     const replyPTag = displayEvent.tags.find(t => t[0] === 'p' && t[3] === 'reply') || 
@@ -130,9 +141,9 @@ export const PostCard: React.FC<PostCardProps> = ({
     >
       {/* Stretched Link for Accessibility */}
       <Link 
-        href={`/post/${eventNoteId}`}
+        href={isArticle ? `/article/${eventNoteId}` : `/post/${eventNoteId}`}
         className="absolute inset-0 z-0"
-        aria-label={`View post by ${displayName}`}
+        aria-label={`View ${isArticle ? 'article' : 'post'} by ${displayName}`}
       />
 
       <div className="flex relative min-w-0 z-10 pointer-events-none">
