@@ -9,7 +9,8 @@ import { decodeNip19 } from "@/lib/utils/nip19";
 import { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
 import { useProfile } from "@/hooks/useProfile";
 import Image from "next/image";
-import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
+import { format, formatDistanceToNow } from "date-fns";
 import { PostContentRenderer } from "@/components/post/parts/PostContent";
 import { PostActions } from "@/components/post/parts/PostActions";
 import { usePostStats } from "@/hooks/usePostStats";
@@ -108,6 +109,8 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ naddr:
   const tags = article.tags.filter(t => t[0] === 't').map(t => t[1]);
   const publishedAt = article.created_at;
 
+  const readingTime = Math.ceil(article.content.split(/\s+/).length / 200);
+
   return (
     <MainLayout>
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 flex items-center px-4 py-3 space-x-6">
@@ -124,7 +127,7 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ naddr:
       <article className="pb-20">
         {/* Hero Image */}
         {image && (
-          <div className="w-full aspect-video relative overflow-hidden bg-gray-100 dark:bg-gray-900">
+          <div className="w-full aspect-[21/9] relative overflow-hidden bg-gray-100 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
             <img 
               src={image} 
               alt={title}
@@ -133,43 +136,47 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ naddr:
           </div>
         )}
 
-        <div className="p-4 sm:p-8">
+        <div className="max-w-screen-md mx-auto p-6 sm:p-10">
           {/* Metadata */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-6">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500 mb-8 border-b border-gray-100 dark:border-gray-900 pb-6">
+            <Link href={`/${article.author.npub}`} className="flex items-center gap-2 group">
               <img 
                 src={profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${article.pubkey}`}
-                className="w-6 h-6 rounded-full"
+                className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-800"
                 alt={profile?.name || "Author"}
               />
-              <span className="font-bold text-gray-900 dark:text-gray-100">
+              <span className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-500 transition-colors">
                 {profile?.name || profile?.displayName || shortenPubkey(article.pubkey)}
               </span>
-            </div>
+            </Link>
             {publishedAt && (
-              <div className="flex items-center gap-1">
-                <Calendar size={14} />
-                {formatDistanceToNow(new Date(publishedAt * 1000), { addSuffix: true })}
+              <div className="flex items-center gap-1.5">
+                <Calendar size={14} className="text-gray-400" />
+                {format(new Date(publishedAt * 1000), "MMM d, yyyy")}
               </div>
             )}
+            <div className="flex items-center gap-1.5">
+              <span className="w-1 h-1 bg-gray-300 rounded-full" />
+              <span>{readingTime} min read</span>
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-black mb-4 leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-[900] mb-6 leading-[1.1] tracking-tight text-gray-900 dark:text-white">
             {title}
           </h1>
 
           {summary && (
-            <p className="text-lg text-gray-600 dark:text-gray-400 italic mb-8 border-l-4 border-gray-200 dark:border-gray-800 pl-4">
+            <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-400 font-medium leading-relaxed mb-10 border-l-4 border-blue-500 pl-6">
               {summary}
             </p>
           )}
 
           {/* Tags */}
           {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-8">
+            <div className="flex flex-wrap gap-2 mb-12">
               {tags.map(tag => (
-                <span key={tag} className="px-2 py-1 bg-gray-100 dark:bg-gray-900 rounded-md text-xs text-gray-500 flex items-center gap-1">
-                  <Tag size={10} /> {tag}
+                <span key={tag} className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold uppercase tracking-wide">
+                  # {tag}
                 </span>
               ))}
             </div>

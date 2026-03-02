@@ -20,11 +20,14 @@ export function ArticleRenderer({ content, event }: ArticleRendererProps) {
   
   return (
     <div className="prose prose-lg dark:prose-invert prose-blue max-w-none 
-      prose-headings:font-black prose-headings:tracking-tight
-      prose-p:leading-relaxed prose-p:text-gray-800 dark:prose-p:text-gray-200
-      prose-img:rounded-3xl prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-800
-      prose-code:text-blue-500 prose-code:bg-blue-500/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
-      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-950/20 prose-blockquote:py-1 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic
+      selection:bg-blue-500/20
+      prose-headings:font-black prose-headings:tracking-tight prose-headings:text-gray-900 dark:prose-headings:text-white
+      prose-p:leading-[1.8] prose-p:text-gray-800 dark:prose-p:text-gray-200 prose-p:mb-6
+      prose-img:rounded-3xl prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-800 prose-img:my-12
+      prose-code:text-blue-600 dark:prose-code:text-blue-400 prose-code:bg-blue-500/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:font-medium
+      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50/50 dark:prose-blockquote:bg-blue-950/20 prose-blockquote:py-2 prose-blockquote:px-8 prose-blockquote:rounded-r-3xl prose-blockquote:not-italic prose-blockquote:my-10
+      prose-ul:list-disc prose-ul:pl-6 prose-li:mb-2
+      prose-hr:border-gray-100 dark:prose-hr:border-gray-800 prose-hr:my-16
     ">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
