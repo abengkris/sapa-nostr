@@ -3,14 +3,14 @@ import NDK, { NDKEvent, NDKFilter, NDKSubscription } from "@nostr-dev-kit/ndk";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 
-export interface NotificationEvent extends NDKEvent {
+export interface SapaNotification extends NDKEvent {
   type: 'reply' | 'mention' | 'like' | 'repost' | 'zap';
 }
 
 export function useNotifications() {
   const { ndk, isReady } = useNDK();
   const { user, isLoggedIn } = useAuthStore();
-  const [notifications, setNotifications] = useState<NotificationEvent[]>([]);
+  const [notifications, setNotifications] = useState<SapaNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -39,7 +39,7 @@ export function useNotifications() {
         onEvent: (event: NDKEvent) => {
           if (event.pubkey === user.pubkey) return;
 
-          const notif = event as NotificationEvent;
+          const notif = event as SapaNotification;
           if (event.kind === 1) {
             const isReply = event.tags.some(t => t[0] === 'e');
             notif.type = isReply ? 'reply' : 'mention';
@@ -89,7 +89,7 @@ export function useNotifications() {
         onEvent: (event: NDKEvent) => {
           if (event.pubkey === user.pubkey) return;
 
-          const notif = event as NotificationEvent;
+          const notif = event as SapaNotification;
           if (event.kind === 1) {
             const isReply = event.tags.some(t => t[0] === 'e');
             notif.type = isReply ? 'reply' : 'mention';

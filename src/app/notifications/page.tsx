@@ -2,7 +2,7 @@
 
 import React from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications, SapaNotification } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { Loader2, Heart, Repeat2, MessageCircle, Zap, UserPlus, Bell } from "lucide-react";
 import Link from "next/link";
@@ -10,17 +10,6 @@ import Image from "next/image";
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { UserIdentity } from "@/components/common/UserIdentity";
 import { shortenPubkey } from "@/lib/utils/nip19";
-
-interface Notification {
-  id: string;
-  pubkey: string;
-  type: 'like' | 'repost' | 'reply' | 'zap' | 'mention';
-  content?: string;
-  created_at: number;
-  author: {
-    npub: string;
-  };
-}
 
 const NotificationIcon = ({ type }: { type: string }) => {
   switch (type) {
@@ -33,20 +22,20 @@ const NotificationIcon = ({ type }: { type: string }) => {
   }
 };
 
-const NotificationItem = ({ notif }: { notif: Notification }) => {
-  const { profile } = useProfile(notif.pubkey);
-  const displayName = profile?.name || profile?.displayName || shortenPubkey(notif.pubkey);
-  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.pubkey}`;
+const NotificationItem = ({ event }: { event: SapaNotification }) => {
+  const { profile } = useProfile(event.pubkey);
+  const displayName = profile?.name || profile?.displayName || shortenPubkey(event.pubkey);
+  const avatar = profile?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.pubkey}`;
 
   return (
     <div className="border-b border-gray-100 dark:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
       <div className="flex p-4 space-x-3">
         <div className="shrink-0 pt-1">
-          <NotificationIcon type={notif.type} />
+          <NotificationIcon type={event.type} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-1">
-            <Link href={`/${notif.author.npub}`} className="shrink-0">
+            <Link href={`/${event.author.npub}`} className="shrink-0">
               <Image 
                 src={avatar} 
                 width={32}
@@ -57,22 +46,22 @@ const NotificationItem = ({ notif }: { notif: Notification }) => {
               />
             </Link>
             <div className="flex flex-wrap items-center gap-x-1 min-w-0">
-              <Link href={`/${notif.author.npub}`} className="font-bold hover:underline truncate max-w-[150px]">
+              <Link href={`/${event.author.npub}`} className="font-bold hover:underline truncate max-w-[150px]">
                 {displayName}
               </Link>
               <span className="text-gray-500 text-sm whitespace-nowrap">
-                {notif.type === 'like' && "liked your post"}
-                {notif.type === 'repost' && "reposted your post"}
-                {notif.type === 'reply' && "replied to your post"}
-                {notif.type === 'zap' && "zapped your post"}
-                {notif.type === 'mention' && "mentioned you"}
+                {event.type === 'like' && "liked your post"}
+                {event.type === 'repost' && "reposted your post"}
+                {event.type === 'reply' && "replied to your post"}
+                {event.type === 'zap' && "zapped your post"}
+                {event.type === 'mention' && "mentioned you"}
               </span>
             </div>
           </div>
           
-          {notif.content && (
+          {event.content && (
             <div className="text-gray-600 dark:text-gray-400 text-sm border-l-2 border-gray-200 dark:border-gray-800 pl-3 py-1 italic line-clamp-2">
-              {notif.content}
+              {event.content}
             </div>
           )}
         </div>
@@ -122,7 +111,7 @@ export default function NotificationsPage() {
           <>
             <div className="divide-y divide-gray-100 dark:divide-gray-900">
               {notifications.map((notif) => (
-                <NotificationItem key={notif.id} notif={notif} />
+                <NotificationItem key={notif.id} event={notif} />
               ))}
             </div>
             
