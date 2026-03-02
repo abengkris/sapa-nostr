@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { useProfile } from "@/hooks/useProfile";
-import { useReactions } from "@/hooks/useReactions";
+import { usePostStats } from "@/hooks/usePostStats";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "next/navigation";
@@ -51,8 +51,15 @@ export const PostCard: React.FC<PostCardProps> = ({
   
   const displayEvent = isRepost && repostedEvent ? repostedEvent : event;
   const { profile } = useProfile(displayEvent.pubkey);
-  const { likes, userReacted } = useReactions(displayEvent.id);
-  const { totalSats } = useZaps(displayEvent.id);
+  const { 
+    likes, 
+    reposts, 
+    comments, 
+    quotes, 
+    totalSats, 
+    userLiked, 
+    userReposted 
+  } = usePostStats(displayEvent.id);
 
   useEffect(() => {
     if (isRepost && isReady && ndk) {
@@ -103,6 +110,11 @@ export const PostCard: React.FC<PostCardProps> = ({
       console.error(err);
       addToast("Error deleting post", "error");
     }
+  };
+
+  const handleQuote = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addToast("Quote feature coming soon!", "info");
   };
 
   if (isDeleted) return null;
@@ -157,10 +169,15 @@ export const PostCard: React.FC<PostCardProps> = ({
           <PostActions
             eventId={displayEvent.id}
             likes={likes}
+            reposts={reposts}
+            comments={comments}
+            quotes={quotes}
             zaps={totalSats}
-            userReacted={userReacted}
+            userReacted={userLiked ? '+' : null}
+            userReposted={userReposted}
             onZapClick={() => setShowZapModal(true)}
             onReplyClick={() => setShowReplyModal(true)}
+            onQuoteClick={handleQuote}
           />
         </div>
       </div>
