@@ -15,9 +15,40 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tell it! - Whatever it is, just Tell It.",
+  title: {
+    default: "Tell it! - Whatever it is, just Tell It.",
+    template: "%s | Tell it!"
+  },
   description: "A decentralized microblogging platform built on Nostr. Whatever it is, just Tell It.",
   metadataBase: new URL("https://tellit.id"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Tell it!",
+    description: "Whatever it is, just Tell It.",
+    url: "https://tellit.id",
+    siteName: "Tell it!",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "https://tellit.id/og-image.png", // This should be created later
+        width: 1200,
+        height: 630,
+        alt: "Tell it!",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tell it!",
+    description: "Whatever it is, just Tell It.",
+    images: ["https://tellit.id/og-image.png"],
+  },  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
