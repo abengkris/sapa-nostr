@@ -4,8 +4,7 @@ import React, { use } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useProfile } from "@/hooks/useProfile";
 import { useFeed } from "@/hooks/useFeed";
-import { PostCard } from "@/components/post/PostCard";
-import { Loader2, Calendar, MapPin, Link as LinkIcon, Zap, Activity, Mail, Share } from "lucide-react";
+import { Calendar, Link as LinkIcon, Zap, Activity, Mail, Share } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useUIStore } from "@/store/ui";
 import { useNDK } from "@/hooks/useNDK";
@@ -57,16 +56,16 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const { user: currentUser } = useAuthStore();
   const { addToast } = useUIStore();
 
-  // Determine feed parameters based on tab
-  const feedKinds = React.useMemo(() => {
-    if (activeTab === "likes") return [7];
-    if (activeTab === "articles") return [30023];
-    return [1];
+  // Map activeTab to useFeed parameters
+  const { feedKinds, feedFilter } = React.useMemo(() => {
+    if (activeTab === "likes") return { feedKinds: [7], feedFilter: "all" as const };
+    if (activeTab === "articles") return { feedKinds: [30023], feedFilter: "all" as const };
+    if (activeTab === "media") return { feedKinds: [1], feedFilter: "media" as const };
+    if (activeTab === "replies") return { feedKinds: [1], feedFilter: "replies" as const };
+    return { feedKinds: [1], feedFilter: "posts" as const };
   }, [activeTab]);
-
-  const disableFiltering = activeTab === "replies" || activeTab === "likes" || activeTab === "articles";
   
-  const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([hexPubkey], feedKinds, disableFiltering);
+  const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([hexPubkey], feedKinds, feedFilter);
 
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = React.useState(false);
@@ -109,24 +108,6 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
       return url;
     }
   };
-
-  // Custom filter for tabs
-  const filteredPosts = React.useMemo(() => {
-    if (activeTab === "replies") {
-      return posts.filter(p => p.tags.some(t => t[0] === 'e'));
-    }
-    if (activeTab === "posts") {
-      return posts.filter(p => !p.tags.some(t => t[0] === 'e'));
-    }
-    if (activeTab === "media") {
-      return posts.filter(p => {
-        const hasMediaUrl = p.content.match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mov|mp4|webm)/i);
-        const hasImeta = p.tags.some(t => t[0] === 'imeta');
-        return hasMediaUrl || hasImeta;
-      });
-    }
-    return posts;
-  }, [posts, activeTab]);
 
   if (profileLoading) {
     return (
@@ -374,7 +355,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
       {/* Feed */}
       <div className="pb-20">
         <FeedList 
-          posts={filteredPosts}
+          posts={posts}
           isLoading={feedLoading}
           loadMore={loadMore}
           hasMore={hasMore}
