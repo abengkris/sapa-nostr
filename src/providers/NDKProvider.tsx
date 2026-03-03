@@ -25,7 +25,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
   const [messenger, setMessenger] = useState<NDKMessenger | null>(null);
   const [isReady, setIsReady] = useState(false);
   const { privateKey, isLoggedIn, loginType, publicKey, setUser } = useAuthStore();
-  const { addToast, incrementUnreadMessagesCount } = useUIStore();
+  const { incrementUnreadMessagesCount } = useUIStore();
 
   useEffect(() => {
     // Only run on client
@@ -112,7 +112,6 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
                 
                 if (!isCurrentChat) {
                   incrementUnreadMessagesCount();
-                  addToast(`New message from ${message.sender?.pubkey.slice(0, 8)}...`, "info");
                 }
               }
             });
@@ -135,7 +134,6 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
                 const isCurrentChat = window.location.pathname.includes(`/messages/${message.sender?.pubkey}`);
                 if (!isCurrentChat) {
                   incrementUnreadMessagesCount();
-                  addToast(`New message from ${message.sender?.pubkey.slice(0, 8)}...`, "info");
                 }
               }
             });
@@ -154,7 +152,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     };
-  }, [isLoggedIn, loginType, privateKey, publicKey, setUser, addToast, incrementUnreadMessagesCount]);
+  }, [isLoggedIn, loginType, privateKey, publicKey, setUser, incrementUnreadMessagesCount]);
 
   return (
     <NDKContext.Provider value={{ ndk, messenger, isReady }}>
