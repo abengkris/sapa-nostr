@@ -14,20 +14,23 @@ export enum ListKind {
   Emojis = 10030,
 }
 
-export function useLists() {
+export function useLists(targetPubkey?: string) {
   const { ndk, isReady } = useNDK();
-  const { user } = useAuthStore();
+  const { user: currentUser } = useAuthStore();
+  const pubkey = targetPubkey || currentUser?.pubkey;
+  const isOwnProfile = !!currentUser && pubkey === currentUser.pubkey;
   
   const [mutedPubkeys, setMutedPubkeys] = useState<Set<string>>(new Set());
   const [bookmarkedEventIds, setBookmarkedEventIds] = useState<Set<string>>(new Set());
   const [pinnedEventIds, setPinnedEventIds] = useState<Set<string>>(new Set());
+  const [interests, setInterests] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   // Cache latest events to avoid redundant fetches and clobbering
   const listEventsRef = useRef<Map<number, NDKEvent>>(new Map());
 
   const fetchLists = useCallback(async () => {
-    if (!ndk || !isReady || !user) {
+    if (!ndk || !isReady || !pubkey) {
       setLoading(false);
       return;
     }
@@ -35,15 +38,16 @@ export function useLists() {
     setLoading(true);
     try {
       // Fetch common NIP-51 lists
-      const kinds = [ListKind.Mute, ListKind.Pinned, ListKind.Bookmarks] as number[];
+      const kinds = [ListKind.Mute, ListKind.Pinned, ListKind.Bookmarks, ListKind.Interests] as number[];
       const events = await ndk.fetchEvents(
-        { kinds, authors: [user.pubkey] },
+        { kinds, authors: [pubkey] },
         { cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST }
       );
 
       const newMuted = new Set<string>();
       const newBookmarks = new Set<string>();
       const newPinned = new Set<string>();
+      const newInterests = new Set<string>();
 
       // Group events by kind and find latest for each
       const latestByKind = new Map<number, NDKEvent>();
@@ -64,12 +68,15 @@ export function useLists() {
           event.tags.filter(t => t[0] === 'e' || t[0] === 'a').forEach(t => newBookmarks.add(t[1]));
         } else if (kind === ListKind.Pinned) {
           event.tags.filter(t => t[0] === 'e').forEach(t => newPinned.add(t[1]));
+        } else if (kind === ListKind.Interests) {
+          event.tags.filter(t => t[0] === 't').forEach(t => newInterests.add(t[1]));
         }
       });
 
       setMutedPubkeys(newMuted);
       setBookmarkedEventIds(newBookmarks);
       setPinnedEventIds(newPinned);
+      setInterests(newInterests);
     } catch (err) {
       console.error("Error fetching NIP-51 lists:", err);
     } finally {
@@ -88,12 +95,12 @@ export function useLists() {
     action: 'add' | 'remove',
     extraTags: string[] = []
   ) => {
-    if (!ndk || !user) return false;
+    if (!ndk || !currentUser || !isOwnProfile) return false;
 
     try {
       // 1. Fetch ALL versions from relays to find the TRULY latest (Safety logic from follow fix)
       const events = await ndk.fetchEvents(
-        { kinds: [kind as number], authors: [user.pubkey] },
+        { kinds: [kind as number], authors: [currentUser.pubkey] },
         { 
           cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
           closeOnEose: true
@@ -144,6 +151,12 @@ export function useLists() {
           action === 'add' ? next.add(value) : next.delete(value);
           return next;
         });
+      } else if (kind === ListKind.Interests) {
+        setInterests(prev => {
+          const next = new Set(prev);
+          action === 'add' ? next.add(value) : next.delete(value);
+          return next;
+        });
       }
 
       return true;
@@ -151,7 +164,7 @@ export function useLists() {
       console.error(`Failed to update NIP-51 list ${kind}:`, err);
       return false;
     }
-  }, [ndk, user]);
+  }, [ndk, currentUser, isOwnProfile]);
 
   return {
     mutedPubkeys,
@@ -174,5 +187,11 @@ export function useLists() {
     isPinned: (eventId: string) => pinnedEventIds.has(eventId),
     isBookmarked: (eventId: string) => bookmarkedEventIds.has(eventId),
     isMuted: (pubkey: string) => mutedPubkeys.has(pubkey),
+
+    // Interests
+    interests,
+    addInterest: (hashtag: string) => updateList(ListKind.Interests, 't', hashtag.toLowerCase().replace('#', ''), 'add'),
+    removeInterest: (hashtag: string) => updateList(ListKind.Interests, 't', hashtag.toLowerCase().replace('#', ''), 'remove'),
+    isInterested: (hashtag: string) => interests.has(hashtag.toLowerCase().replace('#', '')),
   };
 }

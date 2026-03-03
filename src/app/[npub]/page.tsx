@@ -18,7 +18,8 @@ import { ZapModal } from "@/components/common/ZapModal";
 import { useZaps } from "@/hooks/useZaps";
 import { useRelayList } from "@/hooks/useRelayList";
 import { useUserStatus } from "@/hooks/useUserStatus";
-import { Music, Activity as StatusIcon } from "lucide-react";
+import { useLists } from "@/hooks/useLists";
+import { Music, Activity as StatusIcon, Tag } from "lucide-react";
 import { FollowedBy } from "@/components/profile/FollowedBy";
 
 import Image from "next/image";
@@ -49,6 +50,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const { count: followingCount, loading: fwLoading } = useFollowingList(hexPubkey);
   const { count: followerCount, loading: fLoading } = useFollowerCount(hexPubkey);
   const { totalSats } = useZaps(hexPubkey, true);
+  const { interests } = useLists(hexPubkey);
 
   const { ndk } = useNDK();
   const { user: currentUser } = useAuthStore();
@@ -229,6 +231,22 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
               </div>
             )}
           </div>
+
+          {/* Interests (NIP-51) */}
+          {interests.size > 0 && (
+            <div className="flex flex-wrap gap-2 py-1 animate-in fade-in slide-in-from-left duration-700">
+              {Array.from(interests).map((interest) => (
+                <Link
+                  key={interest}
+                  href={`/search?q=%23${interest}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-500 hover:border-blue-200 transition-all"
+                >
+                  <Tag size={10} />
+                  <span>#{interest}</span>
+                </Link>
+              ))}
+            </div>
+          )}
 
           <p className="text-gray-500 text-xs font-mono break-all bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
             {npubParam}
