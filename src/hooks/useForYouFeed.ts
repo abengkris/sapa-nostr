@@ -156,16 +156,25 @@ function rankByWoT(events: NDKEvent[], wot: NDKWoT): NDKEvent[] {
 
 function computeFinalScore(event: NDKEvent, wot: NDKWoT, now: number): number {
   const wotScore = wot.getScore(event.pubkey) ?? 0;
+  
+  // Hitung selisih waktu dalam jam
+  const deltaHours = (now - (event.created_at ?? 0)) / 3600;
+  
+  // Parameter Half-life (bisa Anda sesuaikan)
+  // 12 jam adalah angka yang pas untuk microblogging agar feed tetap segar
+  const halfLife = 12; 
 
-  const ageHours = (now - (event.created_at ?? 0)) / 3600;
-  let freshness: number;
-  if (ageHours < 1) freshness = 1.0;
-  else if (ageHours < 6) freshness = 0.85;
-  else if (ageHours < 24) freshness = 0.6;
-  else freshness = 0.3;
+  // Rumus Exponential Decay
+  const freshness = Math.pow(0.5, deltaHours / halfLife);
 
-  return wotScore * freshness;
+  // Tambahkan "Penalty" untuk postingan yang sudah sangat lama (misal > 3 hari)
+  // agar tidak menghantui feed selamanya
+  if (deltaHours > 72) return wotScore * freshness * 0.1;
+
+  const randomFactor = 0.9 + Math.random() * 0.2; // Variasi antara 0.9 - 1.1
+return wotScore * freshness * randomFactor;
 }
+
 
 function sortByTime(events: NDKEvent[]): NDKEvent[] {
   return [...events].sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
