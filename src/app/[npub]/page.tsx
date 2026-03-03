@@ -22,6 +22,7 @@ import { useLists } from "@/hooks/useLists";
 import { usePinnedPosts } from "@/hooks/usePinnedPosts";
 import { Music, Activity as StatusIcon, Tag } from "lucide-react";
 import { FollowedBy } from "@/components/profile/FollowedBy";
+import { ExternalIdentities } from "@/components/profile/ExternalIdentities";
 import { PostCard } from "@/components/post/PostCard";
 
 import Image from "next/image";
@@ -52,7 +53,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const { count: followingCount, loading: fwLoading } = useFollowingList(hexPubkey);
   const { count: followerCount, loading: fLoading } = useFollowerCount(hexPubkey);
   const { totalSats } = useZaps(hexPubkey, true);
-  const { interests, pinnedEventIds } = useLists(hexPubkey);
+  const { interests, pinnedEventIds, externalIdentities } = useLists(hexPubkey);
   const { pinnedPosts } = usePinnedPosts(hexPubkey, pinnedEventIds);
 
   const { ndk } = useNDK();
@@ -285,6 +286,8 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             {profile.about}
           </div>
         )}
+
+        <ExternalIdentities identities={externalIdentities} />
 
         <div className="mt-4 flex flex-wrap gap-4 text-gray-500 text-sm">
           {profile?.website && (

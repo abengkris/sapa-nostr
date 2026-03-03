@@ -10,8 +10,15 @@ export enum ListKind {
   Pinned = 10001,
   Relay = 10002,
   Bookmarks = 10003,
+  ExternalIdentities = 10011,
   Interests = 10015,
   Emojis = 10030,
+}
+
+export interface ExternalIdentity {
+  platform: string;
+  identity: string;
+  proof: string;
 }
 
 export function useLists(targetPubkey?: string) {
@@ -24,6 +31,7 @@ export function useLists(targetPubkey?: string) {
   const [bookmarkedEventIds, setBookmarkedEventIds] = useState<Set<string>>(new Set());
   const [pinnedEventIds, setPinnedEventIds] = useState<Set<string>>(new Set());
   const [interests, setInterests] = useState<Set<string>>(new Set());
+  const [externalIdentities, setExternalIdentities] = useState<ExternalIdentity[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Cache latest events to avoid redundant fetches and clobbering
@@ -37,8 +45,15 @@ export function useLists(targetPubkey?: string) {
 
     setLoading(true);
     try {
-      // Fetch common NIP-51 lists
-      const kinds = [ListKind.Mute, ListKind.Pinned, ListKind.Bookmarks, ListKind.Interests] as number[];
+      // Fetch common NIP-51 and NIP-39 lists
+      const kinds = [
+        ListKind.Mute, 
+        ListKind.Pinned, 
+        ListKind.Bookmarks, 
+        ListKind.Interests,
+        ListKind.ExternalIdentities
+      ] as number[];
+      
       const events = await ndk.fetchEvents(
         { kinds, authors: [pubkey] },
         { cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST }
@@ -48,6 +63,7 @@ export function useLists(targetPubkey?: string) {
       const newBookmarks = new Set<string>();
       const newPinned = new Set<string>();
       const newInterests = new Set<string>();
+      const newIdentities: ExternalIdentity[] = [];
 
       // Group events by kind and find latest for each
       const latestByKind = new Map<number, NDKEvent>();
@@ -70,6 +86,13 @@ export function useLists(targetPubkey?: string) {
           event.tags.filter(t => t[0] === 'e').forEach(t => newPinned.add(t[1]));
         } else if (kind === ListKind.Interests) {
           event.tags.filter(t => t[0] === 't').forEach(t => newInterests.add(t[1]));
+        } else if (kind === ListKind.ExternalIdentities) {
+          event.tags.filter(t => t[0] === 'i' && t.length >= 3).forEach(t => {
+            const [platform, identity] = t[1].split(':');
+            if (platform && identity) {
+              newIdentities.push({ platform, identity, proof: t[2] });
+            }
+          });
         }
       });
 
@@ -77,6 +100,7 @@ export function useLists(targetPubkey?: string) {
       setBookmarkedEventIds(newBookmarks);
       setPinnedEventIds(newPinned);
       setInterests(newInterests);
+      setExternalIdentities(newIdentities);
     } catch (err) {
       console.error("Error fetching NIP-51 lists:", err);
     } finally {
@@ -157,6 +181,16 @@ export function useLists(targetPubkey?: string) {
           action === 'add' ? next.add(value) : next.delete(value);
           return next;
         });
+      } else if (kind === ListKind.ExternalIdentities) {
+        // value here is "platform:identity"
+        const [platform, identity] = value.split(':');
+        setExternalIdentities(prev => {
+          if (action === 'add') {
+            return [...prev, { platform, identity, proof: extraTags[0] }];
+          } else {
+            return prev.filter(i => !(i.platform === platform && i.identity === identity));
+          }
+        });
       }
 
       return true;
@@ -193,5 +227,12 @@ export function useLists(targetPubkey?: string) {
     addInterest: (hashtag: string) => updateList(ListKind.Interests, 't', hashtag.toLowerCase().replace('#', ''), 'add'),
     removeInterest: (hashtag: string) => updateList(ListKind.Interests, 't', hashtag.toLowerCase().replace('#', ''), 'remove'),
     isInterested: (hashtag: string) => interests.has(hashtag.toLowerCase().replace('#', '')),
+
+    // External Identities (NIP-39)
+    externalIdentities,
+    addExternalIdentity: (platform: string, identity: string, proof: string) => 
+      updateList(ListKind.ExternalIdentities, 'i', `${platform}:${identity}`, 'add', [proof]),
+    removeExternalIdentity: (platform: string, identity: string) => 
+      updateList(ListKind.ExternalIdentities, 'i', `${platform}:${identity}`, 'remove'),
   };
 }
