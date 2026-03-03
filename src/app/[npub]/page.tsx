@@ -60,12 +60,20 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
   const { feedKinds, feedFilter } = React.useMemo(() => {
     if (activeTab === "likes") return { feedKinds: [7], feedFilter: "all" as const };
     if (activeTab === "articles") return { feedKinds: [30023], feedFilter: "all" as const };
-    if (activeTab === "media") return { feedKinds: [1], feedFilter: "media" as const };
+    if (activeTab === "media") return { feedKinds: [1, 30023], feedFilter: "media" as const };
     if (activeTab === "replies") return { feedKinds: [1], feedFilter: "replies" as const };
     return { feedKinds: [1], feedFilter: "posts" as const };
   }, [activeTab]);
   
-  const { posts, loading: feedLoading, loadMore, hasMore } = useFeed([hexPubkey], feedKinds, feedFilter);
+  // Stabilize authors array
+  const authors = React.useMemo(() => [hexPubkey], [hexPubkey]);
+  
+  const { posts, loading: feedLoading, loadMore, hasMore } = useFeed(authors, feedKinds, feedFilter);
+
+  // Scroll to top on tab change
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [activeTab]);
 
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = React.useState(false);

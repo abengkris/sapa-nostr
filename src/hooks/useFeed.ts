@@ -17,6 +17,12 @@ export function useFeed(authors: string[], kinds: number[] = [1], filterType: Fe
   const subscriptionRef = useRef<NDKSubscription | null>(null);
   const realtimeSubRef = useRef<NDKSubscription | null>(null);
   const oldestTimestampRef = useRef<number | undefined>(undefined);
+  
+  // Use a ref for mutedPubkeys to avoid re-triggering fetchFeed when they change
+  const mutedRef = useRef(mutedPubkeys);
+  useEffect(() => {
+    mutedRef.current = mutedPubkeys;
+  }, [mutedPubkeys]);
 
   const cleanupSubscriptions = useCallback(() => {
     if (subscriptionRef.current) {
@@ -32,14 +38,15 @@ export function useFeed(authors: string[], kinds: number[] = [1], filterType: Fe
   const matchesFilter = useCallback((event: NDKEvent) => {
     if (filterType === "all") return true;
     
-    if (event.kind === 1) {
+    if (event.kind === 1 || event.kind === 30023) {
       const hasETags = event.tags.some(t => t[0] === 'e');
       if (filterType === "posts") return !hasETags;
       if (filterType === "replies") return hasETags;
       if (filterType === "media") {
         const hasMediaUrl = event.content.match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mov|mp4|webm)/i);
         const hasImeta = event.tags.some(t => t[0] === 'imeta');
-        return !!(hasMediaUrl || hasImeta);
+        const hasImageTag = event.tags.some(t => t[0] === 'image');
+        return !!(hasMediaUrl || hasImeta || hasImageTag);
       }
     }
     
@@ -59,7 +66,6 @@ export function useFeed(authors: string[], kinds: number[] = [1], filterType: Fe
     }
 
     setLoading(true);
-    // Larger limit if we are filtering client-side to ensure we have enough results
     const fetchLimit = filterType === "all" ? 20 : 50;
 
     const filter: NDKFilter = {
@@ -87,7 +93,7 @@ export function useFeed(authors: string[], kinds: number[] = [1], filterType: Fe
 
     sub.on("event", (event: NDKEvent) => {
       clearTimeout(loadingTimeout);
-      if (mutedPubkeys.has(event.pubkey)) return;
+      if (mutedRef.current.has(event.pubkey)) return;
       if (!kinds.includes(event.kind!)) return;
 
       eventsReceived++;
@@ -116,7 +122,7 @@ export function useFeed(authors: string[], kinds: number[] = [1], filterType: Fe
       }
       setLoading(false);
     });
-  }, [ndk, isReady, authors, kinds, mutedPubkeys, filterType, matchesFilter]);
+  }, [ndk, isReady, authors, kinds, filterType, matchesFilter]);
 
   // Real-time listener
   useEffect(() => {
@@ -135,7 +141,7 @@ export function useFeed(authors: string[], kinds: number[] = [1], filterType: Fe
     realtimeSubRef.current = sub;
 
     sub.on("event", (event: NDKEvent) => {
-      if (mutedPubkeys.has(event.pubkey)) return;
+      if (mutedRef.current.has(event.pubkey)) return;
       if (!matchesFilter(event)) return;
       
       setPosts((prev) => {
@@ -148,7 +154,7 @@ export function useFeed(authors: string[], kinds: number[] = [1], filterType: Fe
     return () => {
       if (realtimeSubRef.current) realtimeSubRef.current.stop();
     };
-  }, [ndk, isReady, authors, kinds, mutedPubkeys, filterType, matchesFilter, loading]);
+  }, [ndk, isReady, authors, kinds, filterType, matchesFilter, loading]);
 
   useEffect(() => {
     fetchFeed();
