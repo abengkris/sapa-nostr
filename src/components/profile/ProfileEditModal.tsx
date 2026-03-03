@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, Camera, Image as ImageIcon, Loader2, AlertCircle, Check } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, Camera, Image as ImageIcon, Loader2, AlertCircle, Check, Upload } from "lucide-react";
 import { ProfileMetadata } from "@/hooks/useProfile";
 import { updateProfile } from "@/lib/actions/profile";
 import { useNDK } from "@/hooks/useNDK";
 import { useUIStore } from "@/store/ui";
+import { useBlossom } from "@/hooks/useBlossom";
 import Image from "next/image";
 
 interface ProfileEditModalProps {
@@ -23,8 +24,15 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 }) => {
   const { ndk } = useNDK();
   const { addToast } = useUIStore();
+  const { uploadFile } = useBlossom();
   
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState<ProfileMetadata>({
     name: "",
     displayName: "",
@@ -70,6 +78,30 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   }, [formData.website, formData.nip05]);
 
   if (!isOpen) return null;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'picture' | 'banner') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (type === 'picture') setUploadingAvatar(true);
+    else setUploadingBanner(true);
+
+    try {
+      const result = await uploadFile(file);
+      if (result && result.url) {
+        setFormData(prev => ({ ...prev, [type]: result.url }));
+        addToast(`${type === 'picture' ? 'Avatar' : 'Banner'} uploaded successfully!`, "success");
+      }
+    } catch (err) {
+      console.error(err);
+      addToast(`Failed to upload ${type}.`, "error");
+    } finally {
+      if (type === 'picture') setUploadingAvatar(false);
+      else setUploadingBanner(false);
+      // Reset input
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,20 +156,37 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
         <div className="flex-1 overflow-y-auto">
           {/* Banner Preview */}
-          <div className="relative h-40 bg-gray-200 dark:bg-gray-800">
+          <div className="relative h-40 bg-gray-200 dark:bg-gray-800 group">
             {formData.banner ? (
               <Image src={formData.banner} alt="Banner preview" fill className="object-cover" unoptimized />
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500 opacity-20" />
             )}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-              <ImageIcon className="text-white drop-shadow-md" size={32} />
+            <div 
+              className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 group-hover:bg-black/40 cursor-pointer transition-all gap-2"
+              onClick={() => bannerInputRef.current?.click()}
+            >
+              {uploadingBanner ? (
+                <Loader2 className="text-white animate-spin" size={32} />
+              ) : (
+                <>
+                  <ImageIcon className="text-white drop-shadow-md" size={32} />
+                  <span className="text-white text-[10px] font-bold uppercase tracking-widest drop-shadow-md bg-black/40 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">Change Banner</span>
+                </>
+              )}
             </div>
+            <input 
+              type="file" 
+              ref={bannerInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={(e) => handleFileChange(e, 'banner')}
+            />
           </div>
 
           <div className="px-6 pb-6 relative">
             {/* Avatar Preview */}
-            <div className="relative -mt-12 mb-6 inline-block">
+            <div className="relative -mt-12 mb-6 inline-block group">
               <div className="w-24 h-24 rounded-full border-4 border-white dark:border-black overflow-hidden bg-gray-100 dark:bg-gray-900 shadow-md">
                 <Image 
                   src={formData.picture || `https://robohash.org/placeholder?set=set1`} 
@@ -148,15 +197,38 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                   unoptimized
                 />
               </div>
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full pointer-events-none">
-                <Camera className="text-white" size={24} />
+              <div 
+                className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/60 rounded-full cursor-pointer transition-all"
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="text-white animate-spin" size={24} />
+                ) : (
+                  <Camera className="text-white" size={24} />
+                )}
               </div>
+              <input 
+                type="file" 
+                ref={avatarInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={(e) => handleFileChange(e, 'picture')}
+              />
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Avatar URL</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Avatar URL</label>
+                    <button 
+                      type="button"
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="text-[10px] font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
+                    >
+                      <Upload size={10} /> Upload New
+                    </button>
+                  </div>
                   <input
                     type="text"
                     name="picture"
@@ -167,7 +239,16 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Banner URL</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Banner URL</label>
+                    <button 
+                      type="button"
+                      onClick={() => bannerInputRef.current?.click()}
+                      className="text-[10px] font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
+                    >
+                      <Upload size={10} /> Upload New
+                    </button>
+                  </div>
                   <input
                     type="text"
                     name="banner"
