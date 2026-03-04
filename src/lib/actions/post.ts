@@ -45,7 +45,8 @@ export const publishPost = async (
   // 1. Handle Quote (NIP-18)
   if (options?.quoteEvent) {
     const q = options.quoteEvent;
-    event.tags.push(["q", q.id, q.pubkey]);
+    const relayUrl = q.onRelays?.[0]?.url || "";
+    event.tags.push(["q", q.id, relayUrl, q.pubkey]);
     
     // Automatically append the nostr: URI if not present in content
     const nostrUri = q.encode();
@@ -201,14 +202,32 @@ export const repostEvent = async (
   targetEvent: NDKEvent
 ): Promise<NDKEvent> => {
   const repost = new NDKEvent(ndk);
-  repost.kind = 6;
+  
+  // NIP-18: kind 6 for kind 1, kind 16 for everything else
+  repost.kind = targetEvent.kind === 1 ? 6 : 16;
+  
+  // Find a relay URL from targetEvent's seenOn or active relays
+  const relayUrl = targetEvent.onRelays?.[0]?.url || "";
+
   repost.tags = [
-    ["e", targetEvent.id, "", "root"],
+    ["e", targetEvent.id, relayUrl, "root"],
     ["p", targetEvent.pubkey]
   ];
-  // Note: NIP-18 suggests putting the stringified JSON of the target event 
-  // in the content, but many clients leave it empty.
-  repost.content = "";
+
+  // For kind 16 generic reposts, add 'k' tag
+  if (repost.kind === 16) {
+    repost.tags.push(["k", String(targetEvent.kind)]);
+    
+    // For replaceable events (NIP-01 / NIP-33), add 'a' tag
+    const dTag = targetEvent.tags.find(t => t[0] === 'd')?.[1];
+    if (dTag !== undefined) {
+      repost.tags.push(["a", `${targetEvent.kind}:${targetEvent.pubkey}:${dTag}`, relayUrl]);
+    }
+  }
+
+  // NIP-18: content should be stringified JSON of the target event
+  // Recommended unless NIP-70 protected (which we don't track specifically yet)
+  repost.content = JSON.stringify(targetEvent.rawEvent());
 
   await repost.publish();
   return repost;

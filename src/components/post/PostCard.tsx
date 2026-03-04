@@ -58,7 +58,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     isBookmarked, bookmarkPost, unbookmarkPost
   } = useLists();
 
-  const isRepost = event.kind === 6;
+  const isRepost = event.kind === 6 || event.kind === 16;
   const { profile: repostAuthorProfile } = useProfile(isRepost ? event.pubkey : undefined);
   
   const displayEvent = isRepost && repostedEvent ? repostedEvent : event;
@@ -79,15 +79,29 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   useEffect(() => {
     if (isRepost && isReady && ndk) {
+      // Find what to fetch: e tag (id) or a tag (coordinate)
       const eTag = event.tags.find(t => t[0] === 'e');
-      if (eTag) {
+      const aTag = event.tags.find(t => t[0] === 'a');
+      
+      const targetId = eTag?.[1] || aTag?.[1];
+
+      if (targetId) {
         setRepostLoading(true);
-        ndk.fetchEvent(eTag[1])
+        ndk.fetchEvent(targetId)
           .then(ev => {
-            setRepostedEvent(ev);
+            if (ev) setRepostedEvent(ev);
             setRepostLoading(false);
           })
           .catch(() => setRepostLoading(false));
+      } else if (event.content) {
+        // Fallback: try to parse content as JSON if tags are missing
+        try {
+          const raw = JSON.parse(event.content);
+          const ev = new NDKEvent(ndk, raw);
+          setRepostedEvent(ev);
+        } catch {
+          // Not valid JSON
+        }
       }
     }
   }, [isRepost, event, isReady, ndk]);
@@ -344,7 +358,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       </div>
 
       {showReplyModal && (
-        <div className="relative z-30">
+        <div className="relative">
           <ReplyModal
             event={displayEvent}
             onClose={() => setShowReplyModal(false)}
@@ -353,7 +367,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       )}
 
       {showQuoteModal && (
-        <div className="relative z-30">
+        <div className="relative">
           <QuoteModal
             event={displayEvent}
             onClose={() => setShowQuoteModal(false)}
@@ -362,7 +376,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       )}
 
       {showZapModal && (
-        <div className="relative z-20">
+        <div className="relative">
           <ZapModal
             event={displayEvent}
             onClose={() => setShowZapModal(false)}
@@ -371,7 +385,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       )}
 
       {showRawModal && (
-        <div className="relative z-20">
+        <div className="relative">
           <RawEventModal
             event={displayEvent}
             isOpen={showRawModal}
@@ -381,7 +395,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       )}
 
       {showReportModal && (
-        <div className="relative z-20">
+        <div className="relative">
           <ReportModal
             targetPubkey={displayEvent.pubkey}
             targetEventId={displayEvent.id}
