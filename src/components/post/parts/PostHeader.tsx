@@ -42,6 +42,7 @@ interface PostHeaderProps {
   bot?: boolean | string;
   isArticle?: boolean;
   isPoll?: boolean;
+  tags?: string[][];
 }
 
 export const PostHeader: React.FC<PostHeaderProps> = ({
@@ -64,7 +65,8 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   isBookmarked,
   bot,
   isArticle,
-  isPoll
+  isPoll,
+  tags
 }) => {
   const formattedTime = createdAt
     ? formatDistanceToNow(new Date(createdAt * 1000), { addSuffix: true })
@@ -140,6 +142,7 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
                 displayName={displayName}
                 nip05={nip05}
                 variant="post"
+                tags={tags}
               />
             </Link>
             {isPinned && (

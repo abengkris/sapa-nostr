@@ -4,6 +4,7 @@ import React from 'react';
 import { BadgeCheck, Loader2, AlertCircle } from 'lucide-react';
 import { useNIP05 } from '@/hooks/useNIP05';
 import { shortenPubkey } from '@/lib/utils/nip19';
+import { Emojify } from './Emojify';
 
 interface UserIdentityProps {
   pubkey: string;
@@ -11,6 +12,7 @@ interface UserIdentityProps {
   nip05?: string;
   variant?: 'post' | 'profile';
   className?: string;
+  tags?: string[][];
 }
 
 export const UserIdentity: React.FC<UserIdentityProps> = ({
@@ -19,6 +21,7 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
   nip05,
   variant = 'post',
   className = '',
+  tags,
 }) => {
   const status = useNIP05(pubkey, nip05);
 
@@ -31,7 +34,7 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
     <div className={`flex flex-col min-w-0 ${isPost ? 'gap-0' : 'gap-1'} ${className}`}>
       <div className="flex items-center gap-1 min-w-0">
         <span className={`font-bold truncate ${isPost ? 'text-sm' : 'text-xl'}`}>
-          {processedName}
+          <Emojify text={processedName} tags={tags} className={isPost ? "w-4 h-4" : "w-6 h-6"} />
         </span>
 
         {/* Badge logic */}

@@ -16,6 +16,7 @@ import { UserStatusModal } from "@/components/profile/UserStatusModal";
 import { UserIdentity } from "@/components/common/UserIdentity";
 import { ZapModal } from "@/components/common/ZapModal";
 import { DropdownMenu } from "@/components/common/DropdownMenu";
+import { Emojify } from "@/components/common/Emojify";
 import { updateStatus } from "@/lib/actions/profile";
 import { useZaps } from "@/hooks/useZaps";
 import { useRelayList } from "@/hooks/useRelayList";
@@ -280,6 +281,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
               displayName={profile?.name || profile?.displayName}
               nip05={profile?.nip05}
               variant="profile"
+              tags={profile?.tags}
             />
             {profile?.pronouns && (
               <span className="text-xs text-gray-500 font-medium bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded mt-1">
@@ -313,7 +315,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
                   className={isOwnProfile ? "cursor-pointer hover:underline" : ""} 
                   onClick={() => isOwnProfile && setIsStatusModalOpen(true)}
                 >
-                  {generalStatus.content}
+                  <Emojify text={generalStatus.content} tags={profile?.tags} />
                 </span>
                 {generalStatus.link && (
                   <a href={generalStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition-colors" onClick={e => e.stopPropagation()}>
@@ -340,7 +342,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             {musicStatus?.content && (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-pink-500/5 dark:bg-pink-500/10 border border-pink-500/10 dark:border-pink-500/20 text-pink-600 dark:text-pink-400 rounded-full text-[11px] font-bold animate-in fade-in zoom-in-95 duration-500">
                 <Music size={12} className="animate-bounce" style={{ animationDuration: '3s' }} />
-                <span>{musicStatus.content}</span>
+                <span><Emojify text={musicStatus.content} tags={profile?.tags} /></span>
                 {musicStatus.link && (
                   <a href={musicStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-pink-500 transition-colors">
                     <LinkIcon size={10} />
@@ -369,7 +371,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
 
         {profile?.about && (
           <div className="mt-4 text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-            {profile.about}
+            <Emojify text={profile.about} tags={profile.tags} />
           </div>
         )}
 

@@ -308,6 +308,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             onDeleteClick={currentUser?.pubkey === displayEvent.pubkey ? handleDelete : undefined}
             onReportClick={currentUser?.pubkey !== displayEvent.pubkey ? () => setShowReportModal(true) : undefined}
             onMoreClick={() => setShowRawModal(true)}
+            tags={isRepost ? (repostAuthorProfile?.tags || displayEvent.tags) : displayEvent.tags}
           />
 
           <PostContentRenderer

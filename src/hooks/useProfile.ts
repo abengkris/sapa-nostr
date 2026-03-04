@@ -15,6 +15,7 @@ export interface ProfileMetadata {
   pronouns?: string;
   bot?: boolean | string;
   published_at?: number;
+  tags?: string[][];
 }
 
 export function useProfile(pubkey?: string) {
@@ -43,6 +44,7 @@ export function useProfile(pubkey?: string) {
           // Try to get published_at from kind 0 event tags
           const kind0 = await ndk.fetchEvent({ kinds: [0], authors: [pubkey] });
           if (kind0) {
+            metadata.tags = kind0.tags;
             const publishedAtTag = kind0.tags.find(t => t[0] === 'published_at');
             if (publishedAtTag && publishedAtTag[1]) {
               metadata.published_at = parseInt(publishedAtTag[1]);
