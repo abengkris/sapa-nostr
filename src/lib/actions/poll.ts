@@ -38,7 +38,12 @@ export const createPoll = async (
   }
 
   // Add response relays (standard NDK relays if not provided)
-  const relays = pollOptions.relays || ndk.pool?.urls || [];
+  let relays = pollOptions.relays;
+  if (!relays) {
+    const poolUrls = ndk.pool?.urls;
+    relays = typeof poolUrls === "function" ? poolUrls() : (poolUrls || []);
+  }
+
   relays.forEach((url) => {
     event.tags.push(["relay", url]);
   });
