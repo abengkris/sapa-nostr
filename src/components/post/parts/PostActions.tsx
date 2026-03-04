@@ -45,6 +45,23 @@ export const PostActions: React.FC<PostActionsProps> = ({
   const { addToast } = useUIStore();
   const { bookmarkedEventIds, bookmarkPost, unbookmarkPost } = useLists();
 
+  // Sync state with props when they change from relay updates
+  useEffect(() => {
+    setOptimisticLikes(initialLikes);
+  }, [initialLikes]);
+
+  useEffect(() => {
+    setOptimisticReacted(initialUserReacted);
+  }, [initialUserReacted]);
+
+  useEffect(() => {
+    setOptimisticReposted(initialUserReposted);
+  }, [initialUserReposted]);
+
+  useEffect(() => {
+    setOptimisticReposts(initialReposts);
+  }, [initialReposts]);
+
   const isBookmarked = useMemo(() => bookmarkedEventIds.has(eventId), [bookmarkedEventIds, eventId]);
 
   const handleBookmark = async (e: React.MouseEvent) => {
@@ -61,14 +78,15 @@ export const PostActions: React.FC<PostActionsProps> = ({
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (optimisticReacted === '+') {
+      // In NIP-25 we don't usually "unlike" easily, but we can update UI
       setOptimisticLikes(prev => Math.max(0, prev - 1));
       setOptimisticReacted(null);
     } else {
       setOptimisticLikes(prev => prev + 1);
       setOptimisticReacted('+');
       addToast("Liked!", "success");
+      onLikeClick?.(e);
     }
-    onLikeClick?.(e);
   };
 
   const handleRepost = (e: React.MouseEvent) => {
@@ -82,12 +100,6 @@ export const PostActions: React.FC<PostActionsProps> = ({
   };
 
   const formatCount = (n: number) => {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-    return n.toString();
-  };
-
-  const formatSats = (n: number) => {
     if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
     if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
     return n.toString();
@@ -147,7 +159,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
           <Zap size={20} className={zaps > 0 ? "text-yellow-500 fill-yellow-500" : ""} />
         </div>
         <span className={`text-xs ${zaps > 0 ? "text-yellow-600 dark:text-yellow-400 font-bold" : ""}`}>
-          {zaps > 0 ? formatSats(zaps) : ""}
+          {zaps > 0 ? formatCount(zaps) : ""}
         </span>
       </button>
 

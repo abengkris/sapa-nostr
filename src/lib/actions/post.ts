@@ -150,6 +150,29 @@ export const publishArticle = async (
 };
 
 /**
+ * Repost a Nostr event (NIP-18).
+ * @param ndk The NDK instance
+ * @param targetEvent The event to be reposted
+ */
+export const repostEvent = async (
+  ndk: NDK,
+  targetEvent: NDKEvent
+): Promise<NDKEvent> => {
+  const repost = new NDKEvent(ndk);
+  repost.kind = 6;
+  repost.tags = [
+    ["e", targetEvent.id, "", "root"],
+    ["p", targetEvent.pubkey]
+  ];
+  // Note: NIP-18 suggests putting the stringified JSON of the target event 
+  // in the content, but many clients leave it empty.
+  repost.content = "";
+
+  await repost.publish();
+  return repost;
+};
+
+/**
  * Delete a post (NIP-09).
  * Sends a kind 5 deletion request to the relays.
  */

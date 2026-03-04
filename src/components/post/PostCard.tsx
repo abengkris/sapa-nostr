@@ -12,7 +12,8 @@ import { ZapModal } from "@/components/common/ZapModal";
 import { PostHeader } from "./parts/PostHeader";
 import { PostContentRenderer } from "./parts/PostContent";
 import { PostActions } from "./parts/PostActions";
-import { deletePost } from "@/lib/actions/post";
+import { deletePost, repostEvent } from "@/lib/actions/post";
+import { reactToEvent } from "@/lib/actions/reactions";
 import { useUIStore } from "@/store/ui";
 import { useZaps } from "@/hooks/useZaps";
 import { RawEventModal } from "./parts/RawEventModal";
@@ -145,6 +146,34 @@ export const PostCard: React.FC<PostCardProps> = ({
     addToast("Quote feature coming soon!", "info");
   };
 
+  const handleRepost = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!ndk || !isReady) return;
+    
+    try {
+      await repostEvent(ndk, displayEvent);
+    } catch (err) {
+      console.error(err);
+      addToast("Failed to repost", "error");
+    }
+  };
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!ndk || !isReady) return;
+
+    try {
+      // If already liked, we don't have a direct "unlike" in NIP-25 
+      // other than deleting the reaction event, which we don't track yet.
+      // So we just allow liking.
+      if (userLiked) return;
+      await reactToEvent(ndk, displayEvent, "+");
+    } catch (err) {
+      console.error(err);
+      addToast("Failed to like post", "error");
+    }
+  };
+
   const handlePin = async () => {
     if (isPinned(displayEvent.id)) {
       const success = await unpinPost(displayEvent.id);
@@ -271,6 +300,8 @@ export const PostCard: React.FC<PostCardProps> = ({
             userReposted={userReposted}
             onZapClick={() => setShowZapModal(true)}
             onReplyClick={() => setShowReplyModal(true)}
+            onLikeClick={handleLike}
+            onRepostClick={handleRepost}
             onQuoteClick={handleQuote}
             onShareClick={handleShare}
           />
