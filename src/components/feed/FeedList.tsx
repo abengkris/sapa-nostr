@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { PostCard } from "@/components/post/PostCard";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { WhoToFollow } from "@/components/profile/WhoToFollow";
@@ -87,7 +88,13 @@ export function FeedList({
       <div className="divide-y divide-gray-100 dark:divide-gray-900">
         {posts.map((event, index) => (
           <React.Fragment key={event.id}>
-            <PostCard event={event} />
+            <ErrorBoundary fallback={
+              <div className="p-4 text-xs text-gray-500 italic border-b border-gray-100 dark:divide-gray-900">
+                Failed to render post {event.id.slice(0, 8)}…
+              </div>
+            }>
+              <PostCard event={event} />
+            </ErrorBoundary>
             {showSuggestions && index === 4 && <WhoToFollow />}
           </React.Fragment>
         ))}
