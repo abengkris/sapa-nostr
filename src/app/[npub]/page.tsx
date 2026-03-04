@@ -4,7 +4,7 @@ import React, { use } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useProfile } from "@/hooks/useProfile";
 import { useFeed } from "@/hooks/useFeed";
-import { Calendar, Link as LinkIcon, Zap, Activity, Mail, Share, Copy, Check, MoreVertical, Edit2 } from "lucide-react";
+import { Calendar, Link as LinkIcon, Zap, Activity, Mail, Share, Copy, Check, MoreVertical, Edit2, X } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useUIStore } from "@/store/ui";
 import { useNDK } from "@/hooks/useNDK";
@@ -16,6 +16,7 @@ import { UserStatusModal } from "@/components/profile/UserStatusModal";
 import { UserIdentity } from "@/components/common/UserIdentity";
 import { ZapModal } from "@/components/common/ZapModal";
 import { DropdownMenu } from "@/components/common/DropdownMenu";
+import { updateStatus } from "@/lib/actions/profile";
 import { useZaps } from "@/hooks/useZaps";
 import { useRelayList } from "@/hooks/useRelayList";
 import { useUserStatus } from "@/hooks/useUserStatus";
@@ -293,36 +294,55 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
           </div>
           
           {/* User Status Badges */}
-          <div className="flex flex-wrap gap-2 py-1">
+          <div className="flex flex-wrap gap-2 py-1.5">
             {isOwnProfile && !generalStatus?.content && (
               <button 
                 onClick={() => setIsStatusModalOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 dark:bg-gray-900/20 border border-gray-100 dark:border-gray-800 text-gray-500 rounded-full text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-800 text-gray-500 rounded-full text-[11px] font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-500 hover:border-blue-200 dark:hover:border-blue-800 transition-all group"
               >
-                <StatusIcon size={12} />
+                <StatusIcon size={12} className="group-hover:animate-pulse" />
                 <span>Set Status</span>
               </button>
             )}
             {generalStatus?.content && (
-              <button 
-                onClick={() => isOwnProfile && setIsStatusModalOpen(true)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold animate-in fade-in zoom-in-95 duration-500 ${isOwnProfile ? 'cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40' : ''}`}
+              <div 
+                className={`flex items-center gap-1.5 px-3 py-1 bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full text-[11px] font-bold animate-in fade-in zoom-in-95 duration-500 group relative`}
               >
                 <StatusIcon size={12} />
-                <span>{generalStatus.content}</span>
+                <span 
+                  className={isOwnProfile ? "cursor-pointer hover:underline" : ""} 
+                  onClick={() => isOwnProfile && setIsStatusModalOpen(true)}
+                >
+                  {generalStatus.content}
+                </span>
                 {generalStatus.link && (
-                  <a href={generalStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500" onClick={e => e.stopPropagation()}>
+                  <a href={generalStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition-colors" onClick={e => e.stopPropagation()}>
                     <LinkIcon size={10} />
                   </a>
                 )}
-              </button>
+                {isOwnProfile && (
+                  <button 
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (ndk) {
+                        await updateStatus(ndk, "", "general");
+                        window.location.reload();
+                      }
+                    }}
+                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                    title="Clear status"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+              </div>
             )}
             {musicStatus?.content && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-pink-50 dark:bg-pink-900/20 border border-pink-100 dark:border-pink-800 text-pink-600 dark:text-pink-400 rounded-full text-xs font-bold animate-in fade-in zoom-in-95 duration-500">
-                <Music size={12} />
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-pink-500/5 dark:bg-pink-500/10 border border-pink-500/10 dark:border-pink-500/20 text-pink-600 dark:text-pink-400 rounded-full text-[11px] font-bold animate-in fade-in zoom-in-95 duration-500">
+                <Music size={12} className="animate-bounce" style={{ animationDuration: '3s' }} />
                 <span>{musicStatus.content}</span>
                 {musicStatus.link && (
-                  <a href={musicStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-pink-500">
+                  <a href={musicStatus.link} target="_blank" rel="noopener noreferrer" className="hover:text-pink-500 transition-colors">
                     <LinkIcon size={10} />
                   </a>
                 )}
