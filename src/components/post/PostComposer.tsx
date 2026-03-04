@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
 import { PollOption } from "@/lib/actions/poll";
-import { ImageIcon, Calendar, Smile, MapPin, Loader2, X, AlertTriangle, List } from "lucide-react";
+import { ImageIcon, Smile, Loader2, X, AlertTriangle, List } from "lucide-react";
 import Image from "next/image";
 import { useUIStore } from "@/store/ui";
 import { useBlossom } from "@/hooks/useBlossom";
@@ -366,20 +366,6 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                 <List size={20} />
               </button>
               <button 
-                title="Schedule post"
-                aria-label="Schedule post"
-                className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
-              >
-                <Calendar size={20} />
-              </button>
-              <button 
-                title="Add location"
-                aria-label="Add location"
-                className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors opacity-50 cursor-not-allowed"
-              >
-                <MapPin size={20} />
-              </button>
-              <button 
                 title="Add content warning"
                 aria-label="Content Warning"
                 aria-pressed={isSensitive}
@@ -392,8 +378,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
               >
                 <AlertTriangle size={20} fill={isSensitive ? "currentColor" : "none"} />
               </button>
-            </div>
-            
+              </div>            
             <button
               onClick={handlePost}
               disabled={!content.trim() || isSubmitting || isUploading}
