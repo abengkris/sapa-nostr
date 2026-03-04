@@ -35,7 +35,7 @@ export function useEmojis() {
             authors: [user.pubkey] 
           },
           { 
-            ids: ["8d87e3ae547a3302b50f85e23b7a147615671fde72ede324804ab90ba4f40efc"] 
+            ids: ["4f2150214662bce38b5bc56cf3c6062d61ba73f8d97e871313eb1ede99555a5a"] 
           }
         ];
 
