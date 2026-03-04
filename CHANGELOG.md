@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-03-03
+
+### Added
+- **IndexedDB WoT Cache:** Migrated trust graph storage from localStorage to Dexie (IndexedDB) for massive performance gains and scalability.
+- **Spam Shield:** New "Spam Shield" toggle on the home feed to instantly filter out untrusted content.
+- **Intersection-based Trust:** Improved ranking algorithm that boosts users followed by multiple mutual trusted contacts.
+- **Loader Resilience:** Implemented exponential backoff retry logic for background WoT loading.
+
+### Changed
+- **Performance:** Memoized feed ranking logic to ensure buttery smooth scrolling even with large feeds.
+- **Data Model:** Extended the WoT cache to store full graph connectivity, enabling more intelligent scoring.
+
 ## [0.2.0] - 2026-03-03
 
 ### Added

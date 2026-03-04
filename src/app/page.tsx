@@ -12,6 +12,7 @@ import { NewPostsIsland } from "@/components/feed/NewPostsIsland";
 import { usePausedFeed } from "@/hooks/usePausedFeed";
 import { useForYouFeed } from "@/hooks/useForYouFeed";
 import { ProfileSetupCard } from "@/components/profile/ProfileSetupCard";
+import { useUIStore } from "@/store/ui";
 
 type FeedTab = "following" | "forYou" | "global";
 
@@ -173,6 +174,8 @@ function WoTStatusBanner({
   status: "idle" | "loading" | "ready" | "error";
   size: number;
 }) {
+  const { wotStrictMode, setWotStrictMode } = useUIStore();
+
   if (status === "ready") {
     if (size <= 1) {
       return (
@@ -182,9 +185,22 @@ function WoTStatusBanner({
       );
     }
     return (
-      <div className="flex items-center gap-2 px-4 py-3 bg-blue-50/30 dark:bg-blue-900/5 text-[10px] text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-900 font-bold uppercase tracking-widest">
-        <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-        <span>Web of Trust active · {size.toLocaleString()} users in your network</span>
+      <div className="flex items-center justify-between px-4 py-3 bg-blue-50/30 dark:bg-blue-900/5 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-2 text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest">
+          <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+          <span>Web of Trust active · {size.toLocaleString()} users</span>
+        </div>
+        
+        <button 
+          onClick={() => setWotStrictMode(!wotStrictMode)}
+          className={`text-[9px] font-black px-2 py-1 rounded-md transition-all uppercase tracking-tighter ${
+            wotStrictMode 
+            ? "bg-blue-500 text-white shadow-sm" 
+            : "bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-blue-500"
+          }`}
+        >
+          {wotStrictMode ? "🛡️ Spam Shield ON" : "Shield OFF"}
+        </button>
       </div>
     );
   }

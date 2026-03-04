@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { NDKWoT } from "@nostr-dev-kit/wot";
 import { useNDK } from "@/hooks/useNDK";
 import { useWoT, CachedWoT } from "./useWoT";
+import { useUIStore } from "@/store/ui";
 
 interface UseForYouFeedOptions {
   viewerPubkey: string;
@@ -28,8 +29,9 @@ export function useForYouFeed({
 }: UseForYouFeedOptions): UseForYouFeedReturn {
   const { ndk, isReady } = useNDK();
   const { wot, status: wotStatus, pubkeyCount: wotSize } = useWoT(viewerPubkey);
+  const { wotStrictMode } = useUIStore();
 
-  const [posts, setPosts] = useState<NDKEvent[]>([]);
+  const [rawEvents, setRawEvents] = useState<NDKEvent[]>([]);
   const [newCount, setNewCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -38,6 +40,19 @@ export function useForYouFeed({
   const seenIds = useRef(new Set<string>());
   const isInitialLoadDone = useRef(false);
 
+  // Memoized ranked posts
+  const posts = useMemo(() => {
+    let baseEvents = rawEvents;
+    
+    // Strict Mode: Filter out anyone with 0 score (unknown/spam)
+    if (wot && wotStrictMode) {
+      baseEvents = rawEvents.filter(e => wot.getScore(e.pubkey) > 0);
+    }
+
+    if (!wot) return sortByTime(baseEvents);
+    return rankByWoT(baseEvents, wot);
+  }, [rawEvents, wot, wotStrictMode]);
+
   useEffect(() => {
     if (!ndk || !isReady || wotStatus === "idle") return;
 
@@ -45,7 +60,7 @@ export function useForYouFeed({
     seenIds.current = new Set();
     isInitialLoadDone.current = false;
     bufferRef.current = [];
-    setPosts([]);
+    setRawEvents([]);
 
     const authors = wot
       ? wot.getAllPubkeys({ maxDepth: 2 }).slice(0, 500)
@@ -72,9 +87,9 @@ export function useForYouFeed({
       seenIds.current.add(event.id);
 
       if (!isInitialLoadDone.current) {
-        setPosts(prev => {
-          const next = [...prev, event];
-          return wot ? rankByWoT(next, wot) : sortByTime(next);
+        setRawEvents(prev => {
+          const combined = [...prev, event];
+          return combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
         });
       } else {
         bufferRef.current = [event, ...bufferRef.current];
@@ -84,34 +99,30 @@ export function useForYouFeed({
 
     sub.on("eose", () => {
       setIsLoading(false);
-      if (wot) {
-        setPosts(prev => rankByWoT(prev, wot));
-      }
       setTimeout(() => {
         isInitialLoadDone.current = true;
       }, 1500);
     });
 
     return () => sub.stop();
-  }, [ndk, isReady, wotStatus, followingList.join(",")]);
+  }, [ndk, isReady, wotStatus, followingList.join(","), wot]);
 
   const flushNewPosts = useCallback(() => {
     if (!bufferRef.current.length) return;
 
-    setPosts(prev => {
+    setRawEvents(prev => {
       const combined = [...bufferRef.current, ...prev].slice(0, 150);
-      const unique = Array.from(new Map(combined.map(e => [e.id, e])).values());
-      return wot ? rankByWoT(unique, wot) : sortByTime(unique);
+      return combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
     });
 
     bufferRef.current = [];
     setNewCount(0);
-  }, [wot]);
+  }, []);
 
   const loadMore = useCallback(async () => {
-    if (!ndk || !hasMore || !posts.length) return;
+    if (!ndk || !hasMore || !rawEvents.length) return;
 
-    const oldest = Math.min(...posts.map(p => p.created_at ?? Infinity));
+    const oldest = Math.min(...rawEvents.map(p => p.created_at ?? Infinity));
     const authors = wot ? wot.getAllPubkeys({ maxDepth: 2 }).slice(0, 500) : followingList;
 
     const older = await ndk.fetchEvents({
@@ -125,12 +136,11 @@ export function useForYouFeed({
     newEvents.forEach(e => seenIds.current.add(e.id));
     if (newEvents.length < 30) setHasMore(false);
 
-    setPosts(prev => {
+    setRawEvents(prev => {
       const combined = [...prev, ...newEvents];
-      const unique = Array.from(new Map(combined.map(e => [e.id, e])).values());
-      return wot ? rankByWoT(unique, wot) : sortByTime(unique);
+      return combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
     });
-  }, [ndk, posts, hasMore, followingList, wot]);
+  }, [ndk, rawEvents, hasMore, followingList, wot]);
 
   return {
     posts,
@@ -157,6 +167,12 @@ function rankByWoT(events: NDKEvent[], wot: NDKWoT | CachedWoT): NDKEvent[] {
 function computeFinalScore(event: NDKEvent, wot: NDKWoT | CachedWoT, now: number): number {
   const wotScore = wot.getScore(event.pubkey) ?? 0;
   
+  // Intersection-based boost: How many people you trust follow this user?
+  const node = wot.getNode(event.pubkey);
+  const mutualsCount = node?.followedBy?.size ?? 0;
+  // Boost factor: log-based so it doesn't explode but rewards multiple mutuals
+  const intersectionBoost = mutualsCount > 0 ? (1 + Math.log10(mutualsCount + 1)) : 1;
+
   // Hitung selisih waktu dalam jam
   const deltaHours = (now - (event.created_at ?? 0)) / 3600;
   
@@ -169,10 +185,10 @@ function computeFinalScore(event: NDKEvent, wot: NDKWoT | CachedWoT, now: number
 
   // Tambahkan "Penalty" untuk postingan yang sudah sangat lama (misal > 3 hari)
   // agar tidak menghantui feed selamanya
-  if (deltaHours > 72) return wotScore * freshness * 0.1;
+  if (deltaHours > 72) return wotScore * intersectionBoost * freshness * 0.1;
 
-  const randomFactor = 0.9 + Math.random() * 0.2; // Variasi antara 0.9 - 1.1
-return wotScore * freshness * randomFactor;
+  const randomFactor = 0.95 + Math.random() * 0.1; 
+  return wotScore * intersectionBoost * freshness * randomFactor;
 }
 
 

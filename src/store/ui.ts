@@ -9,15 +9,18 @@ interface Toast {
 interface UIState {
   toasts: Toast[];
   unreadMessagesCount: number;
+  wotStrictMode: boolean;
   addToast: (message: string, type?: "success" | "error" | "info") => void;
   removeToast: (id: string) => void;
   setUnreadMessagesCount: (count: number) => void;
   incrementUnreadMessagesCount: () => void;
+  setWotStrictMode: (enabled: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
   toasts: [],
   unreadMessagesCount: 0,
+  wotStrictMode: false,
   addToast: (message, type = "info") => {
     const id = Math.random().toString(36).substring(7);
     set((state) => ({
@@ -35,4 +38,5 @@ export const useUIStore = create<UIState>((set) => ({
     })),
   setUnreadMessagesCount: (count) => set({ unreadMessagesCount: count }),
   incrementUnreadMessagesCount: () => set((state) => ({ unreadMessagesCount: state.unreadMessagesCount + 1 })),
+  setWotStrictMode: (enabled) => set({ wotStrictMode: enabled }),
 }));

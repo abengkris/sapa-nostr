@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { NDKWoT } from "@nostr-dev-kit/wot";
 import { useNDK } from "@/hooks/useNDK";
+import { db } from "@/lib/db";
 
 type WoTStatus = "idle" | "loading" | "ready" | "error";
 
@@ -12,17 +13,20 @@ interface UseWoTReturn {
   pubkeyCount: number;
 }
 
-const CACHE_KEY_PREFIX = "tellit_wot_cache_";
 const CACHE_EXPIRY = 3600000; // 1 hour in ms
+const MAX_RETRIES = 3;
+
 /**
  * Simple wrapper class for cached WoT data to mimic NDKWoT behavior.
  */
 export class CachedWoT {
   public scores: Map<string, number>;
+  public graph: Map<string, string[]>;
   public size: number;
 
-  constructor(scoresObj: Record<string, number>) {
+  constructor(scoresObj: Record<string, number>, graphObj: Record<string, string[]>) {
     this.scores = new Map(Object.entries(scoresObj));
+    this.graph = new Map(Object.entries(graphObj));
     this.size = this.scores.size;
   }
 
@@ -31,6 +35,18 @@ export class CachedWoT {
    */
   getScore(pubkey: string): number {
     return this.scores.get(pubkey) ?? 0;
+  }
+
+  /**
+   * Returns follow metadata for a pubkey.
+   */
+  getNode(pubkey: string) {
+    const followedBy = this.graph.get(pubkey);
+    if (!followedBy) return null;
+    return {
+      pubkey,
+      followedBy: new Set(followedBy)
+    };
   }
 
   /**
@@ -49,20 +65,16 @@ let wotLoadPromise: Promise<void> | null = null;
  * Hook to manage and provide the Web of Trust (WoT) graph.
  * Implements a 2-layer caching strategy: 
  * 1. In-memory singleton for instant access across components.
- * 2. LocalStorage persistence with 1-hour expiry.
+ * 2. Dexie (IndexedDB) persistence with 1-hour expiry.
  * 
  * @param viewerPubkey The pubkey of the user whose trust network we are building.
  */
 export function useWoT(viewerPubkey: string | undefined): UseWoTReturn {
-...
-/**
- * Resets the in-memory WoT singleton.
- */
-export function resetWoT() {
-
+  const { ndk, isReady } = useNDK();
   const [status, setStatus] = useState<WoTStatus>("idle");
   const [pubkeyCount, setPubkeyCount] = useState(0);
   const [wot, setWot] = useState<NDKWoT | CachedWoT | null>(null);
+  const [retries, setRetries] = useState(0);
 
   useEffect(() => {
     if (!ndk || !isReady || !viewerPubkey) return;
@@ -81,21 +93,21 @@ export function resetWoT() {
     if (wotSingletonPubkey !== viewerPubkey) {
       wotSingleton = null;
       wotSingletonPubkey = viewerPubkey;
+      setRetries(0); // Reset retries for new user
     }
 
-    // 2. Check LocalStorage Cache
-    const cacheKey = `${CACHE_KEY_PREFIX}${viewerPubkey}`;
-    const cachedData = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
-    let isCacheValid = false;
+    let isMounted = true;
 
-    if (cachedData) {
+    const checkCacheAndLoad = async () => {
+      // 2. Check Dexie Cache
+      let isCacheValid = false;
       try {
-        const { timestamp, scores, rootPubkey } = JSON.parse(cachedData);
-        const age = Date.now() - timestamp;
+        const cachedEntry = await db.wotCache.get(viewerPubkey);
         
-        // Ensure cache belongs to this user
-        if (rootPubkey === viewerPubkey && Object.keys(scores).length > 0) {
-          const cachedInstance = new CachedWoT(scores);
+        if (cachedEntry && isMounted) {
+          const age = Date.now() - cachedEntry.timestamp;
+          const cachedInstance = new CachedWoT(cachedEntry.scores, cachedEntry.graph || {});
+          
           wotSingleton = cachedInstance;
           wotSingletonPubkey = viewerPubkey;
           setWot(cachedInstance);
@@ -104,68 +116,103 @@ export function resetWoT() {
           
           if (age < CACHE_EXPIRY) {
             isCacheValid = true;
-            console.log(`[WoT] Loaded from cache (${cachedInstance.size} users). Age: ${Math.round(age/60000)}m`);
+            console.log(`[WoT] Loaded from Dexie (${cachedInstance.size} users). Age: ${Math.round(age/60000)}m`);
           } else {
-            console.log("[WoT] Cache expired (>1h), will refresh in background.");
+            console.log("[WoT] Dexie cache expired (>1h), will refresh in background.");
           }
         }
       } catch (e) {
-        console.warn("[WoT] Failed to parse cache", e);
-      }
-    }
-
-    // 3. Trigger Load if needed
-    if (!isCacheValid) {
-      if (wotLoadPromise) {
-        return;
+        console.warn("[WoT] Failed to read Dexie cache", e);
       }
 
-      setStatus(prev => prev === "ready" ? prev : "loading");
-      console.log(`[WoT] Starting background load for ${viewerPubkey}...`);
-      
-      const instance = new NDKWoT(ndk, viewerPubkey);
-      wotLoadPromise = instance
-        .load({
-          depth: 2,
-          timeout: 30000,
-          maxFollows: 150, 
-        })
-        .then(() => {
-          // Serialize scores correctly using public methods
-          const allPubkeys = instance.getAllPubkeys();
-          const scoresMap = instance.getScores(allPubkeys);
-          const scoresObj: Record<string, number> = {};
-          
-          scoresMap.forEach((score, pk) => {
-            scoresObj[pk] = score;
+      // 3. Trigger Load if needed
+      if (!isCacheValid && isMounted) {
+        if (wotLoadPromise) return;
+
+        setStatus(prev => prev === "ready" ? prev : "loading");
+        
+        // If we are retrying, add a delay
+        if (retries > 0) {
+          const delay = Math.pow(2, retries) * 1000;
+          console.log(`[WoT] Retrying load in ${delay}ms... (Attempt ${retries}/${MAX_RETRIES})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        if (!isMounted) return;
+        console.log(`[WoT] Starting background load for ${viewerPubkey}...`);
+        
+        const instance = new NDKWoT(ndk, viewerPubkey);
+        wotLoadPromise = instance
+          .load({
+            depth: 2,
+            timeout: 30000,
+            maxFollows: 150, 
+          })
+          .then(async () => {
+            if (!isMounted) return;
+
+            // Serialize scores and graph correctly using public methods
+            const allPubkeys = instance.getAllPubkeys();
+            const scoresMap = instance.getScores(allPubkeys);
+            const scoresObj: Record<string, number> = {};
+            const graphObj: Record<string, string[]> = {};
+            
+            scoresMap.forEach((score, pk) => {
+              scoresObj[pk] = score;
+              const node = instance.getNode(pk);
+              if (node) {
+                graphObj[pk] = Array.from(node.followedBy);
+              }
+            });
+
+            // Save to Dexie
+            try {
+              await db.wotCache.put({
+                pubkey: viewerPubkey,
+                timestamp: Date.now(),
+                scores: scoresObj,
+                graph: graphObj
+              });
+            } catch (dbErr) {
+              console.error("[WoT] Failed to save to Dexie:", dbErr);
+            }
+
+            wotSingleton = instance;
+            wotSingletonPubkey = viewerPubkey;
+            setWot(instance);
+            setStatus("ready");
+            setPubkeyCount(instance.size);
+            wotLoadPromise = null;
+            setRetries(0); // Success! reset retries
+            console.log(`[WoT] Finished loading and cached to Dexie. Size: ${instance.size}`);
+          })
+          .catch(err => {
+            console.error("[WoT] Load failed:", err);
+            wotLoadPromise = null; 
+            if (isMounted) {
+              if (retries < MAX_RETRIES) {
+                setRetries(prev => prev + 1);
+              } else {
+                setStatus(prev => prev === "ready" ? prev : "error");
+              }
+            }
           });
+      }
+    };
 
-          // Save to LocalStorage
-          localStorage.setItem(cacheKey, JSON.stringify({
-            timestamp: Date.now(),
-            scores: scoresObj,
-            rootPubkey: viewerPubkey
-          }));
+    checkCacheAndLoad();
 
-          wotSingleton = instance;
-          wotSingletonPubkey = viewerPubkey;
-          setWot(instance);
-          setStatus("ready");
-          setPubkeyCount(instance.size);
-          wotLoadPromise = null;
-          console.log(`[WoT] Finished loading and cached. Size: ${instance.size}`);
-        })
-        .catch(err => {
-          console.error("[WoT] Load failed:", err);
-          setStatus(prev => prev === "ready" ? prev : "error");
-          wotLoadPromise = null; 
-        });
-    }
-  }, [ndk, isReady, viewerPubkey, wot]);
+    return () => {
+      isMounted = false;
+    };
+  }, [ndk, isReady, viewerPubkey, wot, status, retries]);
 
   return { wot, status, pubkeyCount };
 }
 
+/**
+ * Resets the in-memory WoT singleton.
+ */
 export function resetWoT() {
   wotSingleton = null;
   wotSingletonPubkey = null;
