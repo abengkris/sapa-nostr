@@ -219,7 +219,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder={replyTo ? "Post your reply" : placeholder}
-          className={`w-full bg-transparent border-none focus:ring-0 resize-none placeholder-gray-500 transition-all duration-300 overflow-hidden ${
+          className={`w-full bg-transparent border-none focus:ring-0 outline-none resize-none placeholder-gray-500 transition-all duration-300 overflow-hidden ${
             isExpanded ? "text-xl min-h-[100px]" : "text-lg min-h-[40px]"
           }`}
         />
@@ -397,7 +397,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
             <button
               onClick={handlePost}
               disabled={!content.trim() || isSubmitting || isUploading}
-              className={`px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-transform transition-colors flex items-center gap-2 ${
+              className={`px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-transform transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap ${
                 (!content.trim() || isSubmitting || isUploading) ? "opacity-50 cursor-not-allowed" : "active:scale-95"
               }`}
             >
