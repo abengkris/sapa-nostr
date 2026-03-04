@@ -382,7 +382,7 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
         {!isOwnProfile && <FollowedBy pubkey={hexPubkey} />}
 
         {/* Stats */}
-        <div className="flex gap-5 mt-4">
+        <div className="flex gap-5 mt-4 text-sm">
           <Link
             href={`/${npubParam}/followers?tab=following`}
             className="hover:underline flex items-center gap-1"
@@ -390,14 +390,14 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
             <span className="font-bold text-gray-900 dark:text-white">
               {fwLoading ? "–" : followingCount.toLocaleString()}
             </span>
-            <span className="text-gray-500">Following</span>
+            <span className="text-gray-500 text-xs">Following</span>
           </Link>
 
           <Link href={`/${npubParam}/followers?tab=followers`} className="hover:underline flex items-center gap-1">
             <span className="font-bold text-gray-900 dark:text-white">
               {fLoading ? "–" : formatCount(followerCount)}
             </span>
-            <span className="text-gray-500">Followers</span>
+            <span className="text-gray-500 text-xs">Followers</span>
           </Link>
 
           <div className="flex items-center gap-1 cursor-default">
