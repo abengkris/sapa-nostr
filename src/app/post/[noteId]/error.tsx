@@ -26,7 +26,7 @@ export default function PostError({
         </div>
         <h2 className="text-2xl font-bold mb-2">Post not found</h2>
         <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm">
-          We couldn't retrieve this post or its thread from the relays. It may have been deleted or the relays are unreachable.
+          We couldn&apos;t retrieve this post or its thread from the relays. It may have been deleted or the relays are unreachable.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">

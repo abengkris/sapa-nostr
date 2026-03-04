@@ -12,6 +12,7 @@ import { imetaTagToTag, NDKImetaTag, NDKTag, NDKEvent } from "@nostr-dev-kit/ndk
 
 interface PostComposerProps {
   replyTo?: NDKEvent;
+  quoteEvent?: NDKEvent;
   onSuccess?: () => void;
   placeholder?: string;
   autoFocus?: boolean;
@@ -19,6 +20,7 @@ interface PostComposerProps {
 
 export const PostComposer: React.FC<PostComposerProps> = ({ 
   replyTo, 
+  quoteEvent,
   onSuccess, 
   placeholder = "What's happening?",
   autoFocus = false 
@@ -54,12 +56,17 @@ export const PostComposer: React.FC<PostComposerProps> = ({
         tags.push(["content-warning", contentWarning]);
       }
 
-      await publishPost(ndk, content, { tags, replyTo });
+      await publishPost(ndk, content, { tags, replyTo, quoteEvent });
       setContent("");
       setImetaTags([]);
       setIsSensitive(false);
       setContentWarning("");
-      addToast(replyTo ? "Reply sent!" : "Post published successfully!", "success");
+      
+      let successMsg = "Post published successfully!";
+      if (replyTo) successMsg = "Reply sent!";
+      else if (quoteEvent) successMsg = "Quote shared!";
+      
+      addToast(successMsg, "success");
       onSuccess?.();
     } catch (err) {
       console.error("Failed to post:", err);
@@ -265,7 +272,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
               (!content.trim() || isSubmitting || isUploading) ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {isSubmitting ? "Posting..." : replyTo ? "Reply" : "Post"}
+            {isSubmitting ? "Posting..." : replyTo ? "Reply" : quoteEvent ? "Quote" : "Post"}
           </button>
         </div>
       </div>

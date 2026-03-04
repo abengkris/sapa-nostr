@@ -19,6 +19,7 @@ import { useZaps } from "@/hooks/useZaps";
 import { RawEventModal } from "./parts/RawEventModal";
 import { ReportModal } from "./parts/ReportModal";
 import { ReplyModal } from "./parts/ReplyModal";
+import { QuoteModal } from "./parts/QuoteModal";
 import { shortenPubkey } from "@/lib/utils/nip19";
 import { nip19 } from "nostr-tools";
 import { useLists } from "@/hooks/useLists";
@@ -47,6 +48,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [showRawModal, setShowRawModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showReplyModal, setShowReplyModal] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
   const { addToast } = useUIStore();
   const { 
     isPinned, pinPost, unpinPost, 
@@ -143,7 +145,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   const handleQuote = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToast("Quote feature coming soon!", "info");
+    setShowQuoteModal(true);
   };
 
   const handleRepost = async (e: React.MouseEvent) => {
@@ -313,6 +315,15 @@ export const PostCard: React.FC<PostCardProps> = ({
           <ReplyModal
             event={displayEvent}
             onClose={() => setShowReplyModal(false)}
+          />
+        </div>
+      )}
+
+      {showQuoteModal && (
+        <div className="relative z-30">
+          <QuoteModal
+            event={displayEvent}
+            onClose={() => setShowQuoteModal(false)}
           />
         </div>
       )}

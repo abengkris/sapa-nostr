@@ -3,6 +3,7 @@ import { nip19 } from "nostr-tools";
 
 interface PostOptions {
   replyTo?: NDKEvent;
+  quoteEvent?: NDKEvent;
   tags?: NDKTag[];
 }
 
@@ -19,7 +20,19 @@ export const publishPost = async (
     event.tags = [...options.tags];
   }
 
-  // 1. Handle Hashtags (#nostr) -> t tags
+  // 1. Handle Quote (NIP-18)
+  if (options?.quoteEvent) {
+    const q = options.quoteEvent;
+    event.tags.push(["q", q.id, q.pubkey]);
+    
+    // Automatically append the nostr: URI if not present in content
+    const nostrUri = q.encode();
+    if (!content.includes(nostrUri)) {
+      event.content += `\n\nnostr:${nostrUri}`;
+    }
+  }
+
+  // 2. Handle Hashtags (#nostr) -> t tags
   const hashtagRegex = /#(\w+)/g;
   const hashtags = [...content.matchAll(hashtagRegex)].map((m) => m[1]);
   hashtags.forEach((tag) => {
