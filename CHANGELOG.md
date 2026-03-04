@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2026-03-04
+
+### Added
+- **Lightning Address Support:** Users can now set and update their Lightning Address (LUD-16) in the profile edit modal.
+- **Lightning UI:** The Lightning Address is now displayed on the profile page with a dedicated icon.
+- **Improved Metadata:** Enhanced profile metadata handling to ensure better parity with other Nostr clients.
+
 ## [0.3.2] - 2026-03-03
 
 ### Added

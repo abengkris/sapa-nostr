@@ -296,6 +296,12 @@ export default function ProfilePage({ params }: { params: Promise<{ npub: string
               <span>{safeHostname(profile.website)}</span>
             </a>
           )}
+          {profile?.lud16 && (
+            <div className="flex items-center space-x-1 text-yellow-600 dark:text-yellow-500">
+              <Zap size={16} fill="currentColor" />
+              <span>{profile.lud16}</span>
+            </div>
+          )}
           <div className="flex items-center space-x-1">
             <Calendar size={16} />
             <span>

@@ -56,7 +56,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
   const [validations, setValidations] = useState({
     website: true,
-    nip05: true
+    nip05: true,
+    lud16: true
   });
 
   useEffect(() => {
@@ -79,12 +80,14 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   useEffect(() => {
     const isWebsiteValid = !formData.website || /^https?:\/\/.+\..+/.test(formData.website);
     const isNip05Valid = !formData.nip05 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.nip05);
+    const isLud16Valid = !formData.lud16 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.lud16);
     
     setValidations({
       website: isWebsiteValid,
-      nip05: isNip05Valid
+      nip05: isNip05Valid,
+      lud16: isLud16Valid
     });
-  }, [formData.website, formData.nip05]);
+  }, [formData.website, formData.nip05, formData.lud16]);
 
   if (!isOpen) return null;
 
@@ -359,6 +362,29 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                   {formData.nip05 && (
                     <div className="absolute right-3 top-3 text-gray-400">
                       {validations.nip05 ? <Check size={18} className="text-green-500" /> : <AlertCircle size={18} className="text-red-500" />}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Lightning Address (LUD-16)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="lud16"
+                    value={formData.lud16}
+                    onChange={handleChange}
+                    placeholder="name@getalby.com or name@strike.me"
+                    className={`w-full bg-transparent border rounded-xl p-3 pr-10 outline-none focus:ring-2 transition-all ${
+                      !validations.lud16 && formData.lud16
+                        ? "border-red-500 focus:ring-red-500/20" 
+                        : "border-gray-200 dark:border-gray-800 focus:ring-blue-500/20 focus:border-blue-500"
+                    }`}
+                  />
+                  {formData.lud16 && (
+                    <div className="absolute right-3 top-3 text-gray-400">
+                      {validations.lud16 ? <Check size={18} className="text-green-500" /> : <AlertCircle size={18} className="text-red-500" />}
                     </div>
                   )}
                 </div>
