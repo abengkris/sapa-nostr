@@ -9,6 +9,7 @@ import { ImageIcon, Smile, Loader2, X, AlertTriangle, List } from "lucide-react"
 import Image from "next/image";
 import { useUIStore } from "@/store/ui";
 import { useBlossom } from "@/hooks/useBlossom";
+import { useEmojis } from "@/hooks/useEmojis";
 import { imetaTagToTag, NDKImetaTag, NDKTag, NDKEvent } from "@nostr-dev-kit/ndk";
 
 interface PostComposerProps {
@@ -35,12 +36,14 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showPoll, setShowPoll] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [pollOptions, setPollOptions] = useState<PollOption[]>([
     { id: "0", label: "" },
     { id: "1", label: "" }
   ]);
   const { user, isLoggedIn } = useAuthStore();
   const { ndk } = useNDK();
+  const { emojis, emojiMap } = useEmojis();
   const { addToast } = useUIStore();
   const { uploadFile } = useBlossom();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +103,13 @@ export const PostComposer: React.FC<PostComposerProps> = ({
         endsAt: Math.floor(Date.now() / 1000) + 86400
       } : undefined;
 
-      await publishPost(ndk, content, { tags, replyTo, quoteEvent, pollOptions: pollOptionsData });
+      await publishPost(ndk, content, { 
+        tags, 
+        replyTo, 
+        quoteEvent, 
+        pollOptions: pollOptionsData,
+        emojis: emojiMap
+      });
       setContent("");
       setImetaTags([]);
       setIsSensitive(false);
@@ -190,6 +199,16 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     setContent((prev) => prev.replace(tag.url!, "").trim());
   };
 
+  const insertEmoji = (shortcode: string) => {
+    setContent(prev => {
+      const lastChar = prev.slice(-1);
+      const prefix = lastChar === " " || lastChar === "" ? "" : " ";
+      return `${prev}${prefix}:${shortcode}: `;
+    });
+    setShowEmojiPicker(false);
+    textareaRef.current?.focus();
+  };
+
   return (
     <div 
       ref={composerRef}
@@ -225,6 +244,27 @@ export const PostComposer: React.FC<PostComposerProps> = ({
         />
 
         <div className={`transition-all duration-500 overflow-hidden ${isExpanded || content.trim() ? "max-h-[800px] opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"}`}>
+          {showEmojiPicker && emojis.length > 0 && (
+            <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Custom Emojis</span>
+                <button onClick={() => setShowEmojiPicker(false)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
+              </div>
+              <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 overflow-y-auto max-h-48 p-1">
+                {emojis.map((emoji) => (
+                  <button
+                    key={emoji.shortcode}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); insertEmoji(emoji.shortcode); }}
+                    title={`:${emoji.shortcode}:`}
+                    className="p-2 hover:bg-white dark:hover:bg-black rounded-xl transition-all hover:scale-110 active:scale-90 border border-transparent hover:border-gray-100 dark:hover:border-gray-800 flex items-center justify-center"
+                  >
+                    <img src={emoji.url} alt={emoji.shortcode} className="w-6 h-6 object-contain" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isSensitive && (
             <div className="mb-3 px-3 py-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-center gap-3">
               <AlertTriangle size={18} className="text-amber-500 shrink-0" />
@@ -349,11 +389,15 @@ export const PostComposer: React.FC<PostComposerProps> = ({
               <button 
                 title="Add emoji"
                 aria-label="Add emoji"
-                className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className={`p-3 rounded-full transition-transform transition-colors ${
+                  showEmojiPicker 
+                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-110" 
+                    : "hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500"
+                }`}
               >
                 <Smile size={20} />
-              </button>
-              <button 
+              </button>              <button 
                 title="Add poll"
                 aria-label="Add poll"
                 onClick={() => setShowPoll(!showPoll)}

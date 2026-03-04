@@ -8,6 +8,7 @@ interface PostOptions {
   quoteEvent?: NDKEvent;
   pollOptions?: CreatePollOptions;
   tags?: NDKTag[];
+  emojis?: Map<string, string>;
 }
 
 export const publishPost = async (
@@ -26,6 +27,19 @@ export const publishPost = async (
 
   if (options?.tags) {
     event.tags = [...options.tags];
+  }
+
+  // 0. Handle Custom Emojis (NIP-30)
+  if (options?.emojis) {
+    const emojiRegex = /:([a-zA-Z0-9_]+):/g;
+    const emojiMatches = [...content.matchAll(emojiRegex)];
+    emojiMatches.forEach((match) => {
+      const shortcode = match[1];
+      const url = options.emojis?.get(shortcode);
+      if (url && !event.tags.some(t => t[0] === 'emoji' && t[1] === shortcode)) {
+        event.tags.push(["emoji", shortcode, url]);
+      }
+    });
   }
 
   // 1. Handle Quote (NIP-18)
