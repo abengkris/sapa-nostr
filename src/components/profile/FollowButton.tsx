@@ -1,6 +1,6 @@
-// src/components/profile/FollowButton.tsx
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useFollowState } from "@/hooks/useFollowState";
 import { useAuthStore } from "@/store/auth";
 
@@ -19,7 +19,7 @@ export function FollowButton({
   const { isFollowing, isLoading, isPending, toggle } =
     useFollowState(targetPubkey);
 
-  // Jangan tampilkan tombol untuk diri sendiri
+  // Don't show button for current user
   if (currentUser?.pubkey === targetPubkey) return null;
 
   const sizeClasses = {
@@ -42,14 +42,14 @@ export function FollowButton({
   return (
     <button
       onClick={(e) => {
-        e.stopPropagation(); // jangan trigger PostCard click
+        e.stopPropagation(); // don't trigger PostCard click
         toggle();
       }}
       disabled={isPending}
       className={`
         ${sizeClasses[size]}
-        font-semibold rounded-full border transition-all duration-150
-        ${isPending ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+        font-semibold rounded-full border transition-colors duration-150
+        ${isPending ? "opacity-60 cursor-not-allowed" : "cursor-pointer active:scale-95 transition-transform"}
         ${
           isFollowing
             ? // State: following → hover shows "Unfollow"
@@ -62,16 +62,16 @@ export function FollowButton({
     >
       {isPending ? (
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-          {isFollowing ? "Unfollow..." : "Follow..."}
+          <Loader2 size={14} className="animate-spin" />
+          {isFollowing ? "Unfollowing…" : "Following…"}
         </span>
       ) : isFollowing ? (
         <>
-          <span className="group-hover:hidden">Mengikuti</span>
-          <span className="hidden group-hover:inline text-red-400">Berhenti Ikuti</span>
+          <span className="group-hover:hidden">Following</span>
+          <span className="hidden group-hover:inline text-red-400">Unfollow</span>
         </>
       ) : (
-        "Ikuti"
+        "Follow"
       )}
     </button>
   );
