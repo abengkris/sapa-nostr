@@ -40,6 +40,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   indent = 0
 }) => {
   const [repostedEvent, setRepostedEvent] = useState<NDKEvent | null>(null);
+  const [repostLoading, setRepostLoading] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
   const { user: currentUser } = useAuthStore();
   const { ndk, isReady } = useNDK();
@@ -78,7 +79,13 @@ export const PostCard: React.FC<PostCardProps> = ({
     if (isRepost && isReady && ndk) {
       const eTag = event.tags.find(t => t[0] === 'e');
       if (eTag) {
-        ndk.fetchEvent(eTag[1]).then(setRepostedEvent);
+        setRepostLoading(true);
+        ndk.fetchEvent(eTag[1])
+          .then(ev => {
+            setRepostedEvent(ev);
+            setRepostLoading(false);
+          })
+          .catch(() => setRepostLoading(false));
       }
     }
   }, [isRepost, event, isReady, ndk]);
@@ -234,6 +241,24 @@ export const PostCard: React.FC<PostCardProps> = ({
   };
 
   if (isDeleted || (currentUser?.pubkey !== displayEvent.pubkey && isMuted(displayEvent.pubkey))) return null;
+
+  if (isRepost && repostLoading) {
+    return (
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 animate-pulse">
+        <div className="flex items-center space-x-2 text-gray-500 text-xs font-bold mb-2 ml-10">
+          <div className="w-4 h-4 bg-gray-200 dark:bg-gray-800 rounded" />
+          <div className="w-32 h-3 bg-gray-200 dark:bg-gray-800 rounded" />
+        </div>
+        <div className="flex gap-3">
+          <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-800 shrink-0" />
+          <div className="flex-1 space-y-2 mt-1">
+            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-1/4" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <article 

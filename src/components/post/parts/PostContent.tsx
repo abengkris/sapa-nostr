@@ -106,6 +106,17 @@ export function PostContentRenderer({
     }
   }
 
+  // NIP-18: Collect quotes from 'q' tags that aren't already in the text
+  const extraQuotes = useMemo(() => {
+    if (!renderQuotes) return [];
+    const qTags = event.tags.filter(t => t[0] === 'q');
+    const existingIds = new Set(quoteTokens.map(t => t.decoded?.eventId).filter(Boolean));
+    
+    return qTags
+      .map(t => ({ id: t[1], relays: t[2] ? [t[2]] : undefined }))
+      .filter(q => !existingIds.has(q.id));
+  }, [event.tags, quoteTokens, renderQuotes]);
+
   while (
     textTokens.length > 0 &&
     (textTokens[textTokens.length - 1].type === "linebreak" ||
@@ -220,6 +231,15 @@ export function PostContentRenderer({
               key={i}
               eventId={token.decoded?.eventId ?? ""}
               hintRelays={token.decoded?.relays}
+            />
+          ))}
+
+          {/* Render NIP-18 'q' tag quotes that weren't in text */}
+          {renderQuotes && extraQuotes.map((q, i) => (
+            <QuoteEmbed
+              key={`extra-q-${i}`}
+              eventId={q.id}
+              hintRelays={q.relays}
             />
           ))}
 

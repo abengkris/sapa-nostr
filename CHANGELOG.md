@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-03-03
+
+### Added
+- **NIP-18 Quote Posts:** Fully implemented quoting functionality. You can now quote any post with a comment.
+- **Improved Feed Rendering:** Reposts and Quotes now correctly display 'q' tag references even if not explicitly linked in the text.
+- **Repost UX:** Added a loading skeleton for reposted content to prevent layout shifts and provide better feedback.
+
 ## [0.3.0] - 2026-03-03
 
 ### Added
