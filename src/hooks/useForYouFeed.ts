@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { NDKWoT } from "@nostr-dev-kit/wot";
 import { useNDK } from "@/hooks/useNDK";
-import { useWoT } from "./useWoT";
+import { useWoT, CachedWoT } from "./useWoT";
 
 interface UseForYouFeedOptions {
   viewerPubkey: string;
@@ -144,7 +144,7 @@ export function useForYouFeed({
   };
 }
 
-function rankByWoT(events: NDKEvent[], wot: NDKWoT): NDKEvent[] {
+function rankByWoT(events: NDKEvent[], wot: NDKWoT | CachedWoT): NDKEvent[] {
   const now = Date.now() / 1000;
 
   return [...events].sort((a, b) => {
@@ -154,7 +154,7 @@ function rankByWoT(events: NDKEvent[], wot: NDKWoT): NDKEvent[] {
   });
 }
 
-function computeFinalScore(event: NDKEvent, wot: NDKWoT, now: number): number {
+function computeFinalScore(event: NDKEvent, wot: NDKWoT | CachedWoT, now: number): number {
   const wotScore = wot.getScore(event.pubkey) ?? 0;
   
   // Hitung selisih waktu dalam jam

@@ -15,7 +15,7 @@ interface UseWoTReturn {
 const CACHE_KEY_PREFIX = "tellit_wot_cache_";
 const CACHE_EXPIRY = 3600000; // 1 hour in ms
 
-class CachedWoT {
+export class CachedWoT {
   public scores: Map<string, number>;
   public size: number;
 
