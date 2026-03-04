@@ -111,9 +111,12 @@ export function useWoT(viewerPubkey: string | undefined): UseWoTReturn {
           maxFollows: 150, 
         })
         .then(() => {
-          // Convert Map to Object for storage
+          // Serialize scores correctly using public methods
+          const allPubkeys = instance.getAllPubkeys();
+          const scoresMap = instance.getScores(allPubkeys);
           const scoresObj: Record<string, number> = {};
-          instance.scores.forEach((score, pk) => {
+          
+          scoresMap.forEach((score, pk) => {
             scoresObj[pk] = score;
           });
 
