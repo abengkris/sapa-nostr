@@ -20,46 +20,69 @@ export const createPoll = async (
   content: string,
   pollOptions: CreatePollOptions
 ): Promise<NDKEvent> => {
-  const event = new NDKEvent(ndk);
-  event.kind = 1068 as NDKKind;
-  event.content = content;
+  if (!ndk) throw new Error("NDK instance is missing");
+  if (!ndk.signer) throw new Error("Please log in to create a poll");
+  if (!pollOptions || !Array.isArray(pollOptions.options)) throw new Error("Invalid poll options");
 
-  // Add options
-  pollOptions.options.forEach((opt) => {
-    event.tags.push(["option", opt.id, opt.label]);
-  });
-
-  // Add poll type (default singlechoice)
-  event.tags.push(["polltype", pollOptions.pollType || "singlechoice"]);
-
-  // Add expiration if provided
-  if (pollOptions.endsAt) {
-    event.tags.push(["endsAt", String(pollOptions.endsAt)]);
-  }
-
-  // Add response relays (standard NDK relays if not provided)
-  let relays = pollOptions.relays;
-  if (!relays) {
-    const poolUrls = ndk.pool?.urls;
-    relays = typeof poolUrls === "function" ? poolUrls() : (poolUrls || []);
-  }
-
-  relays.forEach((url) => {
-    event.tags.push(["relay", url]);
-  });
-
-  event.created_at = Math.floor(Date.now() / 1000);
-
-  console.log("[Poll] Attempting to sign and publish poll event:", event.rawEvent());
-  
   try {
+    const event = new NDKEvent(ndk);
+    event.kind = 1068 as NDKKind;
+    event.content = content;
+
+    // Add options
+    pollOptions.options.forEach((opt) => {
+      if (opt && opt.id && opt.label) {
+        event.tags.push(["option", String(opt.id), String(opt.label)]);
+      }
+    });
+
+    // Add poll type
+    event.tags.push(["polltype", pollOptions.pollType || "singlechoice"]);
+
+    // Add expiration
+    if (pollOptions.endsAt) {
+      event.tags.push(["endsAt", String(pollOptions.endsAt)]);
+    }
+
+    // Add response relays
+    let relayUrls: string[] = [];
+    if (Array.isArray(pollOptions.relays) && pollOptions.relays.length > 0) {
+      relayUrls = pollOptions.relays;
+    } else {
+      // Safely get some relays from the pool
+      const pool = ndk.pool;
+      if (pool) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const poolWithAny = pool as any;
+        const urls = typeof poolWithAny.urls === 'function' ? poolWithAny.urls() : poolWithAny.urls;
+        if (Array.isArray(urls) && urls.length > 0) {
+          relayUrls = urls;
+        } else if (poolWithAny.relays && typeof poolWithAny.relays.keys === 'function') {
+          relayUrls = Array.from(poolWithAny.relays.keys());
+        }
+      }
+    }
+
+    // Ultimate fallback
+    if (!Array.isArray(relayUrls) || relayUrls.length === 0) {
+      relayUrls = ["wss://nos.lol", "wss://relay.damus.io"];
+    }
+
+    relayUrls.forEach((url) => {
+      if (typeof url === "string" && url.startsWith("ws")) {
+        event.tags.push(["relay", url]);
+      }
+    });
+
+    event.created_at = Math.floor(Date.now() / 1000);
+
+    console.log("[Poll] Signing and publishing...");
     await event.sign();
-    console.log("[Poll] Event signed successfully");
-    const relayResponses = await event.publish();
-    console.log("[Poll] Publish result:", relayResponses);
+    await event.publish();
+    
     return event;
   } catch (err) {
-    console.error("[Poll] Failed during sign or publish:", err);
+    console.error("[Poll] Error in createPoll:", err);
     throw err;
   }
 };
@@ -72,18 +95,28 @@ export const respondToPoll = async (
   pollEvent: NDKEvent,
   optionIds: string[]
 ): Promise<NDKEvent> => {
-  const event = new NDKEvent(ndk);
-  event.kind = 1018 as NDKKind;
-  event.content = "";
+  if (!ndk) throw new Error("NDK instance is missing");
+  if (!ndk.signer) throw new Error("Please log in to vote");
+  if (!pollEvent) throw new Error("Poll event is missing");
   
-  event.tags.push(["e", pollEvent.id]);
-  
-  optionIds.forEach(id => {
-    event.tags.push(["response", id]);
-  });
+  try {
+    const event = new NDKEvent(ndk);
+    event.kind = 1018 as NDKKind;
+    event.content = "";
+    
+    event.tags.push(["e", pollEvent.id]);
+    
+    if (Array.isArray(optionIds)) {
+      optionIds.forEach(id => {
+        event.tags.push(["response", String(id)]);
+      });
+    }
 
-  console.log("[Poll] Publishing response event:", event.rawEvent());
-  await event.sign();
-  await event.publish();
-  return event;
+    await event.sign();
+    await event.publish();
+    return event;
+  } catch (err) {
+    console.error("[Poll] Error in respondToPoll:", err);
+    throw err;
+  }
 };
