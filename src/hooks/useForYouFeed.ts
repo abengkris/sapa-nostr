@@ -6,6 +6,8 @@ import { NDKWoT } from "@nostr-dev-kit/wot";
 import { useNDK } from "@/hooks/useNDK";
 import { useWoT, CachedWoT } from "./useWoT";
 import { useUIStore } from "@/store/ui";
+import { useLists } from "@/hooks/useLists";
+import { rankEvents, ScoringContext } from "@/lib/feed/scorer";
 
 interface UseForYouFeedOptions {
   viewerPubkey: string;
@@ -30,6 +32,7 @@ export function useForYouFeed({
   const { ndk, isReady } = useNDK();
   const { wot, status: wotStatus, pubkeyCount: wotSize } = useWoT(viewerPubkey);
   const { wotStrictMode } = useUIStore();
+  const { mutedPubkeys } = useLists();
 
   const [rawEvents, setRawEvents] = useState<NDKEvent[]>([]);
   const [newCount, setNewCount] = useState(0);
@@ -40,7 +43,7 @@ export function useForYouFeed({
   const seenIds = useRef(new Set<string>());
   const isInitialLoadDone = useRef(false);
 
-  // Memoized ranked posts
+  // Memoized ranked posts using advanced scorer
   const posts = useMemo(() => {
     let baseEvents = rawEvents;
     
@@ -50,8 +53,18 @@ export function useForYouFeed({
     }
 
     if (!wot) return sortByTime(baseEvents);
-    return rankByWoT(baseEvents, wot);
-  }, [rawEvents, wot, wotStrictMode]);
+
+    // Prepare context for the scorer
+    const context: ScoringContext = {
+      viewerPubkey,
+      followingSet: new Set(followingList),
+      followsOfFollowsSet: new Set(wot.getAllPubkeys()),
+      interactionHistory: new Map(), // To be implemented if we start tracking this
+      mutedSet: mutedPubkeys,
+    };
+
+    return rankEvents(baseEvents, context).map(se => se.event);
+  }, [rawEvents, wot, wotStrictMode, followingList, mutedPubkeys, viewerPubkey]);
 
   useEffect(() => {
     if (!ndk || !isReady || wotStatus === "idle") return;
@@ -153,44 +166,6 @@ export function useForYouFeed({
     hasMore,
   };
 }
-
-function rankByWoT(events: NDKEvent[], wot: NDKWoT | CachedWoT): NDKEvent[] {
-  const now = Date.now() / 1000;
-
-  return [...events].sort((a, b) => {
-    const scoreA = computeFinalScore(a, wot, now);
-    const scoreB = computeFinalScore(b, wot, now);
-    return scoreB - scoreA;
-  });
-}
-
-function computeFinalScore(event: NDKEvent, wot: NDKWoT | CachedWoT, now: number): number {
-  const wotScore = wot.getScore(event.pubkey) ?? 0;
-  
-  // Intersection-based boost: How many people you trust follow this user?
-  const node = wot.getNode(event.pubkey);
-  const mutualsCount = node?.followedBy?.size ?? 0;
-  // Boost factor: log-based so it doesn't explode but rewards multiple mutuals
-  const intersectionBoost = mutualsCount > 0 ? (1 + Math.log10(mutualsCount + 1)) : 1;
-
-  // Hitung selisih waktu dalam jam
-  const deltaHours = (now - (event.created_at ?? 0)) / 3600;
-  
-  // Parameter Half-life (bisa Anda sesuaikan)
-  // 12 jam adalah angka yang pas untuk microblogging agar feed tetap segar
-  const halfLife = 12; 
-
-  // Rumus Exponential Decay
-  const freshness = Math.pow(0.5, deltaHours / halfLife);
-
-  // Tambahkan "Penalty" untuk postingan yang sudah sangat lama (misal > 3 hari)
-  // agar tidak menghantui feed selamanya
-  if (deltaHours > 72) return wotScore * intersectionBoost * freshness * 0.1;
-
-  const randomFactor = 0.95 + Math.random() * 0.1; 
-  return wotScore * intersectionBoost * freshness * randomFactor;
-}
-
 
 function sortByTime(events: NDKEvent[]): NDKEvent[] {
   return [...events].sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
