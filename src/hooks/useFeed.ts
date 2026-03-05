@@ -121,9 +121,9 @@ export function useFeed(authors: string[], kinds: number[] = [1, 1068, 30023] as
 
     const sub = ndk.subscribe(
       filter, 
-      { closeOnEose: true, groupable: false },
-      undefined, // RelaySet
-      {
+      { 
+        closeOnEose: true, 
+        groupable: false,
         onEvents: (events) => {
           clearTimeout(loadingTimeout);
           eventsReceived += events.length;
