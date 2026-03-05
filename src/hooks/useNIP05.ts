@@ -33,13 +33,7 @@ export function useNIP05(pubkey: string | undefined, nip05: string | undefined) 
 
     const verify = async () => {
       try {
-        const [name, domain] = nip05.split('@');
-        if (!domain) {
-          if (isMounted) setStatus('invalid');
-          return;
-        }
-
-        const res = await fetch(`https://${domain}/.well-known/nostr.json?name=${name}`);
+        const res = await fetch(`/api/nip05?identifier=${encodeURIComponent(nip05)}`);
         
         if (!res.ok) {
           if (isMounted) setStatus('error');
@@ -47,6 +41,7 @@ export function useNIP05(pubkey: string | undefined, nip05: string | undefined) 
         }
 
         const data = await res.json();
+        const [name] = nip05.split('@');
         
         // NIP-05 spec: names mapping to pubkeys
         const foundPubkey = data.names?.[name];

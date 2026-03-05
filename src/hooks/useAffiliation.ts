@@ -30,7 +30,8 @@ export function useAffiliation(nip05: string | undefined) {
 
     const fetchAffiliation = async () => {
       try {
-        const res = await fetch(`https://${domain}/.well-known/nostr.json?name=_`);
+        const identifier = `_@${domain}`;
+        const res = await fetch(`/api/nip05?identifier=${encodeURIComponent(identifier)}`);
         if (!res.ok) return;
 
         const data = await res.json();
