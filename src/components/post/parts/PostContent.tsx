@@ -98,26 +98,39 @@ export function PostContentRenderer({
 
   const tokens = useMemo(() => tokenize(normalizedContent), [normalizedContent]);
 
-  const textTokens: Token[] = [];
-  const mediaTokens: Token[] = [];
-  const quoteTokens: Token[] = [];
-  const cardTokens: Token[] = [];
-  const urlTokens: Token[] = [];
+  const { textTokens, mediaTokens, quoteTokens, cardTokens, urlTokens } = useMemo(() => {
+    const text: Token[] = [];
+    const media: Token[] = [];
+    const quote: Token[] = [];
+    const card: Token[] = [];
+    const url: Token[] = [];
 
-  for (const token of tokens) {
-    if (token.type === "image" || token.type === "video") {
-      mediaTokens.push(token);
-    } else if (token.type === "note_ref" && renderQuotes) {
-      quoteTokens.push(token);
-    } else if (token.type === "lightning" || token.type === "cashu") {
-      cardTokens.push(token);
-    } else if (token.type === "url") {
-      urlTokens.push(token);
-      textTokens.push(token);
-    } else {
-      textTokens.push(token);
+    for (const token of tokens) {
+      if (token.type === "image" || token.type === "video") {
+        media.push(token);
+      } else if (token.type === "note_ref" && renderQuotes) {
+        quote.push(token);
+      } else if (token.type === "lightning" || token.type === "cashu") {
+        card.push(token);
+      } else if (token.type === "url") {
+        url.push(token);
+        text.push(token);
+      } else {
+        text.push(token);
+      }
     }
-  }
+
+    // Trim trailing linebreaks from text tokens
+    while (
+      text.length > 0 &&
+      (text[text.length - 1].type === "linebreak" ||
+        text[text.length - 1].value.trim() === "")
+    ) {
+      text.pop();
+    }
+
+    return { textTokens: text, mediaTokens: media, quoteTokens: quote, cardTokens: card, urlTokens: url };
+  }, [tokens, renderQuotes]);
 
   // NIP-18: Collect quotes from 'q' tags that aren't already in the text
   const extraQuotes = useMemo(() => {
@@ -129,14 +142,6 @@ export function PostContentRenderer({
       .map(t => ({ id: t[1], relays: t[2] ? [t[2]] : undefined }))
       .filter(q => !existingIds.has(q.id));
   }, [event.tags, quoteTokens, renderQuotes]);
-
-  while (
-    textTokens.length > 0 &&
-    (textTokens[textTokens.length - 1].type === "linebreak" ||
-      textTokens[textTokens.length - 1].value.trim() === "")
-  ) {
-    textTokens.pop();
-  }
 
   return (
     <div className={`flex flex-col min-w-0 max-w-full overflow-hidden ${className}`}>

@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { usePostStats } from "@/hooks/usePostStats";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ZapModal } from "@/components/common/ZapModal";
@@ -15,6 +16,7 @@ import { PostActions } from "./parts/PostActions";
 import { deletePost, repostEvent } from "@/lib/actions/post";
 import { reactToEvent } from "@/lib/actions/reactions";
 import { useUIStore } from "@/store/ui";
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { useZaps } from "@/hooks/useZaps";
 import { RawEventModal } from "./parts/RawEventModal";
 import { ReportModal } from "./parts/ReportModal";
@@ -45,7 +47,6 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [isDeleted, setIsDeleted] = useState(false);
   const { user: currentUser } = useAuthStore();
   const { ndk, isReady } = useNDK();
-  const router = useRouter();
   const [showZapModal, setShowZapModal] = useState(false);
   const [showRawModal, setShowRawModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -86,7 +87,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       const targetId = eTag?.[1] || aTag?.[1];
 
       if (targetId) {
-        setRepostLoading(true);
+        Promise.resolve().then(() => setRepostLoading(true));
         ndk.fetchEvent(targetId)
           .then(ev => {
             if (ev) setRepostedEvent(ev);
