@@ -32,7 +32,8 @@ export function useAffiliation(nip05: string | undefined) {
       try {
         const identifier = `_@${domain}`;
         const res = await fetch(`/api/nip05?identifier=${encodeURIComponent(identifier)}`);
-        if (!res.ok) return;
+        
+        if (!isMounted || !res.ok) return;
 
         const data = await res.json();
         const rootPubkey = data.names?.['_'];

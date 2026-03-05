@@ -11,51 +11,41 @@ export function useNIP05(pubkey: string | undefined, nip05: string | undefined) 
     let isMounted = true;
 
     if (!pubkey || !nip05) {
-      // Use a timeout or promise to avoid sync state update in effect body
-      Promise.resolve().then(() => {
-        if (isMounted) setStatus('idle');
-      });
+      setStatus('idle');
       return;
     }
 
-    // Basic format check
     if (!nip05.includes('@')) {
-      Promise.resolve().then(() => {
-        if (isMounted) setStatus('invalid');
-      });
+      setStatus('invalid');
       return;
     }
     
-    // Set loading asynchronously
-    Promise.resolve().then(() => {
-      if (isMounted) setStatus('loading');
-    });
+    setStatus('loading');
 
     const verify = async () => {
       try {
         const res = await fetch(`/api/nip05?identifier=${encodeURIComponent(nip05)}`);
         
+        if (!isMounted) return;
+
         if (!res.ok) {
-          if (isMounted) setStatus('error');
+          setStatus('error');
           return;
         }
 
         const data = await res.json();
         const [name] = nip05.split('@');
         
-        // NIP-05 spec: names mapping to pubkeys
         const foundPubkey = data.names?.[name];
 
         if (isMounted) {
-          if (foundPubkey === pubkey) {
-            setStatus('valid');
-          } else {
-            setStatus('invalid');
-          }
+          setStatus(foundPubkey === pubkey ? 'valid' : 'invalid');
         }
       } catch (err) {
-        console.error('NIP-05 verification error:', err);
-        if (isMounted) setStatus('error');
+        if (isMounted) {
+          console.error('NIP-05 verification error:', err);
+          setStatus('error');
+        }
       }
     };
 

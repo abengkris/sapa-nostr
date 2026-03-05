@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useEffect, useState, ReactNode, useRef } from "react";
-import NDK, { NDKPrivateKeySigner, NDKNip07Signer } from "@nostr-dev-kit/ndk";
+import NDK, { NDKPrivateKeySigner, NDKNip07Signer, NDKSigVerificationWorker } from "@nostr-dev-kit/ndk";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import { NDKMessenger, CacheModuleStorage } from "@nostr-dev-kit/messages";
 import { useAuthStore } from "@/store/auth";
@@ -25,7 +25,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
   const [messenger, setMessenger] = useState<NDKMessenger | null>(null);
   const [isReady, setIsReady] = useState(false);
   const { privateKey, isLoggedIn, loginType, publicKey, setUser } = useAuthStore();
-  const { incrementUnreadMessagesCount } = useUIStore();
+  const { incrementUnreadMessagesCount, addToast } = useUIStore();
   const messengerRef = useRef<NDKMessenger | null>(null);
 
   useEffect(() => {
@@ -46,9 +46,26 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
       instance.cacheAdapter = dexieAdapter as any;
     }
 
-    // Performance Optimization
-    instance.initialValidationRatio = 1.0;
-    instance.lowestValidationRatio = 1.0;
+    // Performance Optimization: Signature Verification Worker
+    if (!instance.signatureVerificationWorker) {
+      try {
+        instance.signatureVerificationWorker = new NDKSigVerificationWorker();
+        console.log("NDK Signature Verification Worker initialized");
+      } catch (e) {
+        console.warn("Failed to initialize NDK Signature Verification Worker:", e);
+      }
+    }
+
+    // Performance Optimization: Validation Sampling
+    // Initially verify 50% of signatures, dropping to 5% as relay trust is established
+    instance.initialValidationRatio = 0.5;
+    instance.lowestValidationRatio = 0.05;
+
+    // Handle invalid signatures
+    instance.on("event:invalid-sig", (event) => {
+      console.error("Invalid signature detected from relay:", event.relay?.url);
+      addToast(`Invalid signature detected from relay: ${event.relay?.url || 'unknown'}`, "error");
+    });
 
     // Handle session restoration
     const restoreSession = async () => {

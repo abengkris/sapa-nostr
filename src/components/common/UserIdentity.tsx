@@ -31,7 +31,9 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const status = useNIP05(pubkey, nip05);
   const affiliationPubkey = useAffiliation(nip05);
-  const { profile: orgProfile } = useProfile(affiliationPubkey || undefined);
+  
+  // Only fetch org profile when modal is open to save resources
+  const { profile: orgProfile } = useProfile(isModalOpen ? (affiliationPubkey || undefined) : undefined);
 
   const isPost = variant === 'post';
   const isProfile = variant === 'profile';
