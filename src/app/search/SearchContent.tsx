@@ -153,9 +153,9 @@ export function SearchContent() {
         )}
 
         {loading && profiles.length === 0 && posts.length === 0 && !directResult.event && (
-          <div className="p-6">
-            <div className="h-4 w-32 bg-gray-100 dark:bg-gray-900 rounded-full animate-pulse mb-6" />
-            <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide">
+          <div className="py-6 overflow-hidden">
+            <div className="h-4 w-32 bg-gray-100 dark:bg-gray-900 rounded-full animate-pulse mb-6 px-6 mx-6" />
+            <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide px-6">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex flex-col items-center min-w-[120px] animate-pulse">
                   <div className="w-20 h-20 rounded-3xl bg-gray-100 dark:bg-gray-900 mb-3" />
@@ -164,30 +164,30 @@ export function SearchContent() {
                 </div>
               ))}
             </div>
-            <div className="mt-8">
+            <div className="mt-8 px-0">
               <FeedSkeleton />
             </div>
           </div>
         )}
 
         {debouncedQuery && profiles.length > 0 && (
-          <section className="p-6 border-b border-gray-100 dark:border-gray-900 animate-in fade-in duration-300">
-            <div className="flex items-center justify-between mb-6">
+          <section className="py-6 border-b border-gray-100 dark:border-gray-900 animate-in fade-in duration-300 overflow-hidden">
+            <div className="flex items-center justify-between mb-6 px-6">
               <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">People</h2>
               <span className="text-[10px] font-bold bg-gray-100 dark:bg-gray-900 px-2 py-0.5 rounded-full text-gray-500">{profiles.length} found</span>
             </div>
-            <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide -mx-2 px-2">
+            <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide px-6">
               {profiles.map((user) => (
                 <Link
                   key={user.pubkey}
                   href={`/${user.npub}`}
-                  className={`flex flex-col items-center min-w-[130px] p-4 rounded-3xl transition-all text-center group ${
+                  className={`flex flex-col items-center min-w-[130px] max-w-[130px] p-4 rounded-3xl transition-all text-center group ${
                     directResult.user?.pubkey === user.pubkey 
                     ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" 
                     : "bg-gray-50 dark:bg-gray-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-transparent"
                   } border`}
                 >
-                  <div className="relative mb-3">
+                  <div className="relative mb-3 shrink-0">
                     <Image
                       src={user.profile?.picture || `https://robohash.org/${user.pubkey}?set=set1`}
                       alt={user.profile?.name || "Profile"}
@@ -202,10 +202,10 @@ export function SearchContent() {
                       </div>
                     )}
                   </div>
-                  <p className="font-black text-sm truncate w-28 text-gray-900 dark:text-white">
+                  <p className="font-black text-sm truncate w-full text-gray-900 dark:text-white px-1">
                     {user.profile?.name || shortenPubkey(user.npub)}
                   </p>
-                  <p className="text-[10px] text-gray-500 font-mono truncate w-28 mt-1">
+                  <p className="text-[10px] text-gray-500 font-mono truncate w-full mt-1 px-1">
                     {user.profile?.nip05 
                       ? (user.profile.nip05.startsWith('_@') ? user.profile.nip05.substring(1) : user.profile.nip05)
                       : shortenPubkey(user.npub, 10)}
