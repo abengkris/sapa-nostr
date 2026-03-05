@@ -66,5 +66,18 @@ export function useBlossom() {
     [blossom, ndk]
   );
 
-  return { blossom, uploadFile, fixUrl, listBlobs };
+  const getOptimizedUrl = useCallback(
+    (url: string, options: { width?: number; height?: number; format?: string; quality?: number }) => {
+      if (!blossom) return url;
+      try {
+        // NDK-Blossom provides an optimized URL generator based on BUD-05
+        return (blossom as any).getOptimizedUrl?.(url, options) || url;
+      } catch (err) {
+        return url;
+      }
+    },
+    [blossom]
+  );
+
+  return { blossom, uploadFile, fixUrl, listBlobs, getOptimizedUrl };
 }

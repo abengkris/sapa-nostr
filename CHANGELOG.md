@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - **Mentions:** Updated `MentionLink` to correctly use the domain as the display name when a user has a `_` NIP-05 identifier and no other name set.
 
 ### Added
+- **Media Optimization (BUD-05):** Integrated Blossom media optimization. The app now requests resized and optimized images from Blossom servers, significantly reducing load times and data usage for avatars and post media.
 - **Blossom URL Healing:** Implemented automatic URL healing for media. The app now uses the Blossom protocol to resolve broken media links by checking the author's preferred Blossom servers.
 - **Enhanced useBlossom Hook:** Added `fixUrl` and `listBlobs` capabilities to the Blossom hook for better media management and discovery.
 - **Search URL Parameters:** Added support for `?q=` URL parameter on the search page, enabling direct linking to search results and synchronizing search state with the browser address bar.

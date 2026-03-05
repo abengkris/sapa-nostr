@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
+import React, { useMemo } from "react";
+import { useBlossom } from "@/hooks/useBlossom";
 
 interface AvatarProps {
   pubkey: string;
@@ -11,7 +12,15 @@ interface AvatarProps {
 }
 
 export const Avatar: React.FC<AvatarProps> = ({ pubkey, src, size = 40, className = "" }) => {
-  const avatarUrl = src || `https://robohash.org/${pubkey}?set=set1`;
+  const { getOptimizedUrl } = useBlossom();
+
+  const avatarUrl = useMemo(() => {
+    if (!src) return `https://robohash.org/${pubkey}?set=set1`;
+    if (src.startsWith('data:')) return src;
+    
+    // Request optimized avatar at 2x size for high-DPI displays
+    return getOptimizedUrl(src, { width: size * 2, height: size * 2, format: 'webp' });
+  }, [src, pubkey, size, getOptimizedUrl]);
 
   return (
     <div 
