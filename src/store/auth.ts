@@ -85,10 +85,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       generateNewKey: async (ndk, sessions) => {
-        const { pubkey, signer } = await sessions.createAccount({
+        const { signer } = await sessions.createAccount({
           // Automatic setup could be added here
         });
         
+        const user = await signer.user();
+        const pubkey = user.pubkey;
         const privateKey = signer.privateKey!;
         
         set({
