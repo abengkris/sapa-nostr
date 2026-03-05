@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - **Mentions:** Updated `MentionLink` to correctly use the domain as the display name when a user has a `_` NIP-05 identifier and no other name set.
 
 ### Added
+- **Subscription Grouping:** Leveraged NDK's intelligent subscription grouping to reduce relay load by batching multiple requests (e.g., profile fetches and post stats) into single `REQ` commands.
+- **Immediate Feed Loading:** Optimized `useFeed` to disable grouping for initial loads, ensuring the fastest possible time-to-first-post for users.
 - **Filter Validation:** Enabled NDK filter validation in `fix` mode. This automatically cleans up `undefined` or invalid values in subscription filters, preventing runtime errors in cache adapters and relays.
 - **NDK Performance Optimizations:** Implemented validation sampling to reduce main-thread load and improve event processing speed.
 - **Relay Protection:** The app now automatically disconnects from relays that send too many invalid event signatures (threshold: 5).
