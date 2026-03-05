@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use } from "react";
+import React from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PostCard } from "@/components/post/PostCard";
 import { Loader2, ArrowLeft } from "lucide-react";

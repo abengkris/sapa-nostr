@@ -1,10 +1,10 @@
 "use client";
 
-import React, { use } from "react";
+import React from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useProfile } from "@/hooks/useProfile";
 import { useFeed } from "@/hooks/useFeed";
-import { Calendar, Link as LinkIcon, Zap, Activity, Mail, Share, Copy, Check, MoreVertical, Edit2, X, Music, Tag } from "lucide-react";
+import { Calendar, Link as LinkIcon, Zap, Activity, Mail, Share, Copy, MoreVertical, Edit2, X, Music, Tag } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useUIStore } from "@/store/ui";
 import { useNDK } from "@/hooks/useNDK";
@@ -34,7 +34,7 @@ import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { FeedList } from "@/components/feed/FeedList";
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { format } from "date-fns";
-import { decodeNip19, shortenPubkey, toNpub } from "@/lib/utils/nip19";
+import { decodeNip19, shortenPubkey } from "@/lib/utils/nip19";
 
 type ProfileTab = "posts" | "replies" | "media" | "articles" | "likes";
 
@@ -103,15 +103,12 @@ export function ProfileContent({ npubParam }: { npubParam: string }) {
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = React.useState(false);
   const [showZapModal, setShowZapModal] = React.useState(false);
-  const [copied, setCopied] = React.useState(false);
   const isOwnProfile = currentUser?.pubkey === hexPubkey;
 
   const handleCopyNpub = async () => {
     try {
       await navigator.clipboard.writeText(npubParam);
-      setCopied(true);
       addToast("Npub copied to clipboard!", "success");
-      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
       addToast("Failed to copy npub", "error");

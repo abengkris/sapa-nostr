@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useEffect, useState, ReactNode, useRef } from "react";
 import NDK, { NDKPrivateKeySigner, NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import { NDKMessenger, CacheModuleStorage } from "@nostr-dev-kit/messages";
@@ -26,6 +26,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
   const [isReady, setIsReady] = useState(false);
   const { privateKey, isLoggedIn, loginType, publicKey, setUser } = useAuthStore();
   const { incrementUnreadMessagesCount } = useUIStore();
+  const messengerRef = useRef<NDKMessenger | null>(null);
 
   useEffect(() => {
     // Only run on client
@@ -85,7 +86,9 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
           : undefined;
         
         msgInstance = new NDKMessenger(instance, { storage });
+        messengerRef.current = msgInstance;
         setMessenger(msgInstance);
+
       } catch (e) {
         console.error("Failed to initialize NDKMessenger:", e);
       }
@@ -151,9 +154,9 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => {
-      if (msgInstance) {
+      if (messengerRef.current) {
         try {
-          (msgInstance as any).destroy();
+          (messengerRef.current as any).destroy();
         } catch (e) {
           console.warn("Error destroying NDKMessenger:", e);
         }
