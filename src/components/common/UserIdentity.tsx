@@ -3,8 +3,10 @@
 import React from 'react';
 import { BadgeCheck, Loader2, AlertCircle } from 'lucide-react';
 import { useNIP05 } from '@/hooks/useNIP05';
+import { useAffiliation } from '@/hooks/useAffiliation';
 import { shortenPubkey } from '@/lib/utils/nip19';
 import { Emojify } from './Emojify';
+import { AffiliationBadge } from './AffiliationBadge';
 
 interface UserIdentityProps {
   pubkey: string;
@@ -24,6 +26,7 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
   tags,
 }) => {
   const status = useNIP05(pubkey, nip05);
+  const affiliationPubkey = useAffiliation(nip05);
 
   const isPost = variant === 'post';
   
@@ -43,10 +46,18 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({
         )}
 
         {status === 'valid' && (
-          <BadgeCheck
-            size={isPost ? 14 : 20}
-            className="text-amber-500 fill-amber-500/10 shrink-0"
-          />
+          <>
+            <BadgeCheck
+              size={isPost ? 14 : 20}
+              className="text-amber-500 fill-amber-500/10 shrink-0"
+            />
+            {affiliationPubkey && (
+              <AffiliationBadge 
+                affiliationPubkey={affiliationPubkey} 
+                isPost={isPost} 
+              />
+            )}
+          </>
         )}
 
         {status === 'invalid' && (

@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 - **NIP-05 Display:** Improved display of NIP-05 identifiers with a local part of `_` (e.g., `_@domain.com` now shows as `@domain.com` in profiles and search results).
 - **Mentions:** Updated `MentionLink` to correctly use the domain as the display name when a user has a `_` NIP-05 identifier and no other name set.
 
+### Added
+- **Organizational Affiliation:** Added support for NIP-05 affiliations. If a user is verified via `name@domain.tld`, the app now automatically checks for a root identity at `_@domain.tld` and displays its profile picture as a small badge next to the user's name (similar to X/Twitter affiliations).
+- **Affiliation Hook:** New `useAffiliation` hook for efficient root identity discovery with domain-level caching.
+
 ## [0.3.3] - 2026-03-04
 
 ### Added
