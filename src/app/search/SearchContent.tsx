@@ -156,8 +156,8 @@ export function SearchContent() {
           <div className="py-6 overflow-hidden">
             <div className="h-4 w-32 bg-gray-100 dark:bg-gray-900 rounded-full animate-pulse mb-6 px-6 mx-6" />
             <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide px-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex flex-col items-center min-w-[120px] animate-pulse">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="flex flex-col items-center min-w-[130px] max-w-[130px] animate-pulse">
                   <div className="w-20 h-20 rounded-3xl bg-gray-100 dark:bg-gray-900 mb-3" />
                   <div className="h-3 w-20 bg-gray-100 dark:bg-gray-900 rounded mb-2" />
                   <div className="h-2 w-14 bg-gray-50 dark:bg-black rounded" />
