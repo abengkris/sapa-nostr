@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useFollowSuggestions } from "@/hooks/useFollowSuggestions";
 import { Avatar } from "@/components/common/Avatar";
 import { FollowButton } from "@/components/profile/FollowButton";
 import Link from "next/link";
 import { useNDK } from "@/hooks/useNDK";
 import { UserIdentity } from "@/components/common/UserIdentity";
+import { useProfile } from "@/hooks/useProfile";
+import { toNpub } from "@/lib/utils/nip19";
 
 interface SuggestionCardProps {
   pubkey: string;
@@ -19,23 +21,8 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
   followedByCount,
   showAbout = false
 }) => {
-  const { ndk } = useNDK();
-  const [profile, setProfile] = useState<any>(null);
-
-  useEffect(() => {
-    if (ndk && pubkey) {
-      ndk.fetchEvent({ kinds: [0], authors: [pubkey] }).then((event) => {
-        if (event) {
-          try {
-            setProfile(JSON.parse(event.content));
-          } catch (e) {}
-        }
-      });
-    }
-  }, [ndk, pubkey]);
-
-  const user = ndk?.getUser({ pubkey });
-  const npub = user?.npub || pubkey;
+  const { profile } = useProfile(pubkey);
+  const npub = toNpub(pubkey);
 
   return (
     <div className="flex items-start justify-between gap-3 group">
@@ -55,6 +42,7 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
             displayName={profile?.name || profile?.displayName}
             nip05={profile?.nip05}
             variant="post"
+            tags={profile?.tags}
           />
         </Link>
         <p className="text-[11px] text-gray-500 mt-0.5 font-medium">
