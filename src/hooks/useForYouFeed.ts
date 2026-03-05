@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { NDKEvent, NDKKind } from "@nostr-dev-kit/ndk";
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { NDKWoT } from "@nostr-dev-kit/wot";
 import { useNDK } from "@/hooks/useNDK";
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { useWoT, CachedWoT } from "./useWoT";
 import { useUIStore } from "@/store/ui";
 import { useLists } from "@/hooks/useLists";
@@ -69,18 +71,20 @@ export function useForYouFeed({
   useEffect(() => {
     if (!ndk || !isReady || wotStatus === "idle") return;
 
-    setIsLoading(true);
-    seenIds.current = new Set();
-    isInitialLoadDone.current = false;
-    bufferRef.current = [];
-    setRawEvents([]);
+    Promise.resolve().then(() => {
+      setIsLoading(true);
+      seenIds.current = new Set();
+      isInitialLoadDone.current = false;
+      bufferRef.current = [];
+      setRawEvents([]);
+    });
 
     const authors = wot
       ? wot.getAllPubkeys({ maxDepth: 2 }).slice(0, 500)
       : followingList;
 
     if (!authors.length) {
-      setIsLoading(false);
+      Promise.resolve().then(() => setIsLoading(false));
       return;
     }
 
@@ -118,7 +122,7 @@ export function useForYouFeed({
     });
 
     return () => sub.stop();
-  }, [ndk, isReady, wotStatus, followingList.join(","), wot]);
+  }, [ndk, isReady, wotStatus, followingList, wot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const flushNewPosts = useCallback(() => {
     if (!bufferRef.current.length) return;

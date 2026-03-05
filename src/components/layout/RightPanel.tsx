@@ -36,7 +36,7 @@ export const RightPanel = () => {
       </section>
 
       <section className="bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
-        <h2 className="text-xl font-bold p-4 pb-2">What's happening</h2>
+        <h2 className="text-xl font-bold p-4 pb-2">What&apos;s happening</h2>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
           <div className="p-4 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer transition-colors">
             <p className="text-xs text-gray-500 mb-0.5">Trending in Nostr</p>

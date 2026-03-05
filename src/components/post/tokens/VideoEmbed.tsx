@@ -13,6 +13,7 @@ export function VideoEmbed({ url }: VideoEmbedProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [duration, setDuration] = useState(0);
@@ -24,6 +25,7 @@ export function VideoEmbed({ url }: VideoEmbedProps) {
     const handleTimeUpdate = () => {
       const p = (video.currentTime / video.duration) * 100;
       setProgress(p);
+      setCurrentTime(video.currentTime);
     };
 
     const handleLoadedMetadata = () => {
@@ -180,7 +182,7 @@ export function VideoEmbed({ url }: VideoEmbedProps) {
             </button>
 
             <span className="text-white text-xs font-mono">
-              {formatTime(videoRef.current?.currentTime || 0)} / {formatTime(duration)}
+              {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
 

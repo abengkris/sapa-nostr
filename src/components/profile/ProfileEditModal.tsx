@@ -480,7 +480,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                     </div>
                     <div>
                       <p className="font-black text-blue-500 uppercase mb-1">Twitter</p>
-                      <p className="text-gray-500 dark:text-gray-400">Tweet: <code className="bg-white dark:bg-black p-0.5 rounded text-[10px]">Verifying my account on nostr My Public Key: "[your_npub]"</code>. Paste the Tweet ID as proof.</p>
+                      <p className="text-gray-500 dark:text-gray-400">Tweet: <code className="bg-white dark:bg-black p-0.5 rounded text-[10px]">Verifying my account on nostr My Public Key: &quot;[your_npub]&quot;</code>. Paste the Tweet ID as proof.</p>
                     </div>
                     <div>
                       <p className="font-black text-blue-500 uppercase mb-1">Mastodon</p>

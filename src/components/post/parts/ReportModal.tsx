@@ -130,7 +130,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           <div className="space-y-3 pb-2">
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl flex items-center justify-between mb-4">
               <div className="text-sm">
-                <p className="font-bold">Don't want to see this user?</p>
+                <p className="font-bold">Don&apos;t want to see this user?</p>
                 <p className="text-gray-500 text-xs">Muting hides their posts and replies globally.</p>
               </div>
               <button

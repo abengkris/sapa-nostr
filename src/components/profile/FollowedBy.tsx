@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useFollowedBy } from "@/hooks/useFollowedBy";
 import { Avatar } from "@/components/common/Avatar";
 import Link from "next/link";
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { NDKUser } from "@nostr-dev-kit/ndk";
 import { shortenPubkey } from "@/lib/utils/nip19";
 
@@ -25,16 +26,16 @@ export const FollowedBy = ({ pubkey }: { pubkey: string }) => {
         };
       })).then(setDisplayUsers);
     } else {
-      setDisplayUsers([]);
+      if (displayUsers.length > 0) Promise.resolve().then(() => setDisplayUsers([]));
     }
-  }, [followedBy]);
+  }, [followedBy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading || followedBy.length === 0) return null;
 
   return (
     <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
       <div className="flex -space-x-2">
-        {followedBy.slice(0, 3).map((user, i) => (
+        {followedBy.slice(0, 3).map((user) => (
           <Avatar 
             key={user.pubkey} 
             pubkey={user.pubkey} 

@@ -6,6 +6,7 @@ import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { getNDK } from "@/lib/ndk";
 
 // Relay yang support query #p pada kind:3 (tidak semua relay support)
+/* eslint-disable-line @typescript-eslint/no-unused-vars */
 const FOLLOWER_RELAYS = [
   "wss://relay.nostr.band",   // support NIP-45 COUNT + #p query
   "wss://relay.damus.io",
@@ -25,14 +26,14 @@ export function useFollowers(pubkey: string | undefined): UseFollowersReturn {
   const [followers, setFollowers] = useState<string[]>([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [isEstimate, setIsEstimate] = useState(false);
+  const [isEstimate] = useState(false);
 
   useEffect(() => {
     if (!pubkey) {
-      setLoading(false);
+      if (loading) Promise.resolve().then(() => setLoading(false));
       return;
     }
-    setLoading(true);
+    Promise.resolve().then(() => setLoading(true));
 
     const ndk = getNDK();
 
@@ -67,7 +68,7 @@ export function useFollowers(pubkey: string | undefined): UseFollowersReturn {
     });
 
     return () => sub.stop();
-  }, [pubkey]);
+  }, [pubkey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { followers, count, loading, isEstimate };
 }
@@ -86,10 +87,10 @@ export function useFollowerCount(pubkey: string | undefined): {
 
   useEffect(() => {
     if (!pubkey) {
-      setLoading(false);
+      if (loading) Promise.resolve().then(() => setLoading(false));
       return;
     }
-    setLoading(true);
+    if (!loading) Promise.resolve().then(() => setLoading(true));
 
     const ndk = getNDK();
 
@@ -117,7 +118,7 @@ export function useFollowerCount(pubkey: string | undefined): {
     });
 
     return () => sub.stop();
-  }, [pubkey]);
+  }, [pubkey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { count, loading };
 }

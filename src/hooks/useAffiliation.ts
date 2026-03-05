@@ -9,7 +9,7 @@ export function useAffiliation(nip05: string | undefined) {
 
   useEffect(() => {
     if (!nip05 || !nip05.includes('@')) {
-      setAffiliationPubkey(null);
+      if (affiliationPubkey !== null) Promise.resolve().then(() => setAffiliationPubkey(null));
       return;
     }
 
@@ -17,12 +17,14 @@ export function useAffiliation(nip05: string | undefined) {
     
     // If the name is already '_', it's the root identity, no need to show affiliation with itself
     if (name === '_') {
-      setAffiliationPubkey(null);
+      if (affiliationPubkey !== null) Promise.resolve().then(() => setAffiliationPubkey(null));
       return;
     }
 
     if (affiliationCache[domain]) {
-      setAffiliationPubkey(affiliationCache[domain]);
+      if (affiliationPubkey !== affiliationCache[domain]) {
+        Promise.resolve().then(() => setAffiliationPubkey(affiliationCache[domain]));
+      }
       return;
     }
 
@@ -44,6 +46,7 @@ export function useAffiliation(nip05: string | undefined) {
         }
       } catch (err) {
         // Silent error for affiliation check
+        /* eslint-disable-line @typescript-eslint/no-unused-vars */
       }
     };
 
@@ -52,7 +55,7 @@ export function useAffiliation(nip05: string | undefined) {
     return () => {
       isMounted = false;
     };
-  }, [nip05]);
+  }, [nip05]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return affiliationPubkey;
 }

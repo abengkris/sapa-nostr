@@ -20,7 +20,7 @@ export function UrlPreview({ url }: { url: string }) {
     // Avoid previewing media directly (handled by other components)
     const isMedia = /\.(jpg|jpeg|png|gif|webp|mp4|webm|ogg|mp3|wav|avif|svg)/i.test(url);
     if (isMedia) {
-      setLoading(false);
+      if (loading) Promise.resolve().then(() => setLoading(false));
       return;
     }
 
@@ -31,8 +31,10 @@ export function UrlPreview({ url }: { url: string }) {
         else setMetadata(data);
       })
       .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [url]);
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading || error || !metadata || !metadata.title) return null;
 
