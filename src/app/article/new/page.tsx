@@ -100,8 +100,8 @@ export default function NewArticlePage() {
         {previewMode ? (
           <div className="p-6 sm:p-10 animate-in fade-in duration-300">
             {image && (
-              <div className="w-full aspect-[21/9] rounded-3xl overflow-hidden mb-10 border border-gray-100 dark:border-gray-800 shadow-sm">
-                <img src={image} className="w-full h-full object-cover" alt="Hero" />
+              <div className="w-full aspect-[21/9] rounded-3xl overflow-hidden mb-10 border border-gray-100 dark:border-gray-800 shadow-sm relative">
+                <Image src={image} fill className="object-cover" alt="Hero" unoptimized />
               </div>
             )}
             <h1 className="text-4xl sm:text-5xl font-[900] mb-6 leading-tight">{title || "Untitled Article"}</h1>

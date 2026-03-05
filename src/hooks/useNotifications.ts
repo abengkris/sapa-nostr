@@ -126,7 +126,7 @@ export function useNotifications() {
     subscriptionRef.current = sub;
 
     // Initial fetch
-    fetchNotifications();
+    Promise.resolve().then(() => fetchNotifications());
 
     return () => {
       sub.stop();

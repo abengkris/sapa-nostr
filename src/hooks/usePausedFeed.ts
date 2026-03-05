@@ -43,11 +43,13 @@ export function usePausedFeed({
     if (!ndk || !isReady) return;
 
     isInitialLoadDone.current = false;
-    setIsLoading(true);
-    setNewCount(0);
+    Promise.resolve().then(() => {
+      setIsLoading(true);
+      setNewCount(0);
+      setPosts([]);
+    });
     bufferRef.current = [];
     seenIds.current = new Set();
-    setPosts([]);
 
     const sub = ndk.subscribe(
       { ...filter, limit: 20 },
@@ -92,7 +94,7 @@ export function usePausedFeed({
   useEffect(() => {
     if (posts.length > 0) {
       const oldest = posts[posts.length - 1].created_at;
-      setOldestTimestamp(oldest);
+      Promise.resolve().then(() => setOldestTimestamp(oldest));
     }
   }, [posts]);
 

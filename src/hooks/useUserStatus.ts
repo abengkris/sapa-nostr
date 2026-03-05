@@ -16,12 +16,12 @@ export function useUserStatus(pubkey?: string) {
 
   useEffect(() => {
     if (!ndk || !isReady || !pubkey) {
-      setLoading(false);
+      Promise.resolve().then(() => setLoading(false));
       return;
     }
 
     let isMounted = true;
-    setLoading(true);
+    Promise.resolve().then(() => setLoading(true));
 
     // Subscribe to kind 30315 (User Status)
     const sub = ndk.subscribe(

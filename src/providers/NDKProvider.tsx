@@ -64,84 +64,91 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
           const user = instance.getUser({ pubkey: publicKey });
           user.ndk = instance;
           instance.activeUser = user;
-          user.fetchProfile().finally(() => {
+          
+          // Initial set to ensure state is available
+          setUser(user);
+          
+          // Background fetch profile and update if needed
+          user.fetchProfile().then(() => {
             setUser(user);
           });
-          setUser(user);
         }
       }
+      
+      setNdk(instance);
+
+      // Initialize Messenger safely with Storage
+      let msgInstance: NDKMessenger | null = null;
+      try {
+        const storage = (dexieAdapter && publicKey) 
+          ? new CacheModuleStorage(dexieAdapter as any, publicKey) 
+          : undefined;
+        
+        msgInstance = new NDKMessenger(instance, { storage });
+        setMessenger(msgInstance);
+      } catch (e) {
+        console.error("Failed to initialize NDKMessenger:", e);
+      }
+
+      return msgInstance;
     };
 
-    restoreSession();
-    setNdk(instance);
+    restoreSession().then((msgInstance) => {
+      // Connection with safety timeout
+      const connectPromise = instance.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Connection timeout")), 10000)
+      );
 
-    // Initialize Messenger safely with Storage
-    let msgInstance: NDKMessenger | null = null;
-    try {
-      const storage = (dexieAdapter && publicKey) 
-        ? new CacheModuleStorage(dexieAdapter as any, publicKey) 
-        : undefined;
-      
-      msgInstance = new NDKMessenger(instance, { storage });
-      setMessenger(msgInstance);
-    } catch (e) {
-      console.error("Failed to initialize NDKMessenger:", e);
-    }
+      Promise.race([connectPromise, timeoutPromise])
+        .then(async () => {
+          setIsReady(true);
+          console.log("NDK connected and session restored");
+          
+          if (isLoggedIn && msgInstance) {
+            try {
+              await msgInstance.start();
 
-    // Connection with safety timeout
-    const connectPromise = instance.connect();
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Connection timeout")), 10000)
-    );
-
-    Promise.race([connectPromise, timeoutPromise])
-      .then(async () => {
-        setIsReady(true);
-        console.log("NDK connected and session restored");
-        
-        if (isLoggedIn && msgInstance) {
-          try {
-            await msgInstance.start();
-
-            // Global Message Listener for Notifications
-            msgInstance.on("message", (message: any) => {
-              // Only notify for INCOMING messages that are not from the current user
-              if (message.sender?.pubkey !== publicKey && message.recipient?.pubkey === publicKey) {
-                // Don't show toast if we are on the message page for this specific user
-                const isCurrentChat = window.location.pathname.includes(`/messages/${message.sender?.pubkey}`);
-                
-                if (!isCurrentChat) {
-                  incrementUnreadMessagesCount();
+              // Global Message Listener for Notifications
+              msgInstance.on("message", (message: any) => {
+                // Only notify for INCOMING messages that are not from the current user
+                if (message.sender?.pubkey !== publicKey && message.recipient?.pubkey === publicKey) {
+                  // Don't show toast if we are on the message page for this specific user
+                  const isCurrentChat = window.location.pathname.includes(`/messages/${message.sender?.pubkey}`);
+                  
+                  if (!isCurrentChat) {
+                    incrementUnreadMessagesCount();
+                  }
                 }
-              }
-            });
-          } catch (e) {
-            console.error("Failed to start NDKMessenger:", e);
+              });
+            } catch (e) {
+              console.error("Failed to start NDKMessenger:", e);
+            }
           }
-        }
-      })
-      .catch(async (err) => {
-        console.warn("NDK connection partial or timed out:", err.message);
-        setIsReady(true);
-        
-        if (isLoggedIn && msgInstance) {
-          try {
-            await msgInstance.start();
+        })
+        .catch(async (err) => {
+          console.warn("NDK connection partial or timed out:", err.message);
+          setIsReady(true);
+          
+          if (isLoggedIn && msgInstance) {
+            try {
+              await msgInstance.start();
 
-            // Global Message Listener for Notifications (Fallback)
-            msgInstance.on("message", (message: any) => {
-              if (message.sender?.pubkey !== publicKey && message.recipient?.pubkey === publicKey) {
-                const isCurrentChat = window.location.pathname.includes(`/messages/${message.sender?.pubkey}`);
-                if (!isCurrentChat) {
-                  incrementUnreadMessagesCount();
+              // Global Message Listener for Notifications (Fallback)
+              msgInstance.on("message", (message: any) => {
+                if (message.sender?.pubkey !== publicKey && message.recipient?.pubkey === publicKey) {
+                  const isCurrentChat = window.location.pathname.includes(`/messages/${message.sender?.pubkey}`);
+                  if (!isCurrentChat) {
+                    incrementUnreadMessagesCount();
+                  }
                 }
-              }
-            });
-          } catch (e) {
-            console.error("Failed to start NDKMessenger (fallback):", e);
+              });
+            } catch (e) {
+              console.error("Failed to start NDKMessenger (fallback):", e);
+            }
           }
-        }
-      });
+        });
+    });
 
     return () => {
       if (msgInstance) {

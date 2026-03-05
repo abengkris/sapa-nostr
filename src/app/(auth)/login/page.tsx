@@ -94,7 +94,7 @@ export default function LoginPage() {
             </div>
             <h1 className="text-2xl font-bold mb-4">SAVE YOUR PRIVATE KEY!</h1>
             <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">
-              We generated a new Nostr identity for you. If you lose this key, you lose your account forever. We don't store it on our servers.
+              We generated a new Nostr identity for you. If you lose this key, you lose your account forever. We don&apos;t store it on our servers.
             </p>
 
             <div className="bg-gray-100 dark:bg-black p-4 rounded-2xl mb-6 relative group">
@@ -115,7 +115,7 @@ export default function LoginPage() {
                 onClick={() => router.push("/")}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg shadow-blue-500/20"
               >
-                I've Saved It, Let's Go!
+                I&apos;ve Saved It, Let&apos;s Go!
               </button>
               <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider">
                 NO RECOVERY POSSIBLE IF LOST

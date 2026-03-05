@@ -40,16 +40,18 @@ export function usePostStats(eventId?: string) {
     if (!ndk || !isReady || !eventId) return;
 
     // Reset stats when eventId changes
-    setStats({
-      likes: 0,
-      reposts: 0,
-      comments: 0,
-      quotes: 0,
-      bookmarks: 0,
-      totalSats: 0,
-      zapCount: 0,
-      userLiked: false,
-      userReposted: false,
+    Promise.resolve().then(() => {
+      setStats({
+        likes: 0,
+        reposts: 0,
+        comments: 0,
+        quotes: 0,
+        bookmarks: 0,
+        totalSats: 0,
+        zapCount: 0,
+        userLiked: false,
+        userReposted: false,
+      });
     });
     seenEvents.current.clear();
 

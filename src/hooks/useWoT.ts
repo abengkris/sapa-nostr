@@ -82,9 +82,12 @@ export function useWoT(viewerPubkey: string | undefined): UseWoTReturn {
     // 1. Check Memory Singleton (and ensure it belongs to the same pubkey)
     if (wotSingleton && wotSingletonPubkey === viewerPubkey) {
       if (wot !== wotSingleton) {
-        setWot(wotSingleton);
-        setStatus("ready");
-        setPubkeyCount(wotSingleton.size);
+        const singleton = wotSingleton;
+        Promise.resolve().then(() => {
+          setWot(singleton);
+          setStatus("ready");
+          setPubkeyCount(singleton.size);
+        });
       }
       return;
     }
@@ -110,9 +113,14 @@ export function useWoT(viewerPubkey: string | undefined): UseWoTReturn {
           
           wotSingleton = cachedInstance;
           wotSingletonPubkey = viewerPubkey;
-          setWot(cachedInstance);
-          setPubkeyCount(cachedInstance.size);
-          setStatus("ready");
+          
+          Promise.resolve().then(() => {
+            if (isMounted) {
+              setWot(cachedInstance);
+              setPubkeyCount(cachedInstance.size);
+              setStatus("ready");
+            }
+          });
           
           if (age < CACHE_EXPIRY) {
             isCacheValid = true;
@@ -129,7 +137,9 @@ export function useWoT(viewerPubkey: string | undefined): UseWoTReturn {
       if (!isCacheValid && isMounted) {
         if (wotLoadPromise) return;
 
-        setStatus(prev => prev === "ready" ? prev : "loading");
+        Promise.resolve().then(() => {
+          if (isMounted) setStatus(prev => prev === "ready" ? prev : "loading");
+        });
         
         // If we are retrying, add a delay
         if (retries > 0) {

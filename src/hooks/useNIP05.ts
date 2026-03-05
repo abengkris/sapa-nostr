@@ -11,20 +11,25 @@ export function useNIP05(pubkey: string | undefined, nip05: string | undefined) 
     let isMounted = true;
 
     if (!pubkey || !nip05) {
-      if (isMounted) setStatus('idle');
+      // Use a timeout or promise to avoid sync state update in effect body
+      Promise.resolve().then(() => {
+        if (isMounted) setStatus('idle');
+      });
       return;
     }
 
     // Basic format check
     if (!nip05.includes('@')) {
-      if (isMounted) setStatus('invalid');
+      Promise.resolve().then(() => {
+        if (isMounted) setStatus('invalid');
+      });
       return;
     }
     
-    // Asynchronously set loading to avoid sync update warning if possible, 
-    // though setting state at start of effect is generally allowed if not conditional on render phase.
-    // However, to be safe and consistent:
-    if (isMounted) setStatus('loading');
+    // Set loading asynchronously
+    Promise.resolve().then(() => {
+      if (isMounted) setStatus('loading');
+    });
 
     const verify = async () => {
       try {

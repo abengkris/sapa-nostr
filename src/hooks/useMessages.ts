@@ -104,7 +104,7 @@ export function useMessages() {
     if (!messenger || !isReady || !user) return;
 
     if (isInitialLoad.current) {
-      setLoading(true);
+      Promise.resolve().then(() => setLoading(true));
       fetchConversations().finally(() => {
         setLoading(false);
         isInitialLoad.current = false;

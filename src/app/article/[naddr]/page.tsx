@@ -2,16 +2,15 @@
 
 import React, { use, useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Loader2, ArrowLeft, Calendar, User, Tag } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useNDK } from "@/hooks/useNDK";
 import { decodeNip19 } from "@/lib/utils/nip19";
-import { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
+import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { useProfile } from "@/hooks/useProfile";
 import Image from "next/image";
 import Link from "next/link";
-import { format, formatDistanceToNow } from "date-fns";
-import { PostContentRenderer } from "@/components/post/parts/PostContent";
+import { format } from "date-fns";
 import { PostActions } from "@/components/post/parts/PostActions";
 import { usePostStats } from "@/hooks/usePostStats";
 import { ThreadNode } from "@/components/post/ThreadNode";
@@ -21,7 +20,7 @@ import { ArticleRenderer } from "@/components/article/ArticleRenderer";
 
 export default function ArticleDetailPage({ params }: { params: Promise<{ naddr: string }> }) {
   const { naddr } = use(params);
-  const { id: hexId, relays, kind, pubkey, identifier } = decodeNip19(naddr);
+  const { id: hexId, relays, pubkey, identifier } = decodeNip19(naddr);
   const { ndk, isReady } = useNDK();
   const [article, setArticle] = useState<NDKEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -128,10 +127,12 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ naddr:
         {/* Hero Image */}
         {image && (
           <div className="w-full aspect-[21/9] relative overflow-hidden bg-gray-100 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-            <img 
+            <Image 
               src={image} 
               alt={title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              unoptimized
             />
           </div>
         )}
@@ -140,11 +141,15 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ naddr:
           {/* Metadata */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500 mb-8 border-b border-gray-100 dark:border-gray-900 pb-6">
             <Link href={`/${article.author.npub}`} className="flex items-center gap-2 group">
-              <img 
-                src={profile?.picture || `https://robohash.org/${article.pubkey}?set=set1`}
-                className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-800"
-                alt={profile?.name || "Author"}
-              />
+              <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 shrink-0">
+                <Image 
+                  src={profile?.picture || `https://robohash.org/${article.pubkey}?set=set1`}
+                  fill
+                  className="object-cover"
+                  alt={profile?.name || "Author"}
+                  unoptimized
+                />
+              </div>
               <span className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-500 transition-colors">
                 {profile?.name || profile?.displayName || shortenPubkey(article.pubkey)}
               </span>
