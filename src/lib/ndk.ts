@@ -17,6 +17,7 @@ export function getNDK(): NDK {
     ndkInstance = new NDK({
       explicitRelayUrls: DEFAULT_RELAYS,
       enableOutboxModel: true,
+      filterValidationMode: "fix",
     });
   }
   return ndkInstance;

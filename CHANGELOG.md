@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - **Mentions:** Updated `MentionLink` to correctly use the domain as the display name when a user has a `_` NIP-05 identifier and no other name set.
 
 ### Added
+- **Filter Validation:** Enabled NDK filter validation in `fix` mode. This automatically cleans up `undefined` or invalid values in subscription filters, preventing runtime errors in cache adapters and relays.
 - **NDK Performance Optimizations:** Implemented validation sampling to reduce main-thread load and improve event processing speed.
 - **Relay Protection:** The app now automatically disconnects from relays that send too many invalid event signatures (threshold: 5).
 - **Throttled Notifications:** Invalid signature warnings are now throttled to prevent UI overwhelming and potential browser crashes.
