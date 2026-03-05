@@ -39,5 +39,32 @@ export function useBlossom() {
     [blossom]
   );
 
-  return { blossom, uploadFile };
+  const fixUrl = useCallback(
+    async (pubkey: string, url: string) => {
+      if (!blossom || !ndk) return url;
+      try {
+        const user = ndk.getUser({ pubkey });
+        const correctUrl = await blossom.fixUrl(user, url);
+        return correctUrl || url;
+      } catch (err) {
+        return url;
+      }
+    },
+    [blossom, ndk]
+  );
+
+  const listBlobs = useCallback(
+    async (pubkey: string) => {
+      if (!blossom || !ndk) return [];
+      try {
+        const user = ndk.getUser({ pubkey });
+        return await blossom.listBlobs(user);
+      } catch (err) {
+        return [];
+      }
+    },
+    [blossom, ndk]
+  );
+
+  return { blossom, uploadFile, fixUrl, listBlobs };
 }

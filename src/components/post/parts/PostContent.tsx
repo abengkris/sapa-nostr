@@ -245,7 +245,7 @@ export function PostContentRenderer({
           {renderMedia && urlTokens.map((token, i) => {
             const cleanUrl = token.value.replace(/[.,;]$/, "");
             const imeta = imetaMap.get(cleanUrl);
-            return <AsyncMediaEmbed key={i} url={cleanUrl} imeta={imeta} />;
+            return <AsyncMediaEmbed key={i} url={cleanUrl} imeta={imeta} pubkey={event.pubkey} />;
           })}
 
           {renderQuotes && quoteTokens.map((token, i) => (
