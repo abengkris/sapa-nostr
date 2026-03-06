@@ -26,6 +26,7 @@ import { usePinnedPosts } from "@/hooks/usePinnedPosts";
 import { FollowedBy } from "@/components/profile/FollowedBy";
 import { ExternalIdentities } from "@/components/profile/ExternalIdentities";
 import { PostCard } from "@/components/post/PostCard";
+import { MediaGrid } from "@/components/profile/MediaGrid";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -85,7 +86,7 @@ export function ProfileContent({ npubParam }: { npubParam: string }) {
   const { feedKinds, feedFilter } = React.useMemo(() => {
     if (activeTab === "likes") return { feedKinds: [7], feedFilter: "all" as const };
     if (activeTab === "articles") return { feedKinds: [30023], feedFilter: "all" as const };
-    if (activeTab === "media") return { feedKinds: [1, 30023], feedFilter: "media" as const };
+    if (activeTab === "media") return { feedKinds: [1, 20, 1063, 30023], feedFilter: "media" as const };
     if (activeTab === "replies") return { feedKinds: [1], feedFilter: "replies" as const };
     return { feedKinds: [1], feedFilter: "posts" as const };
   }, [activeTab]);
@@ -463,13 +464,17 @@ export function ProfileContent({ npubParam }: { npubParam: string }) {
           </div>
         )}
 
-        <FeedList 
-          posts={posts.filter(p => !pinnedEventIds.has(p.id))}
-          isLoading={feedLoading}
-          loadMore={loadMore}
-          hasMore={hasMore}
-          emptyMessage={`No ${activeTab} to show.`}
-        />
+        {activeTab === "media" ? (
+          <MediaGrid posts={posts} isLoading={feedLoading} />
+        ) : (
+          <FeedList 
+            posts={posts.filter(p => !pinnedEventIds.has(p.id))}
+            isLoading={feedLoading}
+            loadMore={loadMore}
+            hasMore={hasMore}
+            emptyMessage={`No ${activeTab} to show.`}
+          />
+        )}
       </div>
 
       <ProfileEditModal

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-03-06
+
+### Added
+- **Visual Media Grid:** The profile "media" tab now features a high-performance 3-column visual grid (Instagram-style) instead of a standard vertical feed. This allows for a more immersive browsing experience for photos and videos.
+- **Enhanced Media Discovery:** Updated `useFeed` and the media tab to support **NIP-92 (Kind 20)** and **NIP-94 (Kind 1063)** for better discovery of files and media uploaded via various Nostr clients.
+- **NIP-94/92 Rendering:** `MediaGrid` now intelligently extracts media from `url` tags, `imeta` tags, and kind 30023 hero images, in addition to standard kind 1 content scanning.
+
+### Changed
+- **Feed Logic:** Improved the media filtering logic in `useFeed` to use the primary tokenizer for more accurate URL discovery and to avoid over-fetching irrelevant events.
+
 ## [0.3.9] - 2026-03-06
 
 ### Changed

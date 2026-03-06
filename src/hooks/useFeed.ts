@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { NDKEvent, NDKFilter, NDKSubscription, NDKKind } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
 import { useLists } from "@/hooks/useLists";
+import { tokenize } from "@/lib/content/tokenizer";
 
 const MAX_POSTS = 100;
 
@@ -18,7 +19,7 @@ export type FeedFilterType = "all" | "posts" | "replies" | "media";
  * @param kinds List of event kinds to fetch (default: [1]).
  * @param filterType Client-side filter to apply (used for profile sub-feeds).
  */
-export function useFeed(authors: string[], kinds: number[] = [1, 1068, 30023] as NDKKind[], filterType: FeedFilterType = "all") {
+export function useFeed(authors: string[], kinds: number[] = [1, 20, 1063, 1068, 30023] as NDKKind[], filterType: FeedFilterType = "all") {
   const { ndk, isReady } = useNDK();
   const { mutedPubkeys } = useLists();
   const [posts, setPosts] = useState<NDKEvent[]>([]);
@@ -49,16 +50,37 @@ export function useFeed(authors: string[], kinds: number[] = [1, 1068, 30023] as
   const matchesFilter = useCallback((event: NDKEvent) => {
     if (filterType === "all") return true;
     
+    // Media filter improvement
+    if (filterType === "media") {
+      // 1. Kind 20 or 1063 (NIP-92, NIP-94)
+      if (event.kind === 20 || event.kind === 1063) {
+        return event.tags.some(t => t[0] === 'url');
+      }
+
+      // 2. Kind 30023 (Articles)
+      if (event.kind === 30023) {
+        return event.tags.some(t => t[0] === 'image');
+      }
+
+      // 3. Kind 1 (Notes) - Use tokenizer for accuracy
+      if (event.kind === 1) {
+        const tokens = tokenize(event.content);
+        const hasMediaToken = tokens.some(t => t.type === 'image' || t.type === 'video');
+        if (hasMediaToken) return true;
+
+        // Check tags (imeta, image)
+        const hasImeta = event.tags.some(t => t[0] === 'imeta');
+        const hasImageTag = event.tags.some(t => t[0] === 'image');
+        return hasImeta || hasImageTag;
+      }
+
+      return false;
+    }
+
     if (event.kind === 1 || event.kind === 30023 || event.kind === 1068) {
       const hasETags = event.tags.some(t => t[0] === 'e');
       if (filterType === "posts") return !hasETags;
       if (filterType === "replies") return hasETags;
-      if (filterType === "media") {
-        const hasMediaUrl = event.content.match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mov|mp4|webm)/i);
-        const hasImeta = event.tags.some(t => t[0] === 'imeta');
-        const hasImageTag = event.tags.some(t => t[0] === 'image');
-        return !!(hasMediaUrl || hasImeta || hasImageTag);
-      }
     }
     
     return true;
