@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] - 2026-03-06
+
+### Added
+- **Documentation:** Created `VERIFICATION.md` to document NIP-05 verification and organizational affiliation concepts, including badge color rules and root identity discovery logic.
+
 ## [0.3.6] - 2026-03-06
 
 ### Changed
