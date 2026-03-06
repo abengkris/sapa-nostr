@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-03-06
+
+### Fixed
+- **TypeScript Build Error:** Fixed a narrowing error in `useFeed.ts` that caused build failures on Vercel due to an unreachable type comparison.
+
 ## [0.4.1] - 2026-03-06
 
 ### Changed

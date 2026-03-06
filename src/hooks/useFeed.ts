@@ -85,7 +85,7 @@ export function useFeed(authors: string[], kinds: number[] = [1, 20, 1063, 1068,
 
     // Reposts (6, 16) are always "posts" in the profile tab context
     if (event.kind === 6 || event.kind === 16) {
-      return filterType === "posts" || filterType === "all";
+      return filterType === "posts";
     }
     
     return true;
