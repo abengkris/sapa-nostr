@@ -235,13 +235,6 @@ export function ProfileContent({ npubParam }: { npubParam: string }) {
                     >
                       <Mail size={20} />
                     </Link>
-                    <button
-                      onClick={() => setShowZapModal(true)}
-                      className="p-2 border border-gray-300 dark:border-gray-700 rounded-full hover:bg-yellow-50 dark:hover:bg-yellow-900/20 text-yellow-500 transition-all"
-                      aria-label="Zap User"
-                    >
-                      <Zap size={20} fill="currentColor" />
-                    </button>
                     <FollowButton targetPubkey={hexPubkey} size="lg" />
                   </>
                 )}
@@ -389,10 +382,14 @@ export function ProfileContent({ npubParam }: { npubParam: string }) {
             </span>
           </div>
           {profile?.lud16 && (
-            <div className="flex items-center space-x-1 text-yellow-600 dark:text-yellow-500">
-              <Zap size={16} fill="currentColor" />
-              <span>{profile.lud16}</span>
-            </div>
+            <button 
+              onClick={() => setShowZapModal(true)}
+              className="flex items-center space-x-1 text-yellow-600 dark:text-yellow-500 hover:underline transition-all group"
+              title={`Zap ${profile.lud16}`}
+            >
+              <Zap size={16} fill="currentColor" className="group-hover:scale-110 transition-transform" />
+              <span className="font-medium">{profile.lud16}</span>
+            </button>
           )}
         </div>
 

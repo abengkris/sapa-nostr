@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.8] - 2026-03-06
+
+### Changed
+- **Zap UI Optimization:** Removed the standalone Zap button from the profile header. Zaps can now be triggered by directly clicking on the Lightning Address (LUD-16) in the profile details, simplifying the UI and emphasizing the payment address.
+
 ## [0.3.7] - 2026-03-06
 
 ### Added
