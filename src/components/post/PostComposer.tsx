@@ -10,7 +10,9 @@ import Image from "next/image";
 import { useUIStore } from "@/store/ui";
 import { useBlossom } from "@/hooks/useBlossom";
 import { useEmojis } from "@/hooks/useEmojis";
-import { imetaTagToTag, NDKImetaTag, NDKTag, NDKEvent } from "@nostr-dev-kit/ndk";
+import { useFollowingList } from "@/hooks/useFollowingList";
+import { UserRecommendation } from "../common/UserRecommendation";
+import { imetaTagToTag, NDKImetaTag, NDKTag, NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
 
 interface PostComposerProps {
   replyTo?: NDKEvent;
@@ -37,6 +39,10 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showPoll, setShowPoll] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+
   const [pollOptions, setPollOptions] = useState<PollOption[]>([
     { id: "0", label: "" },
     { id: "1", label: "" }
@@ -44,11 +50,68 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   const { user, isLoggedIn } = useAuthStore();
   const { ndk } = useNDK();
   const { emojis, emojiMap } = useEmojis();
+  const { followingUsers, loading: loadingFollowing } = useFollowingList(user?.pubkey);
   const { addToast } = useUIStore();
   const { uploadFile } = useBlossom();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
+
+  // Mention filtering
+  const filteredUsers = useMemo(() => {
+    if (!mentionQuery) return followingUsers.slice(0, 8);
+    const q = mentionQuery.toLowerCase();
+    return followingUsers
+      .filter(u => 
+        u.profile?.name?.toLowerCase().includes(q) || 
+        u.profile?.displayName?.toLowerCase().includes(q) ||
+        u.profile?.nip05?.toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  }, [followingUsers, mentionQuery]);
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const position = e.target.selectionStart;
+    setContent(value);
+    setCursorPosition(position);
+
+    // Detect "@" for mentions
+    const textBeforeCursor = value.slice(0, position);
+    const words = textBeforeCursor.split(/\s/);
+    const lastWord = words[words.length - 1];
+
+    if (lastWord.startsWith("@") && lastWord.length > 0) {
+      setMentionQuery(lastWord.slice(1));
+      setShowMentions(true);
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const insertMention = (targetUser: NDKUser) => {
+    const textBeforeCursor = content.slice(0, cursorPosition);
+    const textAfterCursor = content.slice(cursorPosition);
+    
+    const words = textBeforeCursor.split(/\s/);
+    words.pop(); // Remove the partial "@name"
+    
+    const prefix = words.length > 0 ? words.join(" ") + " " : "";
+    const mention = `@${targetUser.npub} `;
+    const newContent = prefix + mention + textAfterCursor;
+    
+    setContent(newContent);
+    setShowMentions(false);
+    
+    // Refocus and set cursor
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newPos = prefix.length + mention.length;
+        textareaRef.current.setSelectionRange(newPos, newPos);
+      }
+    }, 0);
+  };
 
   // Collapse when clicking outside
   useEffect(() => {
@@ -232,16 +295,27 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       
       <div className="flex-1 min-w-0">
         <label htmlFor="post-content" className="sr-only">Post content</label>
-        <textarea
-          id="post-content"
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={replyTo ? "Post your reply" : placeholder}
-          className={`w-full bg-transparent border-none focus:ring-0 outline-none resize-none placeholder-gray-500 transition-all duration-300 overflow-hidden ${
-            isExpanded ? "text-xl min-h-[100px]" : "text-lg min-h-[40px]"
-          }`}
-        />
+        <div className="relative">
+          <textarea
+            id="post-content"
+            ref={textareaRef}
+            value={content}
+            onChange={handleContentChange}
+            onSelect={(e) => setCursorPosition(e.currentTarget.selectionStart)}
+            placeholder={replyTo ? "Post your reply" : placeholder}
+            className={`w-full bg-transparent border-none focus:ring-0 outline-none resize-none placeholder-gray-500 transition-all duration-300 overflow-hidden ${
+              isExpanded ? "text-xl min-h-[100px]" : "text-lg min-h-[40px]"
+            }`}
+          />
+          
+          {showMentions && (
+            <UserRecommendation 
+              users={filteredUsers} 
+              onSelect={insertMention} 
+              isLoading={loadingFollowing}
+            />
+          )}
+        </div>
 
         <div className={`transition-all duration-500 overflow-hidden ${isExpanded || content.trim() ? "max-h-[800px] opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"}`}>
           {showEmojiPicker && (

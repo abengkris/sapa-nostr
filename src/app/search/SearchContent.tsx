@@ -11,15 +11,55 @@ import Image from "next/image";
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { shortenPubkey } from "@/lib/utils/nip19";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useFollowingList } from "@/hooks/useFollowingList";
+import { useAuthStore } from "@/store/auth";
+import { UserRecommendation } from "@/components/common/UserRecommendation";
+import { NDKUser } from "@nostr-dev-kit/ndk";
 
 export function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuthStore();
+  const { followingUsers, loading: loadingFollowing } = useFollowingList(user?.pubkey);
+
   const initialQuery = searchParams.get("q") || "";
   
   const [searchInput, setSearchInput] = useState(initialQuery);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+
   const [debouncedQuery] = useDebounce(searchInput, 300);
   const { posts, profiles, loading, loadMore, hasMore, directResult } = useSearch(debouncedQuery);
+
+  // Mention filtering
+  const filteredUsers = React.useMemo(() => {
+    if (!mentionQuery) return followingUsers.slice(0, 8);
+    const q = mentionQuery.toLowerCase();
+    return followingUsers
+      .filter(u => 
+        u.profile?.name?.toLowerCase().includes(q) || 
+        u.profile?.displayName?.toLowerCase().includes(q) ||
+        u.profile?.nip05?.toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  }, [followingUsers, mentionQuery]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+
+    if (value.startsWith("@")) {
+      setMentionQuery(value.slice(1));
+      setShowMentions(true);
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const handleSelectUser = (u: NDKUser) => {
+    setSearchInput(u.npub);
+    setShowMentions(false);
+  };
 
   // Sync URL with search input
   useEffect(() => {
@@ -54,11 +94,21 @@ export function SearchContent() {
             id="search-input"
             type="text"
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={handleSearchChange}
             placeholder="Search npub, note, #hashtag, or keyword…"
             className="block w-full pl-12 pr-12 py-3 border border-gray-100 dark:border-gray-800 rounded-2xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-black transition-all font-medium"
             autoFocus
           />
+          
+          {showMentions && (
+            <div className="absolute left-0 right-0 top-full mt-2">
+              <UserRecommendation 
+                users={filteredUsers} 
+                onSelect={handleSelectUser} 
+                isLoading={loadingFollowing}
+              />
+            </div>
+          )}
           {searchInput && (
             <button 
               onClick={() => setSearchInput("")}
