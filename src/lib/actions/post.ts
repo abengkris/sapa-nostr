@@ -132,7 +132,7 @@ export const publishPost = async (
   try {
     console.log("[Post] Attempting to publish event kind:", event.kind);
     await event.sign();
-    event.publish(); // Optimistic publish
+    await event.publish();
     return event;
   } catch (err) {
     console.error("[Post] Publish failed:", err);
@@ -188,7 +188,7 @@ export const publishArticle = async (
     }
   });
 
-  event.publish(); // Optimistic publish
+  await event.publish();
   return event;
 };
 
@@ -229,7 +229,7 @@ export const repostEvent = async (
   // Recommended unless NIP-70 protected (which we don't track specifically yet)
   repost.content = JSON.stringify(targetEvent.rawEvent());
 
-  repost.publish(); // Optimistic
+  await repost.publish();
   return repost;
 };
 
