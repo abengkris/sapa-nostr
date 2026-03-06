@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { ImageEmbed } from "./ImageEmbed";
 import { VideoEmbed } from "./VideoEmbed";
+import { AudioEmbed } from "./AudioEmbed";
 import { ImetaData } from "@/lib/content/tokenizer";
 import { useBlossom } from "@/hooks/useBlossom";
 
 export function AsyncMediaEmbed({ url, imeta, pubkey }: { url: string; imeta?: ImetaData; pubkey?: string }) {
-  const [type, setType] = useState<'image' | 'video' | 'url' | 'loading'>('loading');
+  const [type, setType] = useState<'image' | 'video' | 'audio' | 'url' | 'loading'>('loading');
   const [displayUrl, setDisplayUrl] = useState(url);
   const { fixUrl } = useBlossom();
 
@@ -35,6 +36,10 @@ export function AsyncMediaEmbed({ url, imeta, pubkey }: { url: string; imeta?: I
         if (isMounted) setType('video');
         return;
       }
+      if (imeta?.mimeType?.startsWith('audio/')) {
+        if (isMounted) setType('audio');
+        return;
+      }
 
       try {
         const res = await fetch(currentUrl, { method: 'HEAD' });
@@ -43,6 +48,7 @@ export function AsyncMediaEmbed({ url, imeta, pubkey }: { url: string; imeta?: I
         if (isMounted) {
           if (contentType?.startsWith('image/')) setType('image');
           else if (contentType?.startsWith('video/')) setType('video');
+          else if (contentType?.startsWith('audio/')) setType('audio');
           else setType('url');
         }
       } catch (err) {
@@ -58,6 +64,7 @@ export function AsyncMediaEmbed({ url, imeta, pubkey }: { url: string; imeta?: I
   if (type === 'loading') return null;
   if (type === 'image') return <ImageEmbed url={displayUrl} imeta={imeta} />;
   if (type === 'video') return <VideoEmbed url={displayUrl} />;
+  if (type === 'audio') return <AudioEmbed url={displayUrl} />;
   
   return null; 
 }

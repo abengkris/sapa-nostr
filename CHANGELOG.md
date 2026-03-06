@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-03-06
+
+### Added
+- **Multi-Image Grid:** Posts with 2, 3, or 4 images now render in a beautiful, responsive grid layout instead of a vertical stack.
+- **Audio Support:** Added `AudioEmbed` component to render and play audio files (mp3, wav, etc.) directly within posts.
+- **Async Audio Discovery:** `AsyncMediaEmbed` now correctly identifies and renders audio content-types from URLs without extensions.
+
+### Changed
+- **Image Rendering:** Improved `ImageEmbed` with support for custom class names and margin-less rendering for better integration in grid layouts.
+- **Content Parsing:** Updated `PostContentRenderer` to prioritize media grouping and handle the new audio token type.
+
 ## [0.4.4] - 2026-03-06
 
 ### Fixed

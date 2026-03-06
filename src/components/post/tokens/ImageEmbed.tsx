@@ -4,7 +4,17 @@ import { useState, useMemo } from "react";
 import { ImetaData } from "@/lib/content/tokenizer";
 import { useBlossom } from "@/hooks/useBlossom";
 
-export function ImageEmbed({ url, imeta }: { url: string; imeta?: ImetaData }) {
+export function ImageEmbed({ 
+  url, 
+  imeta, 
+  className = "", 
+  noMargin = false 
+}: { 
+  url: string; 
+  imeta?: ImetaData;
+  className?: string;
+  noMargin?: boolean;
+}) {
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const { getOptimizedUrl } = useBlossom();
@@ -23,8 +33,8 @@ export function ImageEmbed({ url, imeta }: { url: string; imeta?: ImetaData }) {
 
   return (
     <div 
-      className="relative rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-900 max-h-[450px] sm:max-h-[550px] border border-gray-200 dark:border-gray-800 w-full mt-3"
-      style={{ aspectRatio }}
+      className={`relative overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full ${!noMargin ? 'rounded-2xl mt-3' : ''} ${className}`}
+      style={{ aspectRatio, maxHeight: noMargin ? 'none' : undefined }}
     >
       {/* Skeleton loading */}
       {!loaded && (
@@ -34,7 +44,7 @@ export function ImageEmbed({ url, imeta }: { url: string; imeta?: ImetaData }) {
       <img
         src={optimizedUrl}
         alt={imeta?.alt || "Post media"}
-        className={`w-full h-auto max-h-[450px] sm:max-h-[550px] object-contain transition-opacity duration-300 block mx-auto ${
+        className={`w-full h-full object-cover transition-opacity duration-300 block mx-auto ${
           loaded ? "opacity-100" : "opacity-0 absolute inset-0"
         }`}
         onLoad={() => setLoaded(true)}

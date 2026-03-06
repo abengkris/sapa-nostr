@@ -7,6 +7,7 @@ import { MentionLink } from "../tokens/MentionLink";
 import { HashtagLink } from "../tokens/HashtagLink";
 import { ImageEmbed } from "../tokens/ImageEmbed";
 import { VideoEmbed } from "../tokens/VideoEmbed";
+import { AudioEmbed } from "../tokens/AudioEmbed";
 import { QuoteEmbed } from "../tokens/QuoteEmbed";
 import { LightningCard } from "../tokens/LightningCard";
 import { CashuCard } from "../tokens/CashuCard";
@@ -98,9 +99,10 @@ export function PostContentRenderer({
 
   const tokens = useMemo(() => tokenize(normalizedContent), [normalizedContent]);
 
-  const { textTokens, mediaTokens, quoteTokens, cardTokens, urlTokens } = useMemo(() => {
+  const { textTokens, mediaTokens, audioTokens, quoteTokens, cardTokens, urlTokens } = useMemo(() => {
     const text: Token[] = [];
     const media: Token[] = [];
+    const audio: Token[] = [];
     const quote: Token[] = [];
     const card: Token[] = [];
     const url: Token[] = [];
@@ -108,6 +110,8 @@ export function PostContentRenderer({
     for (const token of tokens) {
       if (token.type === "image" || token.type === "video") {
         media.push(token);
+      } else if (token.type === "audio") {
+        audio.push(token);
       } else if (token.type === "note_ref" && renderQuotes) {
         quote.push(token);
       } else if (token.type === "lightning" || token.type === "cashu") {
@@ -129,7 +133,7 @@ export function PostContentRenderer({
       text.pop();
     }
 
-    return { textTokens: text, mediaTokens: media, quoteTokens: quote, cardTokens: card, urlTokens: url };
+    return { textTokens: text, mediaTokens: media, audioTokens: audio, quoteTokens: quote, cardTokens: card, urlTokens: url };
   }, [tokens, renderQuotes]);
 
   // NIP-18: Collect quotes from 'q' tags that aren't already in the text
@@ -234,15 +238,49 @@ export function PostContentRenderer({
           )}
 
           {renderMedia && mediaTokens.length > 0 && (
+            <div className="mt-3 w-full">
+              {/* Image Grid Logic for multiple images */}
+              {mediaTokens.filter(t => t.type === 'image').length > 1 ? (
+                <div className={`grid gap-1 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 ${
+                  mediaTokens.filter(t => t.type === 'image').length === 2 ? 'grid-cols-2' : 
+                  mediaTokens.filter(t => t.type === 'image').length === 3 ? 'grid-cols-2 grid-rows-2' : 
+                  'grid-cols-2 grid-rows-2'
+                }`}>
+                  {mediaTokens.filter(t => t.type === 'image').slice(0, 4).map((token, i, arr) => {
+                    const cleanUrl = token.value.replace(/[.,;]$/, "");
+                    const imeta = imetaMap.get(cleanUrl);
+                    
+                    return (
+                      <div 
+                        key={i} 
+                        className={`relative h-full ${arr.length === 3 && i === 0 ? 'row-span-2' : ''}`}
+                      >
+                        <ImageEmbed url={cleanUrl} imeta={imeta} noMargin={true} className="border-0" />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {mediaTokens.map((token, i) => {
+                    const cleanUrl = token.value.replace(/[.,;]$/, "");
+                    const imeta = imetaMap.get(cleanUrl);
+                    return token.type === "image" ? (
+                      <ImageEmbed key={i} url={cleanUrl} imeta={imeta} />
+                    ) : (
+                      <VideoEmbed key={i} url={cleanUrl} />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {renderMedia && audioTokens.length > 0 && (
             <div className="space-y-2 w-full">
-              {mediaTokens.map((token, i) => {
+              {audioTokens.map((token, i) => {
                 const cleanUrl = token.value.replace(/[.,;]$/, "");
-                const imeta = imetaMap.get(cleanUrl);
-                return token.type === "image" ? (
-                  <ImageEmbed key={i} url={cleanUrl} imeta={imeta} />
-                ) : (
-                  <VideoEmbed key={i} url={cleanUrl} />
-                );
+                return <AudioEmbed key={i} url={cleanUrl} />;
               })}
             </div>
           )}
