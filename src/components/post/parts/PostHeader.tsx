@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
 import { 
   Repeat2, 
   MoreHorizontal, 
@@ -20,6 +19,7 @@ import Image from "next/image";
 
 import { UserIdentity } from "@/components/common/UserIdentity";
 import { DropdownMenu } from "@/components/common/DropdownMenu";
+import { formatCompactDate } from "@/lib/utils/date";
 
 interface PostHeaderProps {
   displayName: string;
@@ -68,9 +68,7 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   isPoll,
   tags
 }) => {
-  const formattedTime = createdAt
-    ? formatDistanceToNow(new Date(createdAt * 1000), { addSuffix: true })
-    : "unknown";
+  const formattedTime = formatCompactDate(createdAt);
 
   const menuItems = [
     ...(onPinClick ? [{
