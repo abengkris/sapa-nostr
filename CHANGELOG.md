@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2026-03-06
+
+### Changed
+- **Repost Handling Optimization:** Kind 6/16 reposts now prioritize parsing the full event JSON directly from the `content` field. This significantly improves load times for reposts and reduces relay load.
+
 ## [0.5.0] - 2026-03-06
 
 ### Added

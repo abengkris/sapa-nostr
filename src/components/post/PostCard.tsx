@@ -80,29 +80,35 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   useEffect(() => {
     if (isRepost && isReady && ndk) {
-      // Find what to fetch: e tag (id) or a tag (coordinate)
+      // 1. Priority: Try to parse content as JSON if it contains the full event
+      if (event.content && event.content.trim().startsWith('{')) {
+        try {
+          const raw = JSON.parse(event.content);
+          // Basic validation that it looks like an event
+          if (raw.id && raw.pubkey && raw.content !== undefined) {
+            const ev = new NDKEvent(ndk, raw);
+            setRepostedEvent(ev);
+            setRepostLoading(false);
+            return; // Success, no need to fetch
+          }
+        } catch {
+          // Not valid JSON or partial, proceed to fetch
+        }
+      }
+
+      // 2. Fallback: Fetch from relays if content is missing or invalid
       const eTag = event.tags.find(t => t[0] === 'e');
       const aTag = event.tags.find(t => t[0] === 'a');
-      
       const targetId = eTag?.[1] || aTag?.[1];
 
       if (targetId) {
-        Promise.resolve().then(() => setRepostLoading(true));
+        setRepostLoading(true);
         ndk.fetchEvent(targetId)
           .then(ev => {
             if (ev) setRepostedEvent(ev);
             setRepostLoading(false);
           })
           .catch(() => setRepostLoading(false));
-      } else if (event.content) {
-        // Fallback: try to parse content as JSON if tags are missing
-        try {
-          const raw = JSON.parse(event.content);
-          const ev = new NDKEvent(ndk, raw);
-          Promise.resolve().then(() => setRepostedEvent(ev));
-        } catch {
-          // Not valid JSON
-        }
       }
     }
   }, [isRepost, event, isReady, ndk]);
