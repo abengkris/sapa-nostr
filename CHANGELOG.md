@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.4] - 2026-03-06
+
+### Fixed
+- **Media Discovery Refinement:** Further refined media URL regex to avoid over-matching and correctly identify multiple URLs separated by newlines or spaces.
+- **Smart Media Embedding:** `PostContentRenderer` now automatically upgrades generic URL tokens to media tokens if they have media extensions or associated `imeta` tags, ensuring they are rendered in the visual grid.
+- **Grid Layout Consistency:** Improved the image grid layout with forced aspect ratios and height-filling images for a more uniform and polished appearance when multiple images are present.
+
 ## [0.5.3] - 2026-03-06
 
 ### Fixed

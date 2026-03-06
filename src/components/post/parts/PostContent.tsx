@@ -99,6 +99,11 @@ export function PostContentRenderer({
 
   const tokens = useMemo(() => tokenize(normalizedContent), [normalizedContent]);
 
+  const isMediaUrl = (url: string) => {
+    const path = url.split('?')[0].split('#')[0].toLowerCase();
+    return !!path.match(/\.(jpg|jpeg|png|gif|webp|avif|svg|jfif|mp4|mov|webm|ogg)$/);
+  };
+
   const { textTokens, mediaTokens, audioTokens, quoteTokens, cardTokens, urlTokens } = useMemo(() => {
     const text: Token[] = [];
     const media: Token[] = [];
@@ -117,8 +122,18 @@ export function PostContentRenderer({
       } else if (token.type === "lightning" || token.type === "cashu") {
         card.push(token);
       } else if (token.type === "url") {
-        url.push(token);
-        text.push(token);
+        const cleanUrl = token.value.replace(/[.,;]$/, "");
+        if (isMediaUrl(cleanUrl) || imetaMap.has(cleanUrl)) {
+          const isVideo = cleanUrl.match(/\.(mp4|mov|webm|ogg)$/i) || imetaMap.get(cleanUrl)?.mimeType?.startsWith('video/');
+          media.push({
+            ...token,
+            type: isVideo ? "video" : "image",
+            value: cleanUrl
+          });
+        } else {
+          url.push(token);
+          text.push(token);
+        }
       } else {
         text.push(token);
       }
@@ -134,7 +149,7 @@ export function PostContentRenderer({
     }
 
     return { textTokens: text, mediaTokens: media, audioTokens: audio, quoteTokens: quote, cardTokens: card, urlTokens: url };
-  }, [tokens, renderQuotes]);
+  }, [tokens, renderQuotes, imetaMap]);
 
   // NIP-18: Collect quotes from 'q' tags that aren't already in the text
   const extraQuotes = useMemo(() => {
@@ -242,9 +257,9 @@ export function PostContentRenderer({
               {/* Image Grid Logic for multiple images */}
               {mediaTokens.filter(t => t.type === 'image').length > 1 ? (
                 <div className={`grid gap-1 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 ${
-                  mediaTokens.filter(t => t.type === 'image').length === 2 ? 'grid-cols-2' : 
-                  mediaTokens.filter(t => t.type === 'image').length === 3 ? 'grid-cols-2 grid-rows-2' : 
-                  'grid-cols-2 grid-rows-2'
+                  mediaTokens.filter(t => t.type === 'image').length === 2 ? 'grid-cols-2 aspect-video' : 
+                  mediaTokens.filter(t => t.type === 'image').length === 3 ? 'grid-cols-2 grid-rows-2 aspect-square' : 
+                  'grid-cols-2 grid-rows-2 aspect-square'
                 }`}>
                   {mediaTokens.filter(t => t.type === 'image').slice(0, 4).map((token, i, arr) => {
                     const cleanUrl = token.value.replace(/[.,;]$/, "");
@@ -253,9 +268,9 @@ export function PostContentRenderer({
                     return (
                       <div 
                         key={i} 
-                        className={`relative h-full ${arr.length === 3 && i === 0 ? 'row-span-2' : ''}`}
+                        className={`relative ${arr.length === 3 && i === 0 ? 'row-span-2' : ''}`}
                       >
-                        <ImageEmbed url={cleanUrl} imeta={imeta} noMargin={true} className="border-0" />
+                        <ImageEmbed url={cleanUrl} imeta={imeta} noMargin={true} className="border-0 h-full w-full" />
                       </div>
                     );
                   })}
