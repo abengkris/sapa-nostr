@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import Image from "next/image";
 import Link from "next/link";
 import { Play, FileText, Image as ImageIcon } from "lucide-react";
-import { tokenize } from "@/lib/content/tokenizer";
+import { tokenize, parseImeta } from "@/lib/content/tokenizer";
 import { nip19 } from "nostr-tools";
+import { Blurhash } from "react-blurhash";
 
 interface MediaGridProps {
   posts: NDKEvent[];
@@ -34,37 +35,44 @@ export function MediaGrid({ posts, isLoading }: MediaGridProps) {
 }
 
 function MediaItem({ post }: { post: NDKEvent }) {
+  const [loaded, setLoaded] = useState(false);
   const media = React.useMemo(() => {
-    // 1. Check for NIP-94 (File Metadata) or Kind 20
+    // 1. Check imeta tags
+    for (const tag of post.tags) {
+      const meta = parseImeta(tag);
+      if (meta && meta.url) {
+        return { 
+          url: meta.url, 
+          type: meta.mimeType?.startsWith('video/') ? 'video' : 'image',
+          blurhash: meta.blurhash
+        };
+      }
+    }
+
+    // 2. Check for NIP-94 (File Metadata) or Kind 20
     if (post.kind === 1063 || post.kind === 20) {
       const url = post.tags.find(t => t[0] === 'url')?.[1];
       const type = post.tags.find(t => t[0] === 'm')?.[1] || "";
       if (url) {
         return { 
           url, 
-          type: type.startsWith('video') ? 'video' : (type.startsWith('audio') ? 'audio' : 'image') 
+          type: type.startsWith('video') ? 'video' : (type.startsWith('audio') ? 'audio' : 'image'),
+          blurhash: post.tags.find(t => t[0] === 'blurhash')?.[1]
         };
       }
     }
 
-    // 2. Check kind 30023 image tag
+    // 3. Check kind 30023 image tag
     if (post.kind === 30023) {
       const image = post.tags.find(t => t[0] === 'image')?.[1];
-      if (image) return { url: image, type: 'image' };
+      if (image) return { url: image, type: 'image', blurhash: undefined };
     }
 
-    // 3. Tokenize content for media
+    // 4. Tokenize content for media
     const tokens = tokenize(post.content);
     const firstMedia = tokens.find(t => t.type === 'image' || t.type === 'video');
     if (firstMedia) {
-      return { url: firstMedia.value, type: firstMedia.type };
-    }
-
-    // 4. Check imeta tags
-    const imeta = post.tags.find(t => t[0] === 'imeta');
-    if (imeta) {
-      const urlPart = imeta.find(p => p.startsWith('url '));
-      if (urlPart) return { url: urlPart.split(' ')[1], type: 'image' };
+      return { url: firstMedia.value, type: firstMedia.type, blurhash: undefined };
     }
 
     return null;
@@ -85,6 +93,20 @@ function MediaItem({ post }: { post: NDKEvent }) {
       href={href}
       className="group relative aspect-square bg-gray-100 dark:bg-gray-900 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800 transition-all hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 dark:hover:ring-offset-black"
     >
+      {/* Placeholder: Blurhash */}
+      {!loaded && media.blurhash && (
+        <div className="absolute inset-0 z-0">
+          <Blurhash
+            hash={media.blurhash}
+            width="100%"
+            height="100%"
+            resolutionX={32}
+            resolutionY={32}
+            punch={1}
+          />
+        </div>
+      )}
+
       {media.type === 'video' ? (
         <div className="w-full h-full relative">
           <video src={media.url} className="w-full h-full object-cover" />
@@ -97,7 +119,8 @@ function MediaItem({ post }: { post: NDKEvent }) {
           src={media.url} 
           alt="" 
           fill 
-          className="object-cover transition-transform group-hover:scale-105"
+          className={`object-cover transition-all duration-500 group-hover:scale-105 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setLoaded(true)}
           unoptimized 
         />
       )}

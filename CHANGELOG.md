@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-03-06
+
+### Added
+- **Blurhash Support:** Implemented high-quality image placeholders using Blurhash. Images in posts and the profile media grid now show a smooth, color-matching blur while loading instead of a generic skeleton.
+- **Enhanced Media Discovery in Grid:** Improved `MediaGrid` to prioritize `imeta` tags, ensuring better extraction of blurhash strings and more accurate media types.
+
 ## [0.5.6] - 2026-03-06
 
 ### Fixed

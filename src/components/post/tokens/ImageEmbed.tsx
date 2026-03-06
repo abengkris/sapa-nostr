@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ImetaData } from "@/lib/content/tokenizer";
+import { Blurhash } from "react-blurhash";
 
 export function ImageEmbed({ 
   url, 
@@ -45,15 +46,28 @@ export function ImageEmbed({
       className={`relative overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full ${!noMargin ? 'rounded-2xl mt-3' : ''} ${className}`}
       style={{ aspectRatio, minHeight: !loaded ? '200px' : 'auto' }}
     >
-      {/* Skeleton loading */}
+      {/* Placeholder: Blurhash or Skeleton */}
       {!loaded && (
-        <div className="absolute inset-0 w-full h-full animate-pulse bg-gray-200 dark:bg-gray-800" />
+        <div className="absolute inset-0 w-full h-full">
+          {imeta?.blurhash ? (
+            <Blurhash
+              hash={imeta.blurhash}
+              width="100%"
+              height="100%"
+              resolutionX={32}
+              resolutionY={32}
+              punch={1}
+            />
+          ) : (
+            <div className="w-full h-full animate-pulse bg-gray-200 dark:bg-gray-800" />
+          )}
+        </div>
       )}
 
       <img
         src={displayUrl}
         alt={imeta?.alt || "Post media"}
-        className={`w-full h-auto max-h-[70vh] object-contain transition-opacity duration-300 block mx-auto cursor-pointer ${
+        className={`w-full h-auto max-h-[70vh] object-contain transition-opacity duration-500 block mx-auto cursor-pointer ${
           loaded ? "opacity-100" : "opacity-0"
         }`}
         onLoad={() => setLoaded(true)}

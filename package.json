@@ -1,6 +1,6 @@
 {
   "name": "tellit",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -17,12 +17,14 @@
     "@nostr-dev-kit/sessions": "^1.0.0",
     "@nostr-dev-kit/wot": "^1.0.0",
     "@tailwindcss/typography": "^0.5.19",
+    "blurhash": "^2.0.5",
     "date-fns": "^4.1.0",
     "dexie": "^4.3.0",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "qrcode.react": "^4.2.0",
     "react": "19.2.3",
+    "react-blurhash": "^0.3.0",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.1",
