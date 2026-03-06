@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const affiliationCache: Record<string, string> = {};
+const affiliationCache: Record<string, string | null> = {};
 
 export function useAffiliation(nip05: string | undefined) {
   const [affiliationPubkey, setAffiliationPubkey] = useState<string | null>(null);
@@ -14,16 +14,19 @@ export function useAffiliation(nip05: string | undefined) {
     }
 
     const [name, domain] = nip05.split('@');
+    const domainPart = domain.split('.')[0];
     
-    // If the name is already '_', it's the root identity, no need to show affiliation with itself
-    if (name === '_') {
+    // If the name is already '_' or matches the domain name (e.g. primal@primal.net), 
+    // it's the root identity, no need to show affiliation with itself
+    if (name === '_' || name === domainPart) {
       if (affiliationPubkey !== null) Promise.resolve().then(() => setAffiliationPubkey(null));
       return;
     }
 
-    if (affiliationCache[domain]) {
-      if (affiliationPubkey !== affiliationCache[domain]) {
-        Promise.resolve().then(() => setAffiliationPubkey(affiliationCache[domain]));
+    if (domain in affiliationCache) {
+      const cached = affiliationCache[domain];
+      if (affiliationPubkey !== cached) {
+        Promise.resolve().then(() => setAffiliationPubkey(cached));
       }
       return;
     }
@@ -32,21 +35,44 @@ export function useAffiliation(nip05: string | undefined) {
 
     const fetchAffiliation = async () => {
       try {
-        const identifier = `_@${domain}`;
-        const res = await fetch(`/api/nip05?identifier=${encodeURIComponent(identifier)}`);
+        let rootPubkey: string | undefined;
+
+        // 1. Try _@domain first (Standard NIP-05 root)
+        try {
+          const res = await fetch(`/api/nip05?identifier=${encodeURIComponent(`_@${domain}`)}`);
+          if (res.ok) {
+            const data = await res.json();
+            rootPubkey = data.names?.['_'];
+          }
+        } catch (e) {
+          // ignore error for first try
+        }
         
-        if (!isMounted || !res.ok) return;
+        if (!isMounted) return;
 
-        const data = await res.json();
-        const rootPubkey = data.names?.['_'];
+        // 2. Fallback to domainPart@domain (e.g. primal@primal.net)
+        if (!rootPubkey && domainPart) {
+          try {
+            const resFallback = await fetch(`/api/nip05?identifier=${encodeURIComponent(`${domainPart}@${domain}`)}`);
+            if (resFallback.ok) {
+              const dataFallback = await resFallback.json();
+              rootPubkey = dataFallback.names?.[domainPart];
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
 
-        if (rootPubkey && isMounted) {
-          affiliationCache[domain] = rootPubkey;
-          setAffiliationPubkey(rootPubkey);
+        if (isMounted) {
+          const result = rootPubkey || null;
+          affiliationCache[domain] = result;
+          setAffiliationPubkey(result);
         }
       } catch (err) {
-        // Silent error for affiliation check
-        /* eslint-disable-line @typescript-eslint/no-unused-vars */
+        if (isMounted) {
+          affiliationCache[domain] = null;
+          setAffiliationPubkey(null);
+        }
       }
     };
 

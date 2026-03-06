@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2026-03-06
+
+### Changed
+- **Affiliation Discovery:** Enhanced the organizational affiliation tracking to support a fallback to `domain@domain.tld` if the standard root identifier (`_@domain.tld`) is not found. This provides better compatibility with organizations that use their domain name as their primary NIP-05.
+- **Affiliation Logic:** Improved `useAffiliation` hook with internal failure caching (caching `null`) to prevent redundant network requests for domains without identifiable organizational root identities.
+- **Root Identity Recognition:** Users whose NIP-05 already matches the organization's name (e.g., `primal@primal.net`) are now correctly recognized as root identities, suppressing redundant affiliation badges on their own profiles.
+
 ## [0.3.4] - 2026-03-05
 
 ### Changed
