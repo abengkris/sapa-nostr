@@ -17,6 +17,7 @@ import { AsyncMediaEmbed } from "../tokens/AsyncMediaEmbed";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { shortenPubkey, toNpub } from "@/lib/utils/nip19";
 import { useProfile } from "@/hooks/useProfile";
+import { Play } from "lucide-react";
 
 interface PostContentRendererProps {
   content: string;
@@ -253,16 +254,52 @@ export function PostContentRenderer({
           )}
 
           {renderMedia && mediaTokens.length > 0 && (
-            <div className="space-y-2 w-full">
-              {mediaTokens.map((token, i) => {
-                const cleanUrl = token.value.replace(/[.,;]$/, "");
-                const imeta = imetaMap.get(cleanUrl);
-                return token.type === "image" ? (
-                  <ImageEmbed key={i} url={cleanUrl} imeta={imeta} />
-                ) : (
-                  <VideoEmbed key={i} url={cleanUrl} />
-                );
-              })}
+            <div className="w-full mt-3">
+              {mediaTokens.length === 1 ? (
+                mediaTokens.map((token, i) => {
+                  const cleanUrl = token.value.replace(/[.,;]$/, "");
+                  const imeta = imetaMap.get(cleanUrl);
+                  return token.type === "image" ? (
+                    <ImageEmbed key={i} url={cleanUrl} imeta={imeta} noMargin />
+                  ) : (
+                    <VideoEmbed key={i} url={cleanUrl} />
+                  );
+                })
+              ) : (
+                <div className={`grid gap-1 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 ${
+                  mediaTokens.length === 2 ? "grid-cols-2 aspect-[2/1]" : 
+                  mediaTokens.length === 3 ? "grid-cols-2 grid-rows-2 aspect-[3/2]" : 
+                  "grid-cols-2 grid-rows-2 aspect-square"
+                }`}>
+                  {mediaTokens.slice(0, 4).map((token, i) => {
+                    const cleanUrl = token.value.replace(/[.,;]$/, "");
+                    const imeta = imetaMap.get(cleanUrl);
+                    const isLarge = mediaTokens.length === 3 && i === 0;
+                    
+                    return (
+                      <div key={i} className={`relative overflow-hidden ${isLarge ? "row-span-2" : ""}`}>
+                        {token.type === "image" ? (
+                          <ImageEmbed 
+                            url={cleanUrl} 
+                            imeta={imeta} 
+                            noMargin 
+                            className="w-full h-full"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-black flex items-center justify-center">
+                            <video src={cleanUrl} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                                <Play fill="currentColor" size={20} />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

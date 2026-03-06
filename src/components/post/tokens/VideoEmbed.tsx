@@ -114,7 +114,7 @@ export function VideoEmbed({ url }: VideoEmbedProps) {
   return (
     <div 
       ref={containerRef}
-      className="group relative rounded-2xl overflow-hidden bg-black max-h-[450px] sm:max-h-[550px] border border-gray-200 dark:border-gray-800 w-full mt-3 flex items-center justify-center cursor-pointer"
+      className="group relative rounded-2xl overflow-hidden bg-black max-h-[80vh] border border-gray-200 dark:border-gray-800 w-full mt-3 flex items-center justify-center cursor-pointer"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       onClick={togglePlay}
@@ -125,7 +125,7 @@ export function VideoEmbed({ url }: VideoEmbedProps) {
         muted={isMuted}
         playsInline
         loop
-        className="max-w-full max-h-[450px] sm:max-h-[550px] block"
+        className="max-w-full max-h-[80vh] object-contain block"
         preload="metadata"
       />
 

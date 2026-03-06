@@ -67,7 +67,7 @@ export function ImageEmbed({
       <img
         src={displayUrl}
         alt={imeta?.alt || "Post media"}
-        className={`w-full h-auto max-h-[70vh] object-cover transition-opacity duration-500 block mx-auto cursor-pointer ${
+        className={`w-full h-auto max-h-[80vh] object-contain transition-opacity duration-500 block mx-auto cursor-pointer ${
           loaded ? "opacity-100" : "opacity-0"
         }`}
         onLoad={() => setLoaded(true)}
