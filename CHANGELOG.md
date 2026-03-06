@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.3] - 2026-03-06
+
+### Fixed
+- **Media Discovery:** Fixed a greedy regex bug in the tokenizer that caused media URLs to be missed when multiple URLs were placed on consecutive lines.
+- **Media Support:** Added support for `.jfif` image extension.
+- **Async Media Fallback:** Improved `AsyncMediaEmbed` to fallback to extension-based identification when `HEAD` requests fail due to CORS or network issues.
+
 ## [0.5.2] - 2026-03-06
 
 ### Changed

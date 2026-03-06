@@ -47,9 +47,9 @@ const PATTERNS: { re: RegExp; type: TokenType }[] = [
   { re: /\bcashu[AB][a-zA-Z0-9+/=]{20,}\b/g, type: "cashu" },
 
   // 4. Media URLs (SEBELUM URL biasa)
-  { re: /https?:\/\/\S+\.(?:jpg|jpeg|png|gif|webp|avif|svg)(?:\?\S*)?/gi, type: "image" },
-  { re: /https?:\/\/\S+\.(?:mp4|mov|webm|ogg)(?:\?\S*)?/gi,          type: "video" },
-  { re: /https?:\/\/\S+\.(?:mp3|wav|aac|flac|m4a)(?:\?\S*)?/gi,      type: "audio" },
+  { re: /https?:\/\/\S+?\.(?:jpg|jpeg|png|gif|webp|avif|svg|jfif)(?:\?\S*)?/gi, type: "image" },
+  { re: /https?:\/\/\S+?\.(?:mp4|mov|webm|ogg)(?:\?\S*)?/gi,          type: "video" },
+  { re: /https?:\/\/\S+?\.(?:mp3|wav|aac|flac|m4a)(?:\?\S*)?/gi,      type: "audio" },
 
   // 5. URL biasa
   { re: /https?:\/\/[^\s\])"'<>]+/g,  type: "url"        },

@@ -15,6 +15,14 @@ export function AsyncMediaEmbed({ url, imeta, pubkey }: { url: string; imeta?: I
   useEffect(() => {
     let isMounted = true;
 
+    const extensionMatch = (u: string) => {
+      const path = u.split('?')[0].split('#')[0].toLowerCase();
+      if (path.match(/\.(jpg|jpeg|png|gif|webp|avif|svg|jfif)$/)) return 'image';
+      if (path.match(/\.(mp4|mov|webm|ogg)$/)) return 'video';
+      if (path.match(/\.(mp3|wav|aac|flac|m4a)$/)) return 'audio';
+      return null;
+    };
+
     const resolveAndCheck = async () => {
       let currentUrl = url;
       
@@ -38,6 +46,13 @@ export function AsyncMediaEmbed({ url, imeta, pubkey }: { url: string; imeta?: I
       }
       if (imeta?.mimeType?.startsWith('audio/')) {
         if (isMounted) setType('audio');
+        return;
+      }
+
+      // Try extension match first (fast, no CORS issues)
+      const extType = extensionMatch(currentUrl);
+      if (extType) {
+        if (isMounted) setType(extType);
         return;
       }
 
