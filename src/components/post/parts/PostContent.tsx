@@ -16,6 +16,7 @@ import { UrlPreview } from "../tokens/UrlPreview";
 import { AsyncMediaEmbed } from "../tokens/AsyncMediaEmbed";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { shortenPubkey, toNpub } from "@/lib/utils/nip19";
+import { nip19 } from "nostr-tools";
 import { useProfile } from "@/hooks/useProfile";
 import { Play } from "lucide-react";
 
@@ -66,7 +67,32 @@ export function PostContentRenderer({
     const eTag = event.tags.find(t => t[0] === 'e');
     const aTag = event.tags.find(t => t[0] === 'a');
     const rTag = event.tags.find(t => t[0] === 'r');
-    return { id: eTag?.[1] || aTag?.[1], url: rTag?.[1] };
+    
+    if (aTag?.[1]) {
+      const parts = aTag[1].split(':');
+      if (parts.length >= 3) {
+        const kind = parseInt(parts[0]);
+        const pubkey = parts[1];
+        const identifier = parts.slice(2).join(':');
+        
+        try {
+          const naddr = nip19.naddrEncode({
+            kind,
+            pubkey,
+            identifier
+          });
+          return { id: naddr, type: kind === 30023 ? 'article' : 'event' as const };
+        } catch {
+          return { id: aTag[1], type: 'event' as const };
+        }
+      }
+      return { id: aTag[1], type: 'event' as const };
+    }
+    
+    if (eTag?.[1]) return { id: eTag[1], type: 'event' as const };
+    if (rTag?.[1]) return { url: rTag[1], type: 'url' as const };
+    
+    return null;
   }, [isHighlight, event.tags]);
 
   const nudeDetections = useMemo(() => {
@@ -274,7 +300,14 @@ export function PostContentRenderer({
               {highlightSource && (highlightSource.id || highlightSource.url) && (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter shrink-0">Source:</span>
-                  {highlightSource.id ? (
+                  {highlightSource.type === 'article' ? (
+                    <Link 
+                      href={`/article/${highlightSource.id}`}
+                      className="text-[10px] font-mono text-blue-500 hover:underline truncate max-w-[200px]"
+                    >
+                      {highlightSource.id}
+                    </Link>
+                  ) : highlightSource.id ? (
                     <Link 
                       href={`/post/${highlightSource.id}`}
                       className="text-[10px] font-mono text-blue-500 hover:underline truncate max-w-[200px]"
