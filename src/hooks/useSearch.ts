@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { NDKEvent, NDKFilter, NDKUser } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKFilter, NDKUser, NDKRelaySet } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
-import { decodeNip19 } from "@/lib/utils/nip19";
+
+const SEARCH_RELAYS = ["wss://relay.nostr.band", "wss://search.nos.today", "wss://nos.lol"];
 
 export function useSearch(query: string) {
   const { ndk, isReady } = useNDK();
@@ -28,6 +29,8 @@ export function useSearch(query: string) {
     setLoading(true);
 
     try {
+      const searchRelaySet = NDKRelaySet.fromRelayUrls(SEARCH_RELAYS, ndk);
+
       if (!isLoadMore) {
         setDirectResult({});
         
@@ -39,22 +42,12 @@ export function useSearch(query: string) {
         const isNip05 = query.includes("@") || query.includes(".");
 
         if (isNip19 || isHex || isNip05) {
-          // Extract relay hints if query is NIP-19
-          let relayHints: string[] | undefined = undefined;
-          try {
-            if (query.startsWith("nprofile") || query.startsWith("nevent") || query.startsWith("naddr")) {
-              const decoded = decodeNip19(query);
-              relayHints = decoded.relays;
-            }
-          } catch (e) {}
-
           // Try to fetch as a user first if it looks like a user ID or NIP-05
           if (query.startsWith("npub") || query.startsWith("nprofile") || isNip05 || (isHex && !query.startsWith("note"))) {
             try {
               const user = await ndk.fetchUser(query);
               if (user) {
-                // If we have relay hints, we should try to fetch profile from them
-                await user.fetchProfile(relayHints ? { relayUrls: relayHints } : undefined);
+                await user.fetchProfile();
                 setDirectResult({ user });
               }
             } catch (e) {
@@ -65,7 +58,7 @@ export function useSearch(query: string) {
           // If not a user result, or also check if it's an event
           if (!directResult.user && (query.startsWith("note") || query.startsWith("nevent") || query.startsWith("naddr") || isHex)) {
             try {
-              const event = await ndk.fetchEvent(query, relayHints ? { relayUrls: relayHints } : undefined);
+              const event = await ndk.fetchEvent(query);
               if (event) setDirectResult({ event });
             } catch (e) {
               console.warn("Failed to fetch event direct result", e);
@@ -77,21 +70,20 @@ export function useSearch(query: string) {
         const profileFilter: NDKFilter = {
           kinds: [0],
           search: query,
-          limit: 10,
+          limit: 15,
         };
 
-        const profileEvents = await ndk.fetchEvents(profileFilter);
+        const profileEvents = await ndk.fetchEvents(profileFilter, undefined, searchRelaySet);
         const foundProfiles = Array.from(profileEvents).map((event) => {
           const user = ndk.getUser({ pubkey: event.pubkey });
           try {
             user.profile = JSON.parse(event.content);
           } catch (e) {
-            console.error("Failed to parse kind:0 content", e);
+            // content might not be valid JSON
           }
           return user;
         });
         
-        // Add direct result to profiles if it's a user and not already there
         if (directResult.user) {
           const exists = foundProfiles.some(p => p.pubkey === directResult.user?.pubkey);
           if (!exists) foundProfiles.unshift(directResult.user);
@@ -111,7 +103,7 @@ export function useSearch(query: string) {
           limit: 20,
         };
       } else {
-        // NIP-50 Full-text search
+        // NIP-50 Full-text search using dedicated search relays
         postFilter = {
           kinds: [1, 30023],
           search: query,
@@ -123,13 +115,12 @@ export function useSearch(query: string) {
         postFilter.until = oldestTimestampRef.current - 1;
       }
 
-      const postEvents = await ndk.fetchEvents(postFilter);
+      const postEvents = await ndk.fetchEvents(postFilter, undefined, searchRelaySet);
       const newPostsList = Array.from(postEvents).sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
       
       setPosts((prev) => {
         let combined = isLoadMore ? [...prev, ...newPostsList] : newPostsList;
         
-        // Add direct result event if it's a post
         if (!isLoadMore && directResult.event) {
           const exists = combined.some(p => p.id === directResult.event?.id);
           if (!exists) combined = [directResult.event, ...combined];
@@ -144,11 +135,7 @@ export function useSearch(query: string) {
         return unique;
       });
 
-      if (postEvents.size < 20) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+      setHasMore(postEvents.size >= 20);
     } catch (err) {
       console.error("Search error:", err);
     } finally {
@@ -159,7 +146,8 @@ export function useSearch(query: string) {
   useEffect(() => {
     setHasMore(true);
     oldestTimestampRef.current = undefined;
-    performSearch();
+    const timeout = setTimeout(() => performSearch(), 500); // Debounce
+    return () => clearTimeout(timeout);
   }, [query, performSearch]);
 
   const loadMore = () => {

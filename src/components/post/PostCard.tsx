@@ -88,8 +88,10 @@ export const PostCard: React.FC<PostCardProps> = ({
           // Basic validation that it looks like an event
           if (raw.id && raw.pubkey && raw.content !== undefined) {
             const ev = new NDKEvent(ndk, raw);
-            setRepostedEvent(ev);
-            setRepostLoading(false);
+            Promise.resolve().then(() => {
+              setRepostedEvent(ev);
+              setRepostLoading(false);
+            });
             return; // Success, no need to fetch
           }
         } catch {
@@ -103,7 +105,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       const targetId = eTag?.[1] || aTag?.[1];
 
       if (targetId) {
-        setRepostLoading(true);
+        Promise.resolve().then(() => setRepostLoading(true));
         ndk.fetchEvent(targetId)
           .then(ev => {
             if (ev) setRepostedEvent(ev);

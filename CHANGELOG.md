@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.6] - 2026-03-07
+
+### Improved
+- **Optimized Search:** Integrated dedicated search relays (`nostr.band`, `nos.today`) and added debouncing to the search hook for more reliable and efficient results.
+- **PWA Enhancements:** Updated manifest with theme colors, standalone display mode, and app shortcuts for a better native experience.
+- **Render Stability:** Completed refactoring of `PostCard` and `useSearch` to eliminate remaining cascading render warnings.
+
 ## [0.6.5] - 2026-03-07
 
 ### Performance Optimizations
