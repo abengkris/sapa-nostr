@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
@@ -14,11 +14,7 @@ import {
   Smile, 
   X, 
   Loader2, 
-  Send, 
-  Zap,
-  Globe,
-  Trash2,
-  Paperclip
+  Zap
 } from "lucide-react";
 import { Avatar } from "../common/Avatar";
 
@@ -51,7 +47,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   const [isPosting, setIsPosting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [mediaFiles, setMediaFiles] = useState<{ url: string; type: string; imeta?: NDKTag[] }[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<{ url: string; type: string; imeta?: NDKTag }[]>([]);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,16 +126,17 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       for (const file of files) {
         const result = await uploadFile(file);
         if (result && result.url) {
+          const url = result.url;
           setMediaFiles(prev => [...prev, { 
-            url: result.url, 
+            url, 
             type: file.type,
-            imeta: result.sha256 ? ["imeta", `url ${result.url}`, `m ${file.type}`, `x ${result.sha256}`] : undefined
+            imeta: result.sha256 ? ["imeta", `url ${url}`, `m ${file.type}`, `x ${result.sha256}`] as NDKTag : undefined
           }]);
         }
       }
       addToast("Media uploaded!", "success");
     } catch (err) {
-      console.error(err);
+      console.error("Failed to upload media:", err);
       addToast("Failed to upload media.", "error");
     } finally {
       setIsUploading(false);
@@ -227,7 +224,9 @@ export const PostComposer: React.FC<PostComposerProps> = ({
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                className={`p-2 rounded-full transition-colors ${
+                  showEmojiPicker ? "bg-blue-500 text-white" : "text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                }`}
                 title="Add emoji"
               >
                 <Smile size={20} />
