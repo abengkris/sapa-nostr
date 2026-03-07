@@ -27,12 +27,12 @@ export const Avatar: React.FC<AvatarProps> = ({ pubkey, src, size = 40, classNam
 
   useEffect(() => {
     if (!src) {
-      setAvatarUrl(`https://robohash.org/${pubkey}?set=set1`);
+      Promise.resolve().then(() => setAvatarUrl(`https://robohash.org/${pubkey}?set=set1`));
       return;
     }
     
     if (src.startsWith('data:')) {
-      setAvatarUrl(src);
+      Promise.resolve().then(() => setAvatarUrl(src));
       return;
     }
 

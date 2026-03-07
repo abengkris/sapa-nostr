@@ -21,7 +21,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
-      setPermissionStatus(Notification.permission);
+      Promise.resolve().then(() => setPermissionStatus(Notification.permission));
     }
   }, []);
 

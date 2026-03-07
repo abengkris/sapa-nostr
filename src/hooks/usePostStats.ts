@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { NDKEvent, NDKFilter, NDKSubscription } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKFilter } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
 
@@ -16,40 +16,40 @@ export interface PostStats {
   userReposted: boolean;
 }
 
+const INITIAL_STATS: PostStats = {
+  likes: 0,
+  reposts: 0,
+  comments: 0,
+  quotes: 0,
+  bookmarks: 0,
+  totalSats: 0,
+  userLiked: false,
+  userReposted: false,
+};
+
 /**
  * Hook to fetch and aggregate all statistics for a post.
  */
 export function usePostStats(eventId?: string) {
   const { ndk, isReady } = useNDK();
   const { publicKey } = useAuthStore();
-  const [stats, setStats] = useState<PostStats>({
-    likes: 0,
-    reposts: 0,
-    comments: 0,
-    quotes: 0,
-    bookmarks: 0,
-    totalSats: 0,
-    userLiked: false,
-    userReposted: false,
-  });
+  
+  // Initialize with INITIAL_STATS
+  const [stats, setStats] = useState<PostStats>(INITIAL_STATS);
 
   const seenEvents = useRef<Set<string>>(new Set());
+  const lastEventId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!ndk || !isReady || !eventId) return;
 
-    // Reset stats when eventId changes
-    setStats({
-      likes: 0,
-      reposts: 0,
-      comments: 0,
-      quotes: 0,
-      bookmarks: 0,
-      totalSats: 0,
-      userLiked: false,
-      userReposted: false,
-    });
-    seenEvents.current.clear();
+    // Manual reset if eventId changed since last effect run
+    // This avoids one extra render compared to always calling it at the start of effect
+    if (lastEventId.current !== eventId) {
+      Promise.resolve().then(() => setStats(INITIAL_STATS));
+      seenEvents.current.clear();
+      lastEventId.current = eventId;
+    }
 
     const filter: NDKFilter = {
       kinds: [1, 6, 7, 16, 1111, 9735, 10003],
@@ -113,7 +113,7 @@ export function usePostStats(eventId?: string) {
     const sub = ndk.subscribe(filter, { 
       closeOnEose: false,
       groupable: true,
-      groupableDelay: 250 // Wait a bit longer to batch more cards together
+      groupableDelay: 250
     });
 
     sub.on("event", handleEvent);

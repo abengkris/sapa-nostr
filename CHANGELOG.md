@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.5] - 2026-03-07
+
+### Performance Optimizations
+- **Optimized Post Stats:** Refactored `usePostStats` to avoid unnecessary resets and cascading renders when switching between posts.
+- **Improved React Hook Stability:** Fixed multiple `react-hooks/set-state-in-effect` warnings in `Avatar`, `useMessages`, and `usePostStats` to improve overall app responsiveness and reduce redundant render cycles.
+
+### Improved
+- **Standardized Messaging Logic:** Introduced a shared `mapNDKMessage` utility to ensure consistent message and sender/recipient detection between `useMessages` and `useChat`.
+- **Refined UI Store:** Improved persistence and state management for UI-related settings.
+
 ## [0.6.4] - 2026-03-07
 
 ### Performance Optimizations
