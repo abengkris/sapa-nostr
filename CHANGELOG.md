@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.8] - 2026-03-07
+
+### Added
+- **Rich DM Messaging:** Enabled media (image/video) rendering in direct messages using a new `MessageBubbleContent` component.
+- **DM Media Uploads:** Integrated Blossom media uploads directly into the chat interface.
+- **Composition Drafts:** Implemented a new `useDrafts` hook to automatically save and restore unsent text in both the main post composer and DM chats.
+- **DM Emoji Picker:** Added custom emoji support to the direct messaging interface.
+
+### Fixed
+- **One-tap Zap Support:** Correctly passed author information to post actions to enable seamless instant zapping.
+
 ## [0.6.7] - 2026-03-07
 
 ### Added
