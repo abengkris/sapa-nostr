@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.4] - 2026-03-07
+
+### Fixed
+- **Avatar Rendering:** Resolved an issue where avatar images were appearing broken due to aggressive optimization and strict metadata field requirements.
+- **Metadata Compatibility:** Improved support for older Kind 0 profile events by correctly handling both `picture` and `image` fields.
+- **Improved Avatar Fallback:** Switched to standard `<img>` tags with robust `onError` handlers for more reliable profile image loading.
+
 ## [0.7.3] - 2026-03-07
 
 ### Added

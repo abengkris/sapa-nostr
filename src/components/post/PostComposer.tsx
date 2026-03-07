@@ -205,7 +205,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   return (
     <div className={`p-4 ${replyTo ? "" : "border-b border-gray-100 dark:border-gray-800"}`}>
       <div className="flex gap-3">
-        <Avatar pubkey={user?.pubkey || ""} src={profile?.picture} size={48} />
+        <Avatar pubkey={user?.pubkey || ""} src={profile?.picture || (profile as { image?: string })?.image} size={48} />
         
         <div className="flex-1 min-w-0">
           <textarea

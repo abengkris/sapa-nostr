@@ -7,10 +7,10 @@ import { useProfile } from "@/hooks/useProfile";
 import { useUIStore } from "@/store/ui";
 import { Loader2, MessageSquare, Plus } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { shortenPubkey, toNpub } from "@/lib/utils/nip19";
 import { NewMessageModal } from "@/components/messages/NewMessageModal";
+import { Avatar } from "@/components/common/Avatar";
 
 export default function MessagesPage() {
   const { conversations, loading } = useMessages();
@@ -77,7 +77,6 @@ export default function MessagesPage() {
 const ConversationItem = ({ conversation }: { conversation: Conversation }) => {
   const { profile } = useProfile(conversation.pubkey);
   const displayName = profile?.name || profile?.displayName || shortenPubkey(conversation.pubkey);
-  const avatar = profile?.picture || `https://robohash.org/${conversation.pubkey}?set=set1`;
   const npub = toNpub(conversation.pubkey);
 
   return (
@@ -86,13 +85,11 @@ const ConversationItem = ({ conversation }: { conversation: Conversation }) => {
       className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors group"
     >
       <div className="relative shrink-0">
-        <Image
-          src={avatar}
-          alt={displayName}
-          width={56}
-          height={56}
-          className="w-14 h-14 rounded-full object-cover bg-gray-200 border border-gray-100 dark:border-gray-800"
-          unoptimized
+        <Avatar 
+          pubkey={conversation.pubkey} 
+          src={profile?.picture || (profile as { image?: string })?.image} 
+          size={56} 
+          className="bg-gray-200 border border-gray-100 dark:border-gray-800"
         />
         {conversation.unreadCount > 0 && (
           <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-white dark:border-black">

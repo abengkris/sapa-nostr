@@ -190,7 +190,7 @@ export function ProfileContent({ npubParam }: { npubParam: string }) {
           <div className="p-1 bg-white dark:bg-black rounded-full ring-4 ring-white dark:ring-black shrink-0">
             <Avatar 
               pubkey={hexPubkey} 
-              src={profile?.picture} 
+              src={profile?.picture || (profile as { image?: string })?.image} 
               size={128} 
               className="border-none shadow-none" 
             />

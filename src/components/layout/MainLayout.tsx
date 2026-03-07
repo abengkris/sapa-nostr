@@ -31,7 +31,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
           <button onClick={() => setIsDrawerOpen(true)} className="outline-none relative">
             <Avatar 
               pubkey={user?.pubkey || ""} 
-              src={profile?.picture} 
+              src={profile?.picture || (profile as { image?: string })?.image} 
               size={32} 
               className="border border-gray-100 dark:border-gray-900"
             />

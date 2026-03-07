@@ -72,8 +72,19 @@ export function useBlossom() {
 
   const getOptimizedUrl = useCallback(
     async (url: string, options: { width?: number; height?: number; format?: string; quality?: number }) => {
-      if (!blossom) return url;
+      if (!blossom || !url) return url;
+      
       try {
+        // Optimization: Only attempt to optimize if it's a known blossom server or matches pattern
+        // BUD-05 optimization is specific to Blossom servers. 
+        // Applying it to generic URLs (like S3 or legacy CDNs) will likely break them.
+        const isBlossom = url.includes('blossom') || 
+                         url.includes('cdn.nostr.build') || 
+                         url.includes('nos.lol') ||
+                         url.includes('/media/');
+
+        if (!isBlossom) return url;
+
         // NDK-Blossom provides an optimized URL generator based on BUD-05
         return await blossom.getOptimizedUrl(url, options);
       } catch (err) {

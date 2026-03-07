@@ -73,7 +73,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose, onO
             <Link href={`/${user?.npub}`} onClick={onClose} className="block mb-4">
               <Avatar 
                 pubkey={user?.pubkey || ""} 
-                src={profile?.picture} 
+                src={profile?.picture || (profile as { image?: string })?.image} 
                 size={64} 
                 className="border-2 border-white dark:border-black shadow-sm"
               />
