@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
+import { createPoll, PollOption } from "@/lib/actions/poll";
 import { useUIStore } from "@/store/ui";
 import { useBlossom } from "@/hooks/useBlossom";
 import { useEmojis } from "@/hooks/useEmojis";
@@ -14,9 +15,10 @@ import {
   Smile, 
   X, 
   Loader2, 
-  Zap
+  BarChart2
 } from "lucide-react";
 import { Avatar } from "../common/Avatar";
+import { PollEditor } from "./PollEditor";
 
 interface PostComposerProps {
   replyTo?: NDKEvent;
@@ -47,6 +49,11 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   const [isPosting, setIsPosting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showPollEditor, setShowPollEditor] = useState(false);
+  const [pollOptions, setPollOptions] = useState<PollOption[]>([
+    { id: "0", label: "" },
+    { id: "1", label: "" }
+  ]);
   const [mediaFiles, setMediaFiles] = useState<{ url: string; type: string; imeta?: NDKTag }[]>([]);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -73,6 +80,15 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       return;
     }
 
+    // Validate poll if enabled
+    if (showPollEditor) {
+      const validOptions = pollOptions.filter(o => o.label.trim().length > 0);
+      if (validOptions.length < 2) {
+        addToast("Poll needs at least 2 options", "error");
+        return;
+      }
+    }
+
     setIsPosting(true);
     try {
       // Append media URLs to content if not already there
@@ -83,25 +99,38 @@ export const PostComposer: React.FC<PostComposerProps> = ({
         }
       });
 
-      const tags: NDKTag[] = [];
-      // Add imeta tags for Blossom media
-      mediaFiles.forEach(file => {
-        if (file.imeta) {
-          tags.push(file.imeta);
-        }
-      });
+      let event: NDKEvent | null = null;
 
-      const options = {
-        replyTo,
-        quoteEvent,
-        tags
-      };
+      if (showPollEditor) {
+        const validOptions = pollOptions.filter(o => o.label.trim().length > 0);
+        event = await createPoll(ndk, finalContent, {
+          options: validOptions,
+          endsAt: Math.floor(Date.now() / 1000) + 86400, // 24h default
+        });
+      } else {
+        const tags: NDKTag[] = [];
+        // Add imeta tags for Blossom media
+        mediaFiles.forEach(file => {
+          if (file.imeta) {
+            tags.push(file.imeta);
+          }
+        });
 
-      const event = await publishPost(ndk, finalContent, options);
+        const options = {
+          replyTo,
+          quoteEvent,
+          tags
+        };
+
+        event = await publishPost(ndk, finalContent, options);
+      }
+
       if (event) {
-        addToast("Posted successfully!", "success");
+        addToast(showPollEditor ? "Poll published!" : "Posted successfully!", "success");
         setContent("");
         setMediaFiles([]);
+        setShowPollEditor(false);
+        setPollOptions([{ id: "0", label: "" }, { id: "1", label: "" }]);
         clearDraft();
         if (onSuccess) onSuccess();
       }
@@ -179,6 +208,14 @@ export const PostComposer: React.FC<PostComposerProps> = ({
             className="w-full bg-transparent text-lg resize-none outline-none placeholder-gray-500 py-2"
           />
 
+          {showPollEditor && (
+            <PollEditor 
+              options={pollOptions} 
+              setOptions={setPollOptions} 
+              onClose={() => setShowPollEditor(false)} 
+            />
+          )}
+
           {/* Media Previews */}
           {mediaFiles.length > 0 && (
             <div className={`grid gap-2 mb-3 ${mediaFiles.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
@@ -234,11 +271,13 @@ export const PostComposer: React.FC<PostComposerProps> = ({
 
               <button
                 type="button"
-                className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
-                title="Poll (Coming soon)"
-                disabled
+                onClick={() => setShowPollEditor(!showPollEditor)}
+                className={`p-2 rounded-full transition-colors ${
+                  showPollEditor ? "bg-blue-500 text-white" : "text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                }`}
+                title="Poll"
               >
-                <Zap size={20} className="opacity-30" />
+                <BarChart2 size={20} />
               </button>
             </div>
 
