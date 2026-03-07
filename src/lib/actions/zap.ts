@@ -1,4 +1,4 @@
-import NDK, { NDKEvent, NDKUser, NDKZapper } from "@nostr-dev-kit/ndk";
+import NDK, { NDKEvent, NDKUser, NDKZapper, NDKFilter } from "@nostr-dev-kit/ndk";
 
 /**
  * Handle the zap process for a specific event or user.
@@ -19,7 +19,7 @@ export const createZapInvoice = async (
 
     return new Promise((resolve, reject) => {
       // Listen for the invoice event
-      zapper.on("ln_invoice", (invoice: any) => {
+      zapper.on("ln_invoice", (invoice: { pr: string }) => {
         resolve(invoice.pr);
       });
       
@@ -52,7 +52,7 @@ export function listenForZapReceipt(
   onReceipt: (receipt: NDKEvent) => void,
   isUser = false
 ) {
-  const filter: any = {
+  const filter: NDKFilter = {
     kinds: [9735],
   };
 

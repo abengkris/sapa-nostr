@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { NDKEvent, NDKFilter, NDKSubscription } from "@nostr-dev-kit/ndk";
 import { useNDK } from "@/hooks/useNDK";
+import { useAuthStore } from "@/store/auth";
 
 export interface PostStats {
   likes: number;
@@ -21,6 +22,7 @@ export interface PostStats {
  */
 export function usePostStats(eventId?: string) {
   const { ndk, isReady } = useNDK();
+  const { publicKey } = useAuthStore();
   const [stats, setStats] = useState<PostStats>({
     likes: 0,
     reposts: 0,
@@ -75,7 +77,7 @@ export function usePostStats(eventId?: string) {
 
       setStats((prev) => {
         const newStats = { ...prev };
-        const isMe = ndk.signer && event.pubkey === (ndk.signer as any).user?.pubkey;
+        const isMe = publicKey && event.pubkey === publicKey;
 
         // 1. Reactions (Likes)
         if (event.kind === 7) {

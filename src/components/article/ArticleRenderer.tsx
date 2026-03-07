@@ -33,7 +33,7 @@ export function ArticleRenderer({ content, event }: ArticleRendererProps) {
         remarkPlugins={[remarkGfm]}
         components={{
           // Syntax Highlighting for Code Blocks
-          code({ node, inline, className, children, ...props }: any) {
+          code({ node, inline, className, children, ...props }: React.ComponentPropsWithoutRef<"code"> & { inline?: boolean; node?: unknown }) {
             const match = /language-(\w+)/.exec(className || "");
             return !inline && match ? (
               <div className="relative group rounded-2xl overflow-hidden my-6 border border-gray-200 dark:border-gray-800 shadow-sm">
@@ -43,7 +43,8 @@ export function ArticleRenderer({ content, event }: ArticleRendererProps) {
                   </span>
                 </div>
                 <SyntaxHighlighter
-                  style={oneDark}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  style={oneDark as any}
                   language={match[1]}
                   PreTag="div"
                   customStyle={{

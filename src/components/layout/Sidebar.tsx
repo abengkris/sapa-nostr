@@ -11,7 +11,7 @@ import { useRelayStatus } from "@/hooks/useRelayStatus";
 import { useUIStore } from "@/store/ui";
 import { RelayModal } from "@/components/common/RelayModal";
 
-const SidebarItem = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: number }) => {
+const SidebarItem = ({ href, icon: Icon, label, badge }: { href: string; icon: React.ElementType; label: string; badge?: number }) => {
   const pathname = usePathname();
   // More robust active state check for nested routes
   const active = href === "/" ? pathname === "/" : pathname.startsWith(href);

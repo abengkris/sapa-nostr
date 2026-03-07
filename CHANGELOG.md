@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.2] - 2026-03-07
+
+### Added
+- **Enforced Type Safety:** Enabled `@typescript-eslint/no-explicit-any` as an error in ESLint configuration to ensure stricter type safety across the codebase.
+
+### Fixed
+- **Type Refactoring:** Replaced all occurrences of `any` with proper interfaces and specific types in hooks (`useChat`, `useMessages`, `useBlossom`, `usePostStats`), components (`ArticleRenderer`, `Sidebar`, `Avatar`, `ZapModal`), and tests.
+- **Async Blossom Integration:** Updated `useBlossom` and `Avatar` component to correctly handle the asynchronous nature of Blossom's URL optimization.
+
 ## [0.6.1] - 2026-03-06
 
 ### Changed

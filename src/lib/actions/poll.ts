@@ -52,14 +52,7 @@ export const createPoll = async (
       // Safely get some relays from the pool
       const pool = ndk.pool;
       if (pool) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const poolWithAny = pool as any;
-        const urls = typeof poolWithAny.urls === 'function' ? poolWithAny.urls() : poolWithAny.urls;
-        if (Array.isArray(urls) && urls.length > 0) {
-          relayUrls = urls;
-        } else if (poolWithAny.relays && typeof poolWithAny.relays.keys === 'function') {
-          relayUrls = Array.from(poolWithAny.relays.keys());
-        }
+        relayUrls = Array.from(pool.relays.keys());
       }
     }
 

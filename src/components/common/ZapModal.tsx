@@ -8,6 +8,17 @@ import { X, Zap, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useUIStore } from "@/store/ui";
 
+interface WebLN {
+  enable: () => Promise<void>;
+  sendPayment: (bolt11: string) => Promise<{ preimage: string }>;
+}
+
+declare global {
+  interface Window {
+    webln?: WebLN;
+  }
+}
+
 interface ZapModalProps {
   event?: NDKEvent;
   user?: NDKUser;
@@ -55,9 +66,9 @@ export const ZapModal: React.FC<ZapModalProps> = ({ event, user, onClose, onSucc
         setInvoice(bolt11);
         
         // Try paying with WebLN if available (Alby, etc.)
-        if (typeof window !== "undefined" && (window as any).webln) {
+        if (typeof window !== "undefined" && window.webln) {
           try {
-            const webln = (window as any).webln;
+            const webln = window.webln;
             await webln.enable();
             await webln.sendPayment(bolt11);
             // Confirmation will come through the event listener

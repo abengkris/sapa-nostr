@@ -4,6 +4,7 @@ import { useMemo, useCallback } from "react";
 import NDKBlossom from "@nostr-dev-kit/ndk-blossom";
 import { useNDK } from "./useNDK";
 import { defaultSHA256Calculator } from "@nostr-dev-kit/ndk-blossom";
+import NDK, { NDKUser } from "@nostr-dev-kit/ndk";
 
 const DEFAULT_BLOSSOM_SERVERS = [
   "https://blossom.primal.net",
@@ -16,6 +17,7 @@ export function useBlossom() {
 
   const blossom = useMemo(() => {
     if (!ndk) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const instance = new NDKBlossom(ndk as any);
     instance.setSHA256Calculator(defaultSHA256Calculator);
     return instance;
@@ -44,6 +46,7 @@ export function useBlossom() {
       if (!blossom || !ndk) return url;
       try {
         const user = ndk.getUser({ pubkey });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const correctUrl = await blossom.fixUrl(user as any, url);
         return correctUrl || url;
       } catch (err) {
@@ -58,6 +61,7 @@ export function useBlossom() {
       if (!blossom || !ndk) return [];
       try {
         const user = ndk.getUser({ pubkey });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return await blossom.listBlobs(user as any);
       } catch (err) {
         return [];
@@ -67,11 +71,11 @@ export function useBlossom() {
   );
 
   const getOptimizedUrl = useCallback(
-    (url: string, options: { width?: number; height?: number; format?: string; quality?: number }) => {
+    async (url: string, options: { width?: number; height?: number; format?: string; quality?: number }) => {
       if (!blossom) return url;
       try {
         // NDK-Blossom provides an optimized URL generator based on BUD-05
-        return (blossom as any).getOptimizedUrl?.(url, options) || url;
+        return await blossom.getOptimizedUrl(url, options);
       } catch (err) {
         return url;
       }

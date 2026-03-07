@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useBlossom } from "@/hooks/useBlossom";
 
 interface AvatarProps {
@@ -13,13 +13,23 @@ interface AvatarProps {
 
 export const Avatar: React.FC<AvatarProps> = ({ pubkey, src, size = 40, className = "" }) => {
   const { getOptimizedUrl } = useBlossom();
+  const [avatarUrl, setAvatarUrl] = useState<string>(`https://robohash.org/${pubkey}?set=set1`);
 
-  const avatarUrl = useMemo(() => {
-    if (!src) return `https://robohash.org/${pubkey}?set=set1`;
-    if (src.startsWith('data:')) return src;
+  useEffect(() => {
+    if (!src) {
+      setAvatarUrl(`https://robohash.org/${pubkey}?set=set1`);
+      return;
+    }
     
+    if (src.startsWith('data:')) {
+      setAvatarUrl(src);
+      return;
+    }
+
     // Request optimized avatar at 2x size for high-DPI displays
-    return getOptimizedUrl(src, { width: size * 2, height: size * 2, format: 'webp' });
+    getOptimizedUrl(src, { width: size * 2, height: size * 2, format: 'webp' })
+      .then(url => setAvatarUrl(url))
+      .catch(() => setAvatarUrl(src));
   }, [src, pubkey, size, getOptimizedUrl]);
 
   return (

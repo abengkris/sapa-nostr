@@ -3,11 +3,15 @@
 import { createContext, useEffect, useState, ReactNode, useRef } from "react";
 import NDK, { NDKUser, NDKEvent, NDKCacheAdapter, NDKRelay } from "@nostr-dev-kit/ndk";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
-import { NDKMessenger, CacheModuleStorage } from "@nostr-dev-kit/messages";
+import { NDKMessenger, CacheModuleStorage, NDKMessage } from "@nostr-dev-kit/messages";
 import { NDKSessionManager, LocalStorage, NDKSession } from "@nostr-dev-kit/sessions";
 import { useAuthStore } from "@/store/auth";
 import { useUIStore } from "@/store/ui";
 import { getNDK } from "@/lib/ndk";
+
+interface ExtendedCacheAdapter extends NDKCacheAdapter {
+  getUnpublishedEvents?: () => Promise<{ event: NDKEvent; relays?: string[]; lastTryAt?: number }[]>;
+}
 
 export interface NDKContextType {
   ndk: NDK | null;
@@ -33,7 +37,7 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
   const [isReady, setIsReady] = useState(false);
   
   const { setUser, setLoginState } = useAuthStore();
-  const { incrementUnreadMessagesCount, addToast } = useUIStore();
+  const { incrementUnreadMessagesCount, addToast, activeChatPubkey } = useUIStore();
   
   const messengerRef = useRef<NDKMessenger | null>(null);
   const sessionsRef = useRef<NDKSessionManager | null>(null);
@@ -139,12 +143,13 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
       setNdk(instance);
 
       // Retry unpublished events from cache
-      if (instance.cacheAdapter && (instance.cacheAdapter as any).getUnpublishedEvents) {
+      if (instance.cacheAdapter && (instance.cacheAdapter as ExtendedCacheAdapter).getUnpublishedEvents) {
         try {
-          const unpublishedEvents = await (instance.cacheAdapter as any).getUnpublishedEvents();
-          if (unpublishedEvents && unpublishedEvents.length > 0) {
-            console.log(`Retrying ${unpublishedEvents.length} unpublished events from cache...`);
-            unpublishedEvents.forEach((event: NDKEvent) => {
+          const unpublished = await (instance.cacheAdapter as ExtendedCacheAdapter).getUnpublishedEvents!();
+          if (unpublished && unpublished.length > 0) {
+            console.log(`Retrying ${unpublished.length} unpublished events from cache...`);
+            unpublished.forEach((item) => {
+              const event = item.event;
               event.ndk = instance;
               event.publish();
             });
@@ -189,10 +194,11 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
           if (sessionManager.activePubkey && msgInstance) {
             try {
               await msgInstance.start();
-              msgInstance.on("message", (message: any) => {
+              msgInstance.on("message", (message: NDKMessage) => {
                 const currentPubkey = sessionManager.activePubkey;
                 if (message.sender?.pubkey !== currentPubkey && message.recipient?.pubkey === currentPubkey) {
-                  const isCurrentChat = window.location.pathname.includes(`/messages/${message.sender?.pubkey}`);
+                  // Use activeChatPubkey from store for more reliable check
+                  const isCurrentChat = activeChatPubkey === message.sender?.pubkey;
                   if (!isCurrentChat) {
                     incrementUnreadMessagesCount();
                   }
@@ -215,10 +221,10 @@ export const NDKProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       unsubscribeSessions();
       if (messengerRef.current) {
-        try { (messengerRef.current as any).destroy(); } catch (e) {}
+        try { messengerRef.current.destroy(); } catch (e) {}
       }
     };
-  }, [setUser, setLoginState, incrementUnreadMessagesCount, addToast]);
+  }, [setUser, setLoginState, incrementUnreadMessagesCount, addToast, activeChatPubkey]);
 
   return (
     <NDKContext.Provider value={{ ndk, messenger, sessions, activeSession, isReady }}>
