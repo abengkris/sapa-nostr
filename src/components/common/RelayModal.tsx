@@ -36,6 +36,12 @@ const getStatusLabel = (status: NDKRelayStatus) => {
   }
 };
 
+const getLatencyColor = (ms: number) => {
+  if (ms < 200) return "text-green-500";
+  if (ms < 500) return "text-yellow-500";
+  return "text-red-500";
+};
+
 export const RelayModal: React.FC<RelayModalProps> = ({ isOpen, onClose }) => {
   const { relays } = useRelayStatus();
 
@@ -70,13 +76,20 @@ export const RelayModal: React.FC<RelayModalProps> = ({ isOpen, onClose }) => {
               >
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate pr-4">{relay.url}</span>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${getStatusColor(relay.status)}`}>
-                    {getStatusLabel(relay.status)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${getStatusColor(relay.status)}`}>
+                      {getStatusLabel(relay.status)}
+                    </span>
+                    {relay.status === NDKRelayStatus.CONNECTED && relay.latency !== undefined && (
+                      <span className={`text-[10px] font-mono ${getLatencyColor(relay.latency)}`}>
+                        {Math.round(relay.latency)}ms
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="shrink-0">
                   {relay.status === NDKRelayStatus.CONNECTED ? (
-                    <Wifi size={16} className="text-green-500" />
+                    <Wifi size={16} className={getLatencyColor(relay.latency || 0)} />
                   ) : (
                     <WifiOff size={16} className="text-red-500" />
                   )}

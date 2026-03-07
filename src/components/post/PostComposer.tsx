@@ -4,524 +4,275 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useAuthStore } from "@/store/auth";
 import { useNDK } from "@/hooks/useNDK";
 import { publishPost } from "@/lib/actions/post";
-import { PollOption } from "@/lib/actions/poll";
-import { ImageIcon, Smile, Loader2, X, AlertTriangle, List } from "lucide-react";
-import Image from "next/image";
 import { useUIStore } from "@/store/ui";
 import { useBlossom } from "@/hooks/useBlossom";
 import { useEmojis } from "@/hooks/useEmojis";
-import { useFollowingList } from "@/hooks/useFollowingList";
-import { UserRecommendation } from "../common/UserRecommendation";
-import { imetaTagToTag, NDKImetaTag, NDKTag, NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
+import { useDrafts } from "@/hooks/useDrafts";
+import { NDKEvent, NDKTag } from "@nostr-dev-kit/ndk";
+import { 
+  ImageIcon, 
+  Smile, 
+  X, 
+  Loader2, 
+  Send, 
+  Zap,
+  Globe,
+  Trash2,
+  Paperclip
+} from "lucide-react";
+import { Avatar } from "../common/Avatar";
 
 interface PostComposerProps {
   replyTo?: NDKEvent;
   quoteEvent?: NDKEvent;
-  onSuccess?: () => void;
   placeholder?: string;
+  onSuccess?: () => void;
   autoFocus?: boolean;
 }
 
 export const PostComposer: React.FC<PostComposerProps> = ({ 
   replyTo, 
   quoteEvent,
-  onSuccess, 
-  placeholder = "What's happening?",
-  autoFocus = false 
+  placeholder = "What's happening?", 
+  onSuccess,
+  autoFocus = false
 }) => {
-  const [content, setContent] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [imetaTags, setImetaTags] = useState<NDKImetaTag[]>([]);
-  const [isSensitive, setIsSensitive] = useState(false);
-  const [contentWarning, setContentWarning] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [showPoll, setShowPoll] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showMentions, setShowMentions] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState("");
-  const [cursorPosition, setCursorPosition] = useState(0);
-
-  const [pollOptions, setPollOptions] = useState<PollOption[]>([
-    { id: "0", label: "" },
-    { id: "1", label: "" }
-  ]);
   const { user, isLoggedIn } = useAuthStore();
-  const { ndk } = useNDK();
-  const { emojis, emojiMap } = useEmojis();
-  const { followingUsers, loading: loadingFollowing } = useFollowingList(user?.pubkey);
+  const { ndk, isReady } = useNDK();
   const { addToast } = useUIStore();
   const { uploadFile } = useBlossom();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { emojis } = useEmojis();
+  
+  // Create a unique key for the draft
+  const draftKey = replyTo ? `reply-${replyTo.id}` : quoteEvent ? `quote-${quoteEvent.id}` : 'main-composer';
+  const { draft, updateDraft, clearDraft, isLoaded } = useDrafts(draftKey);
+
+  const [content, setContent] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState<{ url: string; type: string; imeta?: NDKTag[] }[]>([]);
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const composerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Mention filtering
-  const filteredUsers = useMemo(() => {
-    if (!mentionQuery) return followingUsers.slice(0, 8);
-    const q = mentionQuery.toLowerCase();
-    return followingUsers
-      .filter(u => 
-        u.profile?.name?.toLowerCase().includes(q) || 
-        u.profile?.displayName?.toLowerCase().includes(q) ||
-        u.profile?.nip05?.toLowerCase().includes(q)
-      )
-      .slice(0, 8);
-  }, [followingUsers, mentionQuery]);
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    const position = e.target.selectionStart;
-    setContent(value);
-    setCursorPosition(position);
-
-    // Detect "@" for mentions
-    const textBeforeCursor = value.slice(0, position);
-    const words = textBeforeCursor.split(/\s/);
-    const lastWord = words[words.length - 1];
-
-    if (lastWord.startsWith("@") && lastWord.length > 0) {
-      setMentionQuery(lastWord.slice(1));
-      setShowMentions(true);
-    } else {
-      setShowMentions(false);
-    }
-  };
-
-  const insertMention = (targetUser: NDKUser) => {
-    const textBeforeCursor = content.slice(0, cursorPosition);
-    const textAfterCursor = content.slice(cursorPosition);
-    
-    const words = textBeforeCursor.split(/\s/);
-    words.pop(); // Remove the partial "@name"
-    
-    const prefix = words.length > 0 ? words.join(" ") + " " : "";
-    const mention = `@${targetUser.npub} `;
-    const newContent = prefix + mention + textAfterCursor;
-    
-    setContent(newContent);
-    setShowMentions(false);
-    
-    // Refocus and set cursor
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        const newPos = prefix.length + mention.length;
-        textareaRef.current.setSelectionRange(newPos, newPos);
-      }
-    }, 0);
-  };
-
-  // Collapse when clicking outside
+  // Sync content with draft when loaded
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (composerRef.current && !composerRef.current.contains(event.target as Node) && !content.trim()) {
-        setIsExpanded(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [content]);
-
-  useEffect(() => {
-    if (autoFocus && textareaRef.current) {
-      textareaRef.current.focus();
-      setIsExpanded(true);
+    if (isLoaded && draft) {
+      setContent(draft);
     }
-  }, [autoFocus]);
+  }, [isLoaded, draft]);
 
-  // Auto-resize textarea
+  // Update draft whenever content changes
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    if (isLoaded) {
+      updateDraft(content);
     }
-  }, [content]);
+  }, [content, isLoaded, updateDraft]);
 
   const handlePost = async () => {
-    if (!ndk || !content.trim() || isSubmitting) return;
-
-    // Validate poll if active
-    if (showPoll) {
-      const validOptions = pollOptions.filter(o => o.label.trim() !== "");
-      if (validOptions.length < 2) {
-        addToast("Poll must have at least 2 options", "error");
-        return;
-      }
+    if (!content.trim() && mediaFiles.length === 0) return;
+    if (!ndk || !isReady || !isLoggedIn) {
+      addToast("Please login to post", "error");
+      return;
     }
 
-    setIsSubmitting(true);
+    setIsPosting(true);
     try {
-      const tags: NDKTag[] = imetaTags.map(imetaTagToTag);
-      
-      if (isSensitive) {
-        tags.push(["content-warning", contentWarning]);
-      }
-
-      const pollOptionsData = showPoll ? {
-        options: pollOptions.filter(o => o.label.trim() !== ""),
-        pollType: "singlechoice" as const,
-        // Default to 24h
-        endsAt: Math.floor(Date.now() / 1000) + 86400
-      } : undefined;
-
-      await publishPost(ndk, content, { 
-        tags, 
-        replyTo, 
-        quoteEvent, 
-        pollOptions: pollOptionsData,
-        emojis: emojiMap
+      // Append media URLs to content if not already there
+      let finalContent = content;
+      mediaFiles.forEach(file => {
+        if (!finalContent.includes(file.url)) {
+          finalContent += `\n\n${file.url}`;
+        }
       });
-      setContent("");
-      setImetaTags([]);
-      setIsSensitive(false);
-      setContentWarning("");
-      setShowPoll(false);
-      setPollOptions([{ id: "0", label: "" }, { id: "1", label: "" }]);
-      
-      let successMsg = "Post published successfully!";
-      if (replyTo) successMsg = "Reply sent!";
-      else if (quoteEvent) successMsg = "Quote shared!";
-      else if (showPoll) successMsg = "Poll created!";
-      
-      addToast(successMsg, "success");
-      onSuccess?.();
+
+      const tags: NDKTag[] = [];
+      // Add imeta tags for Blossom media
+      mediaFiles.forEach(file => {
+        if (file.imeta) {
+          tags.push(file.imeta);
+        }
+      });
+
+      const options = {
+        replyTo,
+        quoteEvent,
+        tags
+      };
+
+      const event = await publishPost(ndk, finalContent, options);
+      if (event) {
+        addToast("Posted successfully!", "success");
+        setContent("");
+        setMediaFiles([]);
+        clearDraft();
+        if (onSuccess) onSuccess();
+      }
     } catch (err) {
-      console.error("Failed to post details:", err);
-      addToast(`Failed to publish post: ${(err as Error).message || "Unknown error"}`, "error");
+      console.error(err);
+      addToast("Failed to post. Please try again.", "error");
     } finally {
-      setIsSubmitting(false);
+      setIsPosting(false);
     }
   };
 
-  const handleImageClick = () => {
+  const handleFileClick = () => {
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
     setIsUploading(true);
-    setUploadProgress(0);
-
     try {
-      const result = await uploadFile(file, (progress) => {
-        const percent = Math.round((progress.loaded / progress.total) * 100);
-        setUploadProgress(percent);
-      });
-
-      if (result && result.url) {
-        // Collect imeta tag
-        setImetaTags((prev) => [...prev, result]);
-
-        // Standard Nostr behavior: append URL to content
-        setContent((prev) => {
-          const suffix = prev.endsWith("\n") || prev === "" ? "" : "\n";
-          return `${prev}${suffix}${result.url}`;
-        });
-        addToast("Media uploaded successfully!", "success");
+      for (const file of files) {
+        const result = await uploadFile(file);
+        if (result && result.url) {
+          setMediaFiles(prev => [...prev, { 
+            url: result.url, 
+            type: file.type,
+            imeta: result.sha256 ? ["imeta", `url ${result.url}`, `m ${file.type}`, `x ${result.sha256}`] : undefined
+          }]);
+        }
       }
+      addToast("Media uploaded!", "success");
     } catch (err) {
-      console.error("Upload failed:", err);
+      console.error(err);
       addToast("Failed to upload media.", "error");
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  if (!isLoggedIn) return null;
-
-  const updatePollOption = (index: number, label: string) => {
-    setPollOptions(prev => {
-      const next = [...prev];
-      next[index] = { ...next[index], label };
-      return next;
-    });
-  };
-
-  const addPollOption = () => {
-    if (pollOptions.length >= 5) return;
-    setPollOptions(prev => [...prev, { id: String(prev.length), label: "" }]);
-  };
-
-  const removePollOption = (index: number) => {
-    if (pollOptions.length <= 2) return;
-    setPollOptions(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const removeMedia = (index: number) => {
-    const tag = imetaTags[index];
-    if (!tag.url) return;
-    
-    setImetaTags((prev) => prev.filter((_, i) => i !== index));
-    // Remove URL from content
-    setContent((prev) => prev.replace(tag.url!, "").trim());
+  const removeMedia = (url: string) => {
+    setMediaFiles(prev => prev.filter(f => f.url !== url));
   };
 
   const insertEmoji = (shortcode: string) => {
-    setContent(prev => {
-      const lastChar = prev.slice(-1);
-      const prefix = lastChar === " " || lastChar === "" ? "" : " ";
-      return `${prev}${prefix}:${shortcode}: `;
-    });
+    const start = textareaRef.current?.selectionStart || content.length;
+    const end = textareaRef.current?.selectionEnd || content.length;
+    const newContent = content.substring(0, start) + ` :${shortcode}: ` + content.substring(end);
+    setContent(newContent);
     setShowEmojiPicker(false);
-    textareaRef.current?.focus();
+    
+    // Return focus to textarea
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
   };
 
+  if (!isLoggedIn) return null;
+
   return (
-    <div 
-      ref={composerRef}
-      className={`flex p-4 transition-all duration-300 ${
-        !replyTo ? "border-b border-gray-200 dark:border-gray-800" : ""
-      } ${isExpanded ? "bg-white dark:bg-black" : "bg-transparent hover:bg-gray-50 dark:hover:bg-gray-900/30"}`}
-      onFocus={() => setIsExpanded(true)}
-    >
-      <div className="mr-3 shrink-0">
-        <Image
-          src={user?.profile?.picture || `https://robohash.org/${user?.pubkey}?set=set1`}
-          alt="Avatar"
-          width={48}
-          height={48}
-          className={`rounded-full object-cover bg-gray-200 transition-all duration-300 ${
-            isExpanded ? "w-12 h-12" : "w-10 h-10"
-          }`}
-          unoptimized={true}
-        />
-      </div>
-      
-      <div className="flex-1 min-w-0">
-        <label htmlFor="post-content" className="sr-only">Post content</label>
-        <div className="relative">
+    <div className={`p-4 ${replyTo ? "" : "border-b border-gray-100 dark:border-gray-800"}`}>
+      <div className="flex gap-3">
+        <Avatar pubkey={user?.pubkey || ""} src={user?.profile?.image} size={48} />
+        
+        <div className="flex-1 min-w-0">
           <textarea
-            id="post-content"
             ref={textareaRef}
             value={content}
-            onChange={handleContentChange}
-            onSelect={(e) => setCursorPosition(e.currentTarget.selectionStart)}
-            placeholder={replyTo ? "Post your reply" : placeholder}
-            className={`w-full bg-transparent border-none focus:ring-0 outline-none resize-none placeholder-gray-500 transition-all duration-300 overflow-hidden ${
-              isExpanded ? "text-xl min-h-[100px]" : "text-lg min-h-[40px]"
-            }`}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={placeholder}
+            autoFocus={autoFocus}
+            rows={3}
+            className="w-full bg-transparent text-lg resize-none outline-none placeholder-gray-500 py-2"
           />
-          
-          {showMentions && (
-            <UserRecommendation 
-              users={filteredUsers} 
-              onSelect={insertMention} 
-              isLoading={loadingFollowing}
-            />
-          )}
-        </div>
 
-        <div className={`transition-all duration-500 overflow-hidden ${isExpanded || content.trim() ? "max-h-[800px] opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"}`}>
-          {showEmojiPicker && (
-            <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Custom Emojis</span>
-                <button onClick={() => setShowEmojiPicker(false)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
-              </div>
-              
-              {emojis.length > 0 ? (
-                <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 overflow-y-auto max-h-48 p-1">
-                  {emojis.map((emoji) => (
-                    <button
-                      key={emoji.shortcode}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); insertEmoji(emoji.shortcode); }}
-                      title={`:${emoji.shortcode}:`}
-                      className="p-2 hover:bg-white dark:hover:bg-black rounded-xl transition-all hover:scale-110 active:scale-90 border border-transparent hover:border-gray-100 dark:hover:border-gray-800 flex items-center justify-center"
-                    >
-                      <img src={emoji.url} alt={emoji.shortcode} className="w-6 h-6 object-contain" />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-4 text-center">
-                  <p className="text-sm text-gray-500 mb-2">You don&apos;t have any custom emojis yet.</p>
-                  <a 
-                    href="https://emojish.id" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs font-bold text-blue-500 hover:underline"
-                  >
-                    Discover emojis on emojish.id ↗
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
-
-          {isSensitive && (
-            <div className="mb-3 px-3 py-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-center gap-3">
-              <AlertTriangle size={18} className="text-amber-500 shrink-0" />
-              <input
-                type="text"
-                value={contentWarning}
-                onChange={(e) => setContentWarning(e.target.value)}
-                placeholder="Reason (optional)"
-                className="flex-1 bg-transparent border-none focus:ring-0 text-sm p-0 placeholder-amber-500/50 text-amber-700 dark:text-amber-400 outline-none"
-              />
-              <button 
-                onClick={() => setIsSensitive(false)}
-                className="text-amber-500 hover:text-amber-600"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
-
-          {imetaTags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {imetaTags.map((tag, i) => (
-                <div key={i} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-                  {tag.m?.startsWith("image/") ? (
-                    <Image src={tag.url!} alt="Preview" fill className="object-cover" unoptimized />
+          {/* Media Previews */}
+          {mediaFiles.length > 0 && (
+            <div className={`grid gap-2 mb-3 ${mediaFiles.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+              {mediaFiles.map((file) => (
+                <div key={file.url} className="relative rounded-2xl overflow-hidden group border border-gray-100 dark:border-gray-800">
+                  {file.type.startsWith("image/") ? (
+                    <img src={file.url} alt="Uploaded" className="w-full h-48 object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
-                      Video
-                    </div>
+                    <video src={file.url} className="w-full h-48 object-cover" />
                   )}
                   <button
-                    onClick={() => removeMedia(i)}
-                    className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"
-                    aria-label="Remove media"
+                    onClick={() => removeMedia(file.url)}
+                    className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors opacity-0 group-hover:opacity-100"
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          {showPoll && (
-            <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3 animate-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Poll Options</span>
-                <button 
-                  onClick={() => setShowPoll(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              {pollOptions.map((opt, i) => (
-                <div key={i} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={opt.label}
-                    onChange={(e) => updatePollOption(i, e.target.value)}
-                    placeholder={`Option ${i + 1}`}
-                    className="flex-1 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
-                  />
-                  {pollOptions.length > 2 && (
-                    <button 
-                      onClick={() => removePollOption(i)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <X size={18} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              {pollOptions.length < 5 && (
-                <button
-                  onClick={addPollOption}
-                  className="text-xs font-bold text-blue-500 hover:text-blue-600 transition-colors pl-1"
-                >
-                  + Add another option
-                </button>
-              )}
-            </div>
-          )}
-
-          {isUploading && (
-            <div className="mb-3">
-              <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                <span className="flex items-center gap-1">
-                  <Loader2 size={12} className="animate-spin" />
-                  Uploading media…
-                </span>
-                <span>{uploadProgress}%</span>
-              </div>
-              <div className="w-full h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-500 transition-[width] duration-300" 
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-          
-          <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-900 pt-3 mt-3">
-            <div className="flex items-center -ml-2 text-blue-500">
+          {/* Controls */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-50 dark:border-gray-900">
+            <div className="flex items-center -ml-2">
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept="image/*,video/*"
                 className="hidden"
+                accept="image/*,video/*"
+                multiple
               />
-              <button 
-                title="Add image"
-                aria-label="Add image"
-                onClick={handleImageClick}
+              <button
+                type="button"
+                onClick={handleFileClick}
                 disabled={isUploading}
-                className={`p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors ${
-                  isUploading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors disabled:opacity-50"
+                title="Add media"
               >
-                <ImageIcon size={20} />
+                {isUploading ? <Loader2 className="animate-spin" size={20} /> : <ImageIcon size={20} />}
               </button>
-              <button 
-                title="Add emoji"
-                aria-label="Add emoji"
+              
+              <button
+                type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className={`p-3 rounded-full transition-transform transition-colors ${
-                  showEmojiPicker 
-                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-110" 
-                    : "hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500"
-                }`}
+                className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                title="Add emoji"
               >
                 <Smile size={20} />
-              </button>              <button 
-                title="Add poll"
-                aria-label="Add poll"
-                onClick={() => setShowPoll(!showPoll)}
-                className={`p-3 rounded-full transition-transform transition-colors ${
-                  showPoll 
-                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-110" 
-                    : "hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500"
-                }`}
-              >
-                <List size={20} />
               </button>
-              <button 
-                title="Add content warning"
-                aria-label="Content Warning"
-                aria-pressed={isSensitive}
-                onClick={() => setIsSensitive(!isSensitive)}
-                className={`p-3 rounded-full transition-transform transition-colors ${
-                  isSensitive 
-                    ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-110" 
-                    : "hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500"
-                }`}
+
+              <button
+                type="button"
+                className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                title="Poll (Coming soon)"
+                disabled
               >
-                <AlertTriangle size={20} fill={isSensitive ? "currentColor" : "none"} />
+                <Zap size={20} className="opacity-30" />
               </button>
-              </div>            
+            </div>
+
+            {/* Emoji Picker Overlay */}
+            {showEmojiPicker && (
+              <div className="absolute z-50 mt-12 p-4 bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl max-w-xs animate-in zoom-in-95">
+                <div className="flex items-center justify-between mb-3 border-b border-gray-50 dark:border-gray-900 pb-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Custom Emojis</span>
+                  <button onClick={() => setShowEmojiPicker(false)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
+                </div>
+                <div className="grid grid-cols-5 gap-2 overflow-y-auto max-h-48">
+                  {emojis.map((emoji) => (
+                    <button
+                      key={emoji.shortcode}
+                      onClick={() => insertEmoji(emoji.shortcode)}
+                      title={`:${emoji.shortcode}:`}
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-all flex items-center justify-center"
+                    >
+                      <img src={emoji.url} alt={emoji.shortcode} className="w-6 h-6 object-contain" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <button
               onClick={handlePost}
-              disabled={!content.trim() || isSubmitting || isUploading}
-              className={`px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition-transform transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap ${
-                (!content.trim() || isSubmitting || isUploading) ? "opacity-50 cursor-not-allowed" : "active:scale-95"
-              }`}
+              disabled={isPosting || isUploading || (!content.trim() && mediaFiles.length === 0)}
+              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-black rounded-full transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20 flex items-center gap-2"
             >
-              {isSubmitting ? (
+              {isPosting ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 className="animate-spin" size={18} />
                   <span>Posting…</span>
                 </>
               ) : (

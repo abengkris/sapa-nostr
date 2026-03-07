@@ -1,19 +1,21 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useMessages, Conversation } from "@/hooks/useMessages";
 import { useProfile } from "@/hooks/useProfile";
 import { useUIStore } from "@/store/ui";
-import { Loader2, MessageSquare, Search, Plus } from "lucide-react";
+import { Loader2, MessageSquare, Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
-import { shortenPubkey } from "@/lib/utils/nip19";
+import { shortenPubkey, toNpub } from "@/lib/utils/nip19";
+import { NewMessageModal } from "@/components/messages/NewMessageModal";
 
 export default function MessagesPage() {
   const { conversations, loading } = useMessages();
   const { setUnreadMessagesCount } = useUIStore();
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
 
   useEffect(() => {
     setUnreadMessagesCount(0);
@@ -23,7 +25,11 @@ export default function MessagesPage() {
     <MainLayout>
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 py-3">
         <h1 className="text-xl font-black">Messages</h1>
-        <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors">
+        <button 
+          onClick={() => setShowNewMessageModal(true)}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors"
+          title="New message"
+        >
           <Plus size={22} />
         </button>
       </div>
@@ -51,15 +57,19 @@ export default function MessagesPage() {
             <p className="text-gray-500 dark:text-gray-400 max-w-xs mb-8">
               Private messages on Nostr are secure and metadata-resistant using NIP-17.
             </p>
-            <Link 
-              href="/search" 
+            <button 
+              onClick={() => setShowNewMessageModal(true)}
               className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-500/20 active:scale-95"
             >
               Start a conversation
-            </Link>
+            </button>
           </div>
         )}
       </div>
+
+      {showNewMessageModal && (
+        <NewMessageModal onClose={() => setShowNewMessageModal(false)} />
+      )}
     </MainLayout>
   );
 }
@@ -68,10 +78,11 @@ const ConversationItem = ({ conversation }: { conversation: Conversation }) => {
   const { profile } = useProfile(conversation.pubkey);
   const displayName = profile?.name || profile?.displayName || shortenPubkey(conversation.pubkey);
   const avatar = profile?.picture || `https://robohash.org/${conversation.pubkey}?set=set1`;
+  const npub = toNpub(conversation.pubkey);
 
   return (
     <Link 
-      href={`/messages/${conversation.pubkey}`}
+      href={`/messages/${npub}`}
       className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors group"
     >
       <div className="relative shrink-0">

@@ -2,7 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.9] - 2026-03-07
+## [0.7.1] - 2026-03-07
+
+### Added
+- **New DM Search:** Added a "New Message" button to the inbox that allows users to search for people by name, npub, or NIP-05 to start a new private conversation.
+- **Relay Latency Tracking:** The network status modal now displays real-time latency (ping) for each connected relay, helping users identify high-performance servers.
+
+### Improved
+- **Inbox UX:** Added a "Start a conversation" button for new users with empty inboxes.
+
+## [0.7.0] - 2026-03-07
 
 ### Performance Optimizations
 - **Instant Feed Loading:** Optimized `useFeed` to fetch from local Dexie cache immediately on app start, providing instant UI feedback while relay connections establish.

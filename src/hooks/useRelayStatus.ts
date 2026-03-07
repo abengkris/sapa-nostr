@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useNDK } from "./useNDK";
-import { NDKRelay, NDKRelayStatus } from "@nostr-dev-kit/ndk";
+import { NDKRelayStatus } from "@nostr-dev-kit/ndk";
 
 export interface RelayStatus {
   url: string;
   status: NDKRelayStatus;
+  latency?: number; // in milliseconds
 }
 
 export function useRelayStatus() {
@@ -19,10 +20,19 @@ export function useRelayStatus() {
 
     const updateStatus = () => {
       const allRelays = Array.from(ndk.pool.relays.values());
-      const statusList = allRelays.map((r) => ({
-        url: r.url,
-        status: r.status,
-      }));
+      const statusList = allRelays.map((r) => {
+        // NDKRelay typically has connectivityStats or similar
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const stats = (r as any).connectivityStats;
+        const latency = stats?.latency;
+        
+        return {
+          url: r.url,
+          status: r.status,
+          latency: latency
+        };
+      });
+      
       setRelays(statusList);
       setConnectedCount(allRelays.filter((r) => r.status === NDKRelayStatus.CONNECTED).length);
     };

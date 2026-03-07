@@ -6,8 +6,6 @@ import { useProfile } from "@/hooks/useProfile";
 import { usePostStats } from "@/hooks/usePostStats";
 import { useNDK } from "@/hooks/useNDK";
 import { useAuthStore } from "@/store/auth";
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ZapModal } from "@/components/common/ZapModal";
 import { PostHeader } from "./parts/PostHeader";
@@ -16,8 +14,6 @@ import { PostActions } from "./parts/PostActions";
 import { deletePost, repostEvent } from "@/lib/actions/post";
 import { reactToEvent } from "@/lib/actions/reactions";
 import { useUIStore } from "@/store/ui";
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { useZaps } from "@/hooks/useZaps";
 import { RawEventModal } from "./parts/RawEventModal";
 import { ReportModal } from "./parts/ReportModal";
 import { ReplyModal } from "./parts/ReplyModal";
@@ -65,7 +61,6 @@ export const PostCard: React.FC<PostCardProps> = ({
   
   const displayEvent = isRepost && repostedEvent ? repostedEvent : event;
   const isArticle = displayEvent.kind === 30023;
-  const isComment = displayEvent.kind === 1111;
   const isPoll = displayEvent.kind === 1068;
   const { profile } = useProfile(displayEvent.pubkey);
   const { 
@@ -81,25 +76,22 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   useEffect(() => {
     if (isRepost && isReady && ndk) {
-      // 1. Priority: Try to parse content as JSON if it contains the full event
       if (event.content && event.content.trim().startsWith('{')) {
         try {
           const raw = JSON.parse(event.content);
-          // Basic validation that it looks like an event
           if (raw.id && raw.pubkey && raw.content !== undefined) {
             const ev = new NDKEvent(ndk, raw);
             Promise.resolve().then(() => {
               setRepostedEvent(ev);
               setRepostLoading(false);
             });
-            return; // Success, no need to fetch
+            return;
           }
         } catch {
-          // Not valid JSON or partial, proceed to fetch
+          // Ignore parse errors
         }
       }
 
-      // 2. Fallback: Fetch from relays if content is missing or invalid
       const eTag = event.tags.find(t => t[0] === 'e');
       const aTag = event.tags.find(t => t[0] === 'a');
       const targetId = eTag?.[1] || aTag?.[1];
@@ -145,9 +137,6 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   const navigationHref = useMemo(() => {
     if (isArticle) return `/article/${eventNoteId}`;
-    
-    // For comments (Kind 1111), if they are specifically on articles, 
-    // we could route to /article/... but /post/... handles the thread view better for now.
     return `/post/${eventNoteId}`;
   }, [isArticle, eventNoteId]);
 
@@ -197,9 +186,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     if (!ndk || !isReady) return;
 
     try {
-      // If already liked, we don't have a direct "unlike" in NIP-25 
-      // other than deleting the reaction event, which we don't track yet.
-      // So we just allow liking.
       if (userLiked) return;
       await reactToEvent(ndk, displayEvent, "+");
     } catch (err) {
@@ -292,20 +278,19 @@ export const PostCard: React.FC<PostCardProps> = ({
       }`}
       style={{ paddingLeft: `${1 + indent * 1.5}rem` }}
     >
-      {/* Stretched Link for Accessibility */}
       <Link 
         href={navigationHref}
         className="absolute inset-0 z-0"
-        aria-label={`View ${isArticle ? 'article' : isComment ? 'comment' : 'post'} by ${displayName}`}
+        aria-label={`View post by ${displayName}`}
       />
 
       <div className="flex relative min-w-0 z-10 pointer-events-none">
-        {/* Thread Lines */}
+        {/* Simplified Thread Lines */}
         {(threadLine === "top" || threadLine === "both") && (
-          <div className="absolute top-[-1.5rem] left-6 w-0.5 h-[2.5rem] bg-gray-200 dark:bg-gray-800" />
+          <div className="absolute top-[-1.5rem] left-5 w-0.5 h-[2.5rem] bg-gray-100 dark:bg-gray-800/50" />
         )}
         {(threadLine === "bottom" || threadLine === "both") && (
-          <div className="absolute top-[3rem] bottom-[-1.5rem] left-6 w-0.5 bg-gray-200 dark:bg-gray-800" />
+          <div className="absolute top-[3.5rem] bottom-[-1.5rem] left-5 w-0.5 bg-gray-100 dark:bg-gray-800/50" />
         )}
 
         {/* Content Area */}
