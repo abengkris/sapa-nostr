@@ -1,0 +1,7 @@
+Task: Implement Interest signal extractor (NIP-51)
+Summary: Implemented the logic to map user interests (NIP-51) to post tags for ranking.
+Files:
+- src/lib/feed/signals/interests.ts (New)
+- src/lib/feed/signals/__tests__/interests.test.ts (New)
+- conductor/tracks/foryou_20260321/plan.md (Modified)
+Why: To incorporate user interests as a ranking signal in the 'For You' feed algorithm.
