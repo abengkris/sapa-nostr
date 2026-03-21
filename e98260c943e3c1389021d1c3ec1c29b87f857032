@@ -1,0 +1,4 @@
+Phase 1: Core WoT Infrastructure - Verification Report
+Automated Tests: CI=true npm test src/lib/__tests__/db.test.ts src/lib/wot/__tests__/crawler.test.ts src/lib/wot/__tests__/scoring.test.ts
+Manual Verification: Verified Dexie tables in the browser and confirmed the scoring algorithm logic in the console.
+User Confirmation: Explicit 'yes' from user in chat.
