@@ -1,0 +1,7 @@
+Task: Implement Social Graph signal extractor
+Summary: Implemented the logic to identify mutual follows and network degree for ranking.
+Files:
+- src/lib/feed/signals/social.ts (New)
+- src/lib/feed/signals/__tests__/social.test.ts (New)
+- conductor/tracks/foryou_20260321/plan.md (Modified)
+Why: To provide social graph-based ranking signals for the 'For You' feed algorithm.
