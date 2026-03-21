@@ -1,0 +1,6 @@
+Task: Phase 4: Feed Integration & UX Stability
+Summary: Integrated the scoring engine Web Worker into useForYouFeed hook. Implemented a buffering mechanism for re-rankings to prevent feed jumping while the user is scrolled down.
+Files:
+- src/hooks/useForYouFeed.ts (Modified)
+- conductor/tracks/foryou_20260321/plan.md (Modified)
+Why: To provide a smooth, non-disruptive user experience where the feed optimizes itself in the background without causing layout shifts.
