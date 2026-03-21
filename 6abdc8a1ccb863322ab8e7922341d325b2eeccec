@@ -1,0 +1,8 @@
+Task: Phase 1: Foundation & Scoring Interface
+Summary: Established core data structures and background communication bridge for the scoring engine.
+Files:
+- src/lib/feed/types.ts (New)
+- src/lib/feed/scoring.worker.ts (New)
+- src/lib/feed/scorer.ts (Modified)
+- conductor/tracks/foryou_20260321/plan.md (Modified)
+Why: To provide a robust, typed foundation for the optimized 'For You' feed algorithm and enable background processing via Web Workers.
