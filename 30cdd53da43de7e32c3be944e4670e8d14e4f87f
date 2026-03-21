@@ -1,0 +1,7 @@
+Task: Implement WoT signal extractor
+Summary: Implemented the logic to fetch Web of Trust scores from the local Dexie database for ranking.
+Files:
+- src/lib/feed/signals/wot.ts (New)
+- src/lib/feed/signals/__tests__/wot.test.ts (New)
+- conductor/tracks/foryou_20260321/plan.md (Modified)
+Why: To provide trust-based ranking signals for the 'For You' feed algorithm.
